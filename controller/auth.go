@@ -9,6 +9,7 @@ import (
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
+	"github.com/nkamuo/rasta-server/utils/token"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,7 +21,7 @@ func Register(c *gin.Context) {
 	var input dto.UserRegistrationInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
@@ -37,11 +38,11 @@ func Register(c *gin.Context) {
 	err := userSerice.Save(&user)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "registration success"})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "registration success"})
 
 }
 
@@ -53,23 +54,43 @@ func Login(c *gin.Context) {
 	var input dto.UserFormLoginInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
 	user, err := userRepo.GetByEmail(input.Username)
 	if nil != err {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username or password is incorrect.", "user": user})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "username or password is incorrect."})
 		return
 	}
 
 	token, err := auth.LoginCheck(*user, input.Password)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username or password is incorrect.", "message": err.Error(), "user": user})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "token": token})
+
+}
+
+func GetCurrentUser(c *gin.Context) {
+
+	userService := service.GetUserService()
+
+	userID, err := token.ExtractTokenID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	user, err := userService.GetById(userID)
+
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusBadRequest, gin.H{"status": "success", "data": user})
 
 }

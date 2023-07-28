@@ -12,7 +12,7 @@ type User struct {
 	ID             uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
 	Email          string    `gorm:"type:varchar(64);uniqueIndex:idx_notes_email,LENGTH(255);not null" json:"email,omitempty"`
 	Phone          string    `gorm:"type:varchar(64);uniqueIndex:idx_notes_phone,LENGTH(255);not null" json:"phone,omitempty"`
-	HashedPassword string    `gorm:"not null" json:"ignore"`
+	HashedPassword string    `gorm:"not null" json:"hashedPassword,omit"`
 	FirstName      string    `gorm:"varchar(100)" json:"firstName,omitempty"`
 	LastName       string    `gorm:"varchar(100)" json:"lastName,omitempty"`
 	IsAdmin        bool      `gorm:"default:false;not null" json:"isAdmin"`

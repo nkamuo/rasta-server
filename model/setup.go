@@ -24,11 +24,11 @@ func ConnectDatabase(config *initializers.Config) {
 		os.Exit(1)
 	}
 
-	// DB.Logger = logger.Default.LogMode(logger.Info)
+	// DB.Logger = log.Default.LogMode(logger.Info)
 
-	log.Println("Running Migrations")
+	// log.Debug("Running Migrations")
 
-	err = database.AutoMigrate(&Product{}, &User{})
+	err = database.AutoMigrate(&Product{}, &User{}, &Respondent{}, &Company{})
 	if err != nil {
 		return
 	}

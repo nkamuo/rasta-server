@@ -75,15 +75,15 @@ func (repo *userRepository) Save(user *model.User) (err error) {
 	if (uuid.UUID{} == user.ID) {
 		//NEW - No ID yet
 		repo.db.Create(&user)
-		return nil
+		return repo.db.Error
 	}
 	repo.db.Updates(&user)
-	return nil
+	return repo.db.Error
 }
 
 func (repo *userRepository) Delete(user *model.User) (err error) {
 	repo.db.Delete(&user)
-	return nil
+	return repo.db.Error
 }
 
 func (repo *userRepository) DeleteById(id uuid.UUID) (user *model.User, err error) {
@@ -91,5 +91,8 @@ func (repo *userRepository) DeleteById(id uuid.UUID) (user *model.User, err erro
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+
+	repo.db.Delete(&user)
+
+	return user, repo.db.Error
 }

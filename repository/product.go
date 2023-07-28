@@ -8,13 +8,13 @@ import (
 	"gorm.io/gorm"
 )
 
-var productRepo *ProductRepository
+var productRepo ProductRepository
 var productRepoMutext *sync.Mutex
 
-func GetProductRepository(db *gorm.DB) *ProductRepository {
+func GetProductRepository() ProductRepository {
 	productRepoMutext.Lock()
 	if productRepo == nil {
-		*productRepo = &productRepository{db: db}
+		productRepo = &productRepository{db: model.DB}
 	}
 	productRepoMutext.Unlock()
 	return productRepo

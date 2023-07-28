@@ -41,11 +41,34 @@ func main() {
 	api.POST("/register", controller.Register)
 	api.POST("/login", controller.Login)
 	api.Use(middleware.JwtAuthMiddleware())
+	api.GET("/me", controller.GetCurrentUser)
 
 	api.GET("/products", controller.FindProducts)
 	api.GET("/products/:id", controller.FindProduct)
 	api.POST("/products", controller.CreateProduct)
 	api.DELETE("/products/:id", controller.DeleteProduct)
+
+	api.GET("/users", controller.FindUsers)
+	api.GET("/users/:id", controller.FindUser)
+	api.POST("/users", controller.CreateUser)
+	api.PATCH("/users/:id", controller.UpdateUser)
+	api.DELETE("/users/:id", controller.DeleteUser)
+
+	api.GET("/respondents", controller.FindRespondents)
+	api.GET("/respondents/:id", controller.FindRespondent)
+	api.POST("/respondents", controller.CreateRespondent)
+	api.PATCH("/respondents/:id", controller.UpdateRespondent)
+	api.DELETE("/respondents/:id", controller.DeleteRespondent)
+	// COMPANY RESPONDANTS
+	api.GET("/companies/:id/respondents", controller.FindRespondentsByCompany)
+	api.POST("/companies/:id/respondents", controller.AddRespondentToCompany)
+	api.DELETE("/companies/:id/respondents/:respondent_id", controller.RemoveRespondentFromCompany)
+
+	api.GET("/companies", controller.FindCompanies)
+	api.GET("/companies/:id", controller.FindCompany)
+	api.POST("/companies", controller.CreateCompany)
+	api.PATCH("/companies/:id", controller.UpdateCompany)
+	api.DELETE("/companies/:id", controller.DeleteCompany)
 
 	r.Run(":8090")
 }
