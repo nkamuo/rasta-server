@@ -72,7 +72,7 @@ func (repo *respondentRepository) FindAllByCompanyID(companyID uuid.UUID, page i
 }
 
 func (repo *respondentRepository) GetById(id uuid.UUID) (respondent *model.Respondent, err error) {
-	if err = model.DB. /*.Joins("User")*/ First(&respondent, "id = ?", id).Error; err != nil {
+	if err = model.DB.Joins("User").First(&respondent, "respondents.id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return respondent, nil

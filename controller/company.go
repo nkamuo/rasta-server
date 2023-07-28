@@ -14,10 +14,12 @@ import (
 )
 
 func FindCompanies(c *gin.Context) {
-	var companys []model.Company
-	model.DB.Find(&companys)
-
-	c.JSON(http.StatusOK, gin.H{"status": "success", "data": companys})
+	var companies []model.Company
+	if err := model.DB.Find(&companies).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": companies})
 }
 
 func CreateCompany(c *gin.Context) {
@@ -51,7 +53,7 @@ func CreateCompany(c *gin.Context) {
 		Title:          input.Title,
 		Description:    input.Description,
 		Category:       input.Category,
-		OperatorUserID: &user.ID,
+		OperatorUserID: user.ID,
 	}
 
 	// fmt.Printf("Input USer ID: %s\n user.ID: %s\n company.UserId: %s\n", input.UserId, user.ID, company.UserID)

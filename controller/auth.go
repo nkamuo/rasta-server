@@ -9,7 +9,9 @@ import (
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
-	"github.com/nkamuo/rasta-server/utils/token"
+
+	// "github.com/nkamuo/rasta-server/utils/token"
+	utils "github.com/nkamuo/rasta-server/utils/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -77,15 +79,7 @@ func Login(c *gin.Context) {
 
 func GetCurrentUser(c *gin.Context) {
 
-	userService := service.GetUserService()
-
-	userID, err := token.ExtractTokenID(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
-
-	user, err := userService.GetById(userID)
+	user, err := utils.GetCurrentUser(c)
 
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})

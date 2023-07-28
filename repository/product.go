@@ -9,7 +9,7 @@ import (
 )
 
 var productRepo ProductRepository
-var productRepoMutext *sync.Mutex
+var productRepoMutext *sync.Mutex = &sync.Mutex{}
 
 func GetProductRepository() ProductRepository {
 	productRepoMutext.Lock()
@@ -49,7 +49,7 @@ func (repo *productRepository) FindAll(page int, limit int) (products []model.Pr
 }
 
 func (repo *productRepository) GetById(id uuid.UUID) (product *model.Product, err error) {
-	if err = model.DB.Where("id = ?", id).First(&product).Error; err != nil {
+	if err = model.DB.Preload("Place").Where("id = ?", id).First(&product).Error; err != nil {
 		return nil, err
 	}
 	return product, nil

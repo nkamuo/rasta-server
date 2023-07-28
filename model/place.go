@@ -9,6 +9,7 @@ import (
 
 type Place struct {
 	ID          uuid.UUID     `gorm:"type:char(36);primary_key" json:"id,omitempty"`
+	Code        string        `gorm:"type:varchar(64);uniqueIndex:idx_place_code,LENGTH(64);not null" json:"code,omitempty"`
 	Name        string        `gorm:"type:varchar(255);uniqueIndex:idx_place_name,LENGTH(255);not null" json:"name,omitempty"`
 	ShortName   string        `gorm:"type:varchar(255);uniqueIndex:idx_place_short_name,LENGTH(255);" json:"shortName,omitempty"`
 	LongName    string        `gorm:"type:varchar(255);uniqueIndex:idx_place_long_name,LENGTH(255);" json:"longName,omitempty"`

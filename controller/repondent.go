@@ -9,13 +9,17 @@ import (
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
+	"github.com/nkamuo/rasta-server/utils/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func FindRespondents(c *gin.Context) {
 	var respondents []model.Respondent
-	model.DB.Find(&respondents)
+	if err := model.DB.Preload("User").Find(&respondents).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": respondents})
 }
@@ -39,7 +43,10 @@ func FindRespondentsByCompany(c *gin.Context) {
 	var respondents []model.Respondent
 	model.DB.
 		Joins("JOIN companies ON companies.id = respondents.company_id").
-		Where("companies.id = ?", companyID).Find(&respondents)
+		Where("companies.id = ?", companyID).
+		Preload("User").
+		// Preload("Company").
+		Find(&respondents)
 
 	if respondents == nil {
 		respondents = make([]model.Respondent, 0)
@@ -173,6 +180,23 @@ func FindRespondent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": respondent})
+}
+
+func GetCurrentRespondent(c *gin.Context) {
+	respondentRepo := repository.GetRespondentRepository()
+
+	user, err := auth.GetCurrentUser(c)
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	respondent, err := respondentRepo.GetByUser(*user)
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusBadRequest, gin.H{"status": "success", "data": respondent})
+
 }
 
 func UpdateRespondent(c *gin.Context) {

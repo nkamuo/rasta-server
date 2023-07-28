@@ -46,7 +46,7 @@ func TokenValid(context *gin.Context) error {
 		return []byte(os.Getenv("API_SECRET")), nil
 	})
 
-	userID, err := ExtractTokenID(context)
+	userID, err := ExtractUserID(context)
 	if nil != err {
 		return err
 	}
@@ -88,7 +88,7 @@ func ExtractToken(c *gin.Context) string {
 	return ""
 }
 
-func ExtractTokenID(c *gin.Context) (uuid.UUID, error) {
+func ExtractUserID(c *gin.Context) (uuid.UUID, error) {
 
 	tokenString := ExtractToken(c)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

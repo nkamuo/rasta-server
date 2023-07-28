@@ -42,10 +42,12 @@ func main() {
 	api.POST("/login", controller.Login)
 	api.Use(middleware.JwtAuthMiddleware())
 	api.GET("/me", controller.GetCurrentUser)
+	api.GET("/me/respondent", controller.GetCurrentRespondent)
 
 	api.GET("/products", controller.FindProducts)
 	api.GET("/products/:id", controller.FindProduct)
 	api.POST("/products", controller.CreateProduct)
+	api.PATCH("/products/:id", controller.UpdateProduct)
 	api.DELETE("/products/:id", controller.DeleteProduct)
 
 	api.GET("/users", controller.FindUsers)
@@ -69,6 +71,20 @@ func main() {
 	api.POST("/companies", controller.CreateCompany)
 	api.PATCH("/companies/:id", controller.UpdateCompany)
 	api.DELETE("/companies/:id", controller.DeleteCompany)
+
+	api.GET("/places", controller.FindPlaces)
+	api.GET("/places/:id", controller.FindPlace)
+	api.POST("/places", controller.CreatePlace)
+	api.PATCH("/places/:id", controller.UpdatePlace)
+	api.DELETE("/places/:id", controller.DeletePlace)
+
+	api.GET("/product_respondent_assignments", controller.FindProductRespondentAssignments)
+	api.GET("/product_respondent_assignments/:id", controller.FindProductRespondentAssignment)
+	api.POST("/product_respondent_assignments", controller.CreateProductRespondentAssignment)
+	api.PATCH("/product_respondent_assignments/:id", controller.UpdateProductRespondentAssignment)
+	api.DELETE("/product_respondent_assignments/:id", controller.DeleteProductRespondentAssignment)
+
+	// product_respondent_assignment
 
 	r.Run(":8090")
 }
