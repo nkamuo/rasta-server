@@ -41,13 +41,13 @@ func CreatePlace(c *gin.Context) {
 
 	// Create place
 	place := model.Place{
+		Active:      input.Active,
 		Code:        input.Code,
 		Name:        input.Name,
 		ShortName:   input.ShortName,
 		LongName:    input.LongName,
 		Description: input.Description,
 		Category:    input.Category,
-		Active:      input.Active,
 	}
 
 	// fmt.Printf("Input USer ID: %s\n user.ID: %s\n place.UserId: %s\n", input.UserId, user.ID, place.UserID)
@@ -78,14 +78,12 @@ func FindPlace(c *gin.Context) {
 func UpdatePlace(c *gin.Context) {
 	placeService := service.GetPlaceService()
 
-	var requestBody map[string]interface{}
-	if err := c.Copy().BindJSON(&requestBody); err != nil {
+	var input dto.PlaceUpdateInput
+
+	if err := c.Copy().BindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-
-	// var input dto.PlaceUpdateInput
-	// mapstructure.Decode(requestBody, input)
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -98,31 +96,30 @@ func UpdatePlace(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 
-	if code, ok := requestBody["code"]; ok {
-		place.Code = code.(string)
+	if nil != input.Code {
+		place.Code = *input.Code
 	}
-	if name, ok := requestBody["name"]; ok {
-		place.Name = name.(string)
+	if nil != input.Name {
+		place.Name = *input.Name
 	}
-	if shortName, ok := requestBody["shortName"]; ok {
-		place.ShortName = shortName.(string)
+	if nil != input.ShortName {
+		place.ShortName = *input.ShortName
 	}
-	if longName, ok := requestBody["longName"]; ok {
-		place.LongName = longName.(string)
+	if nil != input.LongName {
+		place.LongName = *input.LongName
 	}
-	if description, ok := requestBody["description"]; ok {
-		place.Description = description.(string)
+	if nil != input.Description {
+		place.Description = *input.Description
 	}
-	if _category, ok := requestBody["category"]; ok {
-		category := _category.(string)
-		if err := ValidatePlaceCategory(category); err != nil {
+	if nil != input.Active {
+		place.Active = *input.Active
+	}
+	if nil != input.Category {
+		if err := ValidatePlaceCategory(*input.Category); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error(), "status": "error"})
 			return
 		}
-		place.Category = category
-	}
-	if active, ok := requestBody["active"]; ok {
-		place.Active = active.(bool)
+		place.Category = *input.Category
 	}
 
 	if err := placeService.Save(place); nil != err {

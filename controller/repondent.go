@@ -41,12 +41,15 @@ func FindRespondentsByCompany(c *gin.Context) {
 	}
 
 	var respondents []model.Respondent
-	model.DB.
+	if err = model.DB.
 		Joins("JOIN companies ON companies.id = respondents.company_id").
 		Where("companies.id = ?", companyID).
 		Preload("User").
 		// Preload("Company").
-		Find(&respondents)
+		Find(&respondents).Error; nil != err {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
 
 	if respondents == nil {
 		respondents = make([]model.Respondent, 0)
@@ -139,7 +142,7 @@ func CreateRespondent(c *gin.Context) {
 		return
 	}
 
-	user, err := userService.GetById(input.UserId)
+	user, err := userService.GetById(input.UserID)
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return

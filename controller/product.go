@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -35,7 +34,7 @@ func CreateProduct(c *gin.Context) {
 		return
 	}
 
-	if err := ValidateProductCategory(input.Category); err != nil {
+	if err := model.ValidateProductCategory(input.Category); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error(), "status": "error"})
 		return
 	}
@@ -48,6 +47,7 @@ func CreateProduct(c *gin.Context) {
 	}
 
 	product := model.Product{
+		Rate:        input.Rate,
 		Label:       input.Label,
 		Title:       input.Title,
 		Category:    input.Category,
@@ -83,13 +83,13 @@ func FindProduct(c *gin.Context) {
 }
 
 func UpdateProduct(c *gin.Context) {
-	placeService := service.GetProductService()
+	productService := service.GetProductService()
 
-	var requestBody map[string]interface{}
-	if err := c.Copy().BindJSON(&requestBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid JSON format"})
-		return
-	}
+	// var requestBody map[string]interface{}
+	// if err := c.Copy().BindJSON(&requestBody); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid JSON format"})
+	// 	return
+	// }
 
 	var input dto.ProductUpdateInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -102,38 +102,39 @@ func UpdateProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
 		return
 	}
-	place, err := placeService.GetById(id)
+	product, err := productService.GetById(id)
 	if nil != err {
-		message := fmt.Sprintf("Could not find place with [id:%s]", id)
+		message := fmt.Sprintf("Could not find product with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 
-	if _, ok := requestBody["label"]; ok {
-		place.Label = input.Label
-	}
-	if _, ok := requestBody["iconImage"]; ok {
-		place.IconImage = input.IconImage
-	}
-	if _, ok := requestBody["coverImage"]; ok {
-		place.CoverImage = input.CoverImage
-	}
-	if _, ok := requestBody["title"]; ok {
-		place.Title = input.Title
-	}
-	if _, ok := requestBody["description"]; ok {
-		place.Description = input.Description
-	}
-	if _, ok := requestBody["description"]; ok {
-		place.Description = input.Description
+	if nil != input.Rate {
+		product.Rate = *input.Rate
 	}
 
-	if err := placeService.Save(place); nil != err {
+	if nil != input.Label {
+		product.Label = *input.Label
+	}
+	if nil != input.IconImage {
+		product.IconImage = *input.IconImage
+	}
+	if nil != input.IconImage {
+		product.CoverImage = *input.CoverImage
+	}
+	if nil != input.Title {
+		product.Title = *input.Title
+	}
+	if nil != input.Description {
+		product.Description = *input.Description
+	}
+
+	if err := productService.Save(product); nil != err {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	message := fmt.Sprintf("Updated place \"%s\"", place.ID)
-	c.JSON(http.StatusOK, gin.H{"data": place, "status": "success", "message": message})
+	message := fmt.Sprintf("Updated Product \"%s\"", product.ID)
+	c.JSON(http.StatusOK, gin.H{"data": product, "status": "success", "message": message})
 }
 
 func DeleteProduct(c *gin.Context) {
@@ -149,22 +150,4 @@ func DeleteProduct(c *gin.Context) {
 	model.DB.Delete(&product)
 	message := fmt.Sprintf("Deleted product \"%s\"", product.Title)
 	c.JSON(http.StatusOK, gin.H{"data": product, "status": "success", "message": message})
-}
-
-func ValidateProductCategory(category model.ProductCategory) (err error) {
-	switch category {
-	case model.PRODUCT_FLAT_TIRE_SERVICE:
-		return nil
-	case model.PRODUCT_FUEL_DELIVERY_SERVICE:
-		return nil
-	case model.PRODUCT_TIRE_AIR_SERVICE:
-		return nil
-	case model.PRODUCT_TOWING_SERVICE:
-		return nil
-	case model.PRODUCT_JUMP_START_SERVICE:
-		return nil
-	case model.PRODUCT_KEY_UNLOCK_SERVICE:
-		return nil
-	}
-	return errors.New(fmt.Sprintf("Unsupported Product Category \"%s\"", category))
 }

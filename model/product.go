@@ -1,6 +1,8 @@
 package model
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +17,7 @@ type Product struct {
 	Category    ProductCategory `gorm:"varchar(100)" json:"category,omitempty"`
 	PlaceID     uuid.UUID       `gorm:"unique" json:"placeId,omitempty"`
 	Place       *Place          `gorm:"foreignKey:PlaceID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"place,omitempty"` // BelongsToMany Association - These mappings may be optional
+	Rate        int64           `gorm:"" json:"rate,omitempty"`
 	IconImage   string          `gorm:"" json:"iconImage,omitempty"`
 	CoverImage  string          `gorm:"" json:"coverImage,omitempty"`
 	Published   bool            `gorm:"default:false;not null" json:"published"`
@@ -38,11 +41,20 @@ const (
 	PRODUCT_TIRE_AIR_SERVICE      ProductCategory = "TIRE_AIR_SERVICE"
 )
 
-// BeforeCreate will set a UUID rather than numeric ID.
-// func (base *Base) BeforeCreate(scope *gorm.Scope) error {
-// 	uuid, err := uuid.NewV4()
-// 	if err != nil {
-// 	 return err
-// 	}
-// 	return scope.SetColumn("ID", uuid)
-//    }
+func ValidateProductCategory(category ProductCategory) (err error) {
+	switch category {
+	case PRODUCT_FLAT_TIRE_SERVICE:
+		return nil
+	case PRODUCT_FUEL_DELIVERY_SERVICE:
+		return nil
+	case PRODUCT_TIRE_AIR_SERVICE:
+		return nil
+	case PRODUCT_TOWING_SERVICE:
+		return nil
+	case PRODUCT_JUMP_START_SERVICE:
+		return nil
+	case PRODUCT_KEY_UNLOCK_SERVICE:
+		return nil
+	}
+	return errors.New(fmt.Sprintf("Unsupported Product Category \"%s\"", category))
+}

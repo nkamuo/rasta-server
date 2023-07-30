@@ -14,11 +14,11 @@ type PlaceCreationInput struct {
 }
 
 type PlaceUpdateInput struct {
-	Code        string              `json:"code,omitempty" binding:""`
-	Name        string              `json:"name,omitempty"`
-	ShortName   string              ` json:"shortName,omitempty"`
-	LongName    string              `json:"longName,omitempty"`
-	Description string              `json:"description,omitempty"`
-	Category    model.PlaceCategory `json:"category,omitempty"`
-	Active      bool                `json:"active"`
+	Code        *string              `json:"code,omitempty" binding:""`
+	Name        *string              `json:"name,omitempty"`
+	ShortName   *string              ` json:"shortName,omitempty"`
+	LongName    *string              `json:"longName,omitempty"`
+	Description *string              `json:"description,omitempty"`
+	Category    *model.PlaceCategory `json:"category,omitempty"`
+	Active      *bool                `json:"active"`
 }

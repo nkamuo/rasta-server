@@ -84,6 +84,21 @@ func main() {
 	api.PATCH("/product_respondent_assignments/:id", controller.UpdateProductRespondentAssignment)
 	api.DELETE("/product_respondent_assignments/:id", controller.DeleteProductRespondentAssignment)
 
+	api.GET("/fuel_types", controller.FindFuelTypes)
+	api.GET("/fuel_types/:id", controller.FindFuelType)
+	api.POST("/fuel_types", controller.CreateFuelType)
+	api.PATCH("/fuel_types/:id", controller.UpdateFuelType)
+	api.DELETE("/fuel_types/:id", controller.DeleteFuelType)
+
+	api.GET("/payment_methods", controller.FindPaymentMethods)
+	api.GET("/payment_methods/:id", controller.FindPaymentMethod)
+	api.POST("/payment_methods", controller.CreatePaymentMethod)
+	api.PATCH("/payment_methods/:id", controller.UpdatePaymentMethod)
+	api.DELETE("/payment_methods/:id", controller.DeletePaymentMethod)
+
+	// USER PAYMENT METHODS
+	api.GET("/users/:id/payment_methods", controller.FindUserPaymentMethods)
+
 	// product_respondent_assignment
 
 	r.Run(":8090")

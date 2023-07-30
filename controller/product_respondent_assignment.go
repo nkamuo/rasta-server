@@ -29,6 +29,7 @@ func FindProductRespondentAssignments(c *gin.Context) {
 
 func CreateProductRespondentAssignment(c *gin.Context) {
 
+	placeService := service.GetPlaceService()
 	productService := service.GetProductService()
 	respondentService := service.GetRespondentService()
 	assignmentService := service.GetProductRespondentAssignmentService()
@@ -52,6 +53,13 @@ func CreateProductRespondentAssignment(c *gin.Context) {
 		return
 	}
 
+	place, err := placeService.GetById(product.PlaceID)
+	if nil != err {
+		message := fmt.Sprintf("Could not resolve Place [id:%s]: %s", product.PlaceID, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
+		return
+	}
+
 	respondant, err := respondentService.GetById(input.RespondentID)
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
@@ -70,9 +78,10 @@ func CreateProductRespondentAssignment(c *gin.Context) {
 
 	if existingCount > 0 {
 		message := fmt.Sprintf(
-			"There is already an assignment for respondent \"%v\" on Product \"%v\"",
+			"There is already an assignment for \"%v\" on \"%v\" in \"%v\"",
 			respondant.User.FullName(),
 			product.Label,
+			place.Name,
 		)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return

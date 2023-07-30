@@ -28,7 +28,24 @@ func ConnectDatabase(config *initializers.Config) {
 
 	// log.Debug("Running Migrations")
 
-	err = database.AutoMigrate(&Product{}, &User{}, &Respondent{}, &Company{}, &ProductRespondentAssignment{})
+	err = database.AutoMigrate(
+		&User{},
+		&Company{},
+		&Product{},
+		&Respondent{},
+		&ProductRespondentAssignment{},
+
+		&Order{},
+		&OrderItem{},
+		&Payment{},
+		&PaymentMethod{},
+		// REQUEST_TYPE - SPECIFIC INFORMATION
+		&FuelType{},
+		// LOCATIONS
+		&Place{},
+		&Location{},
+		&LocationCoordinates{},
+	)
 	if err != nil {
 		return
 	}
