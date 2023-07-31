@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
+	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,7 @@ func FindProducts(c *gin.Context) {
 
 func CreateProduct(c *gin.Context) {
 
+	productRepository := repository.GetProductRepository()
 	productService := service.GetProductService()
 	placeService := service.GetPlaceService()
 
@@ -46,6 +48,20 @@ func CreateProduct(c *gin.Context) {
 		return
 	}
 
+	existingProduct, err := productRepository.GetByPlaceIdAndCategory(input.PlaceID, input.Category)
+	if nil != err {
+		if err.Error() == "record not found" {
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error(), "status": "error"})
+			return
+		}
+	}
+	if existingProduct != nil {
+		message := fmt.Sprintf("Service %s is already provided at %s", input.Category, place.Name)
+		c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
+		return
+	}
+
 	product := model.Product{
 		Rate:        input.Rate,
 		Label:       input.Label,
@@ -56,6 +72,7 @@ func CreateProduct(c *gin.Context) {
 		CoverImage:  input.CoverImage,
 		PlaceID:     place.ID,
 	}
+
 	if err := productService.Save(&product); nil != err {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
 		return

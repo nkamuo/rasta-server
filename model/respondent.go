@@ -18,7 +18,7 @@ type Respondent struct {
 	Vehicle   *Vehicle   `gorm:"foreignKey:VehicleID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"vehicle,omitempty"`
 
 	//ASSOCIATED USER ACCOUNT
-	UserID *uuid.UUID `gorm:"not null;unique" json:"userId,omitempty"`
+	UserID *uuid.UUID `gorm:";unique" json:"userId,omitempty"`
 	User   *User      `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user,omitempty"`
 	//COMPANY OF THE REPSONDANT
 	CompanyID uuid.UUID `gorm:"unique" json:"companyId,omitempty"`

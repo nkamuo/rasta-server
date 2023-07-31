@@ -17,7 +17,7 @@ type PaymentMethod struct {
 	Category PaymentMethodCategory `gorm:"varchar(100)" json:"category,omitempty"`
 
 	//STORE PAYMENT DETAILS LIKE CREDIT CARD INFOR, PAPAL_ID in a map
-	Details map[string]interface{} `gorm:"" json:"details"`
+	Details JSON `gorm:"" json:"details"`
 
 	Description string `gorm:"" json:"description,omitempty"`
 	Active      bool   `gorm:"default:false;not null" json:"active"`

@@ -18,7 +18,7 @@ type Order struct {
 	Status string `json:"status,omitempty"`
 
 	//ASSOCIATED USER ACCOUNT
-	UserID *uuid.UUID `gorm:"not null" json:"userId,omitempty"`
+	UserID *uuid.UUID `gorm:"" json:"userId,omitempty"`
 	User   *User      `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user,omitempty"`
 
 	//Payment Method

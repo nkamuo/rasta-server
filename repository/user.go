@@ -51,21 +51,21 @@ func (repo *userRepository) FindAll(page int, limit int) (users []model.User, to
 }
 
 func (repo *userRepository) GetById(id uuid.UUID) (user *model.User, err error) {
-	if err = model.DB.Where("id = ?", id).First(&user).Error; err != nil {
+	if err = repo.db.Where("id = ?", id).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 func (repo *userRepository) GetByEmail(email string) (user *model.User, err error) {
-	if err = model.DB.Where("email = ?", email).First(&user).Error; err != nil {
+	if err = repo.db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 func (repo *userRepository) GetByPhone(phone string) (user *model.User, err error) {
-	if err = model.DB.Where("phone = ?", phone).First(&user).Error; err != nil {
+	if err = repo.db.Where("phone = ?", phone).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil

@@ -15,7 +15,7 @@ type Product struct {
 	Title       string          `gorm:"type:varchar(255);uniqueIndex:idx_product_title,LENGTH(255);not null" json:"title,omitempty"`
 	Description string          `gorm:"not null" json:"description,omitempty"`
 	Category    ProductCategory `gorm:"varchar(100)" json:"category,omitempty"`
-	PlaceID     uuid.UUID       `gorm:"unique" json:"placeId,omitempty"`
+	PlaceID     uuid.UUID       `gorm:"" json:"placeId,omitempty"`
 	Place       *Place          `gorm:"foreignKey:PlaceID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"place,omitempty"` // BelongsToMany Association - These mappings may be optional
 	Rate        int64           `gorm:"" json:"rate,omitempty"`
 	IconImage   string          `gorm:"" json:"iconImage,omitempty"`

@@ -15,7 +15,7 @@ type OrderItem struct {
 
 	//THE MAIN ORDER ENTITY
 	OrderID *uuid.UUID `gorm:"not null" json:"orderId,omitempty"`
-	Order   *Order     `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"order,omitempty"`
+	Order   *Order     `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
 
 	OriginID *uuid.UUID `json:"originId"`
 	Origin   *Location  `gorm:"" json:"origin,omitempty"`
@@ -24,7 +24,7 @@ type OrderItem struct {
 	Destination   *Location  `gorm:"" json:"destination,omitempty"`
 
 	//ASSOCIATED USER ACCOUNT
-	ProductID *uuid.UUID `gorm:"not null" json:"productId,omitempty"`
+	ProductID *uuid.UUID `gorm:"" json:"productId,omitempty"`
 	Product   *Product   `gorm:"foreignKey:ProductID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"product,omitempty"`
 
 	//TIMESTAMPs

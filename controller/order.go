@@ -9,12 +9,11 @@ import (
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
+	"github.com/nkamuo/rasta-server/utils/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
-// GET /orders
-// Get all orders
 func FindOrders(c *gin.Context) {
 	var orders []model.Order
 	if err := model.DB.Find(&orders).Error; nil != err {
@@ -26,7 +25,9 @@ func FindOrders(c *gin.Context) {
 
 func CreateOrder(c *gin.Context) {
 
+	userService := service.GetUserService()
 	orderService := service.GetOrderService()
+	paymentMethodService := service.GetPaymentMethodService()
 
 	var input dto.OrderCreationInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -34,12 +35,60 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
-	order := model.Order{
-		LicensePlaceNumber: *input.LicensePlaceNumber,
-		Description:        input.Description,
-		ModelID:            orderModel.ID,
-		OwnerID:            owner.ID,
+	requestingUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
 	}
+
+	var user *model.User
+	var paymentMethod *model.PaymentMethod
+
+	if nil != input.UserID {
+		if !requestingUser.IsAdmin {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid request"})
+		} else {
+
+			if ruser, err := userService.GetById(*input.UserID); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("Could not resolve user: %s", err.Error())})
+			} else {
+				user = ruser
+			}
+		}
+	} else {
+		user = requestingUser
+	}
+
+	if nil != input.PaymentMethodID {
+		if FpaymentMethod, err := paymentMethodService.GetById(*input.PaymentMethodID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("Could not resolve payment method: %s", err.Error())})
+			return
+		} else {
+			if *FpaymentMethod.UserID != user.ID {
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("Could not resolve user payment method: %s", err.Error())})
+				return
+			}
+			paymentMethod = FpaymentMethod
+		}
+	}
+
+	if input.Items == nil || len(input.Items) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("You must provide at least one order item")})
+		return
+	}
+
+	for _, iItem := range input.Items {
+
+	}
+
+	order := model.Order{
+		UserID: &user.ID,
+	}
+
+	if nil != paymentMethod {
+		order.PaymentMethodID = &paymentMethod.ID
+	}
+
 	if err := orderService.Save(&order); nil != err {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
 		return
@@ -95,16 +144,6 @@ func UpdateOrder(c *gin.Context) {
 		order.Description = *input.Description
 	}
 
-	if nil != input.ModelID {
-		orderModel, err := modelService.GetById(*input.ModelID)
-		if nil != err {
-			message := fmt.Sprintf("Could not resolve the specified Model with [id:%s]: %s", input.ModelID, err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
-			return
-		}
-		order.ModelID = orderModel.ID
-	}
-
 	if nil != input.OwnerID {
 		owner, err := userService.GetById(*input.OwnerID)
 		if nil != err {
@@ -139,20 +178,28 @@ func DeleteOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success", "message": message})
 }
 
-func ValidateOrderCategory(category model.OrderCategory) (err error) {
-	switch category {
-	case model.PRODUCT_FLAT_TIRE_SERVICE:
-		return nil
-	case model.PRODUCT_FUEL_DELIVERY_SERVICE:
-		return nil
-	case model.PRODUCT_TIRE_AIR_SERVICE:
-		return nil
-	case model.PRODUCT_TOWING_SERVICE:
-		return nil
-	case model.PRODUCT_JUMP_START_SERVICE:
-		return nil
-	case model.PRODUCT_KEY_UNLOCK_SERVICE:
-		return nil
+func buildOrderItem(input dto.OrderItemInput, requestingUser *model.User) (orderItem *model.OrderItem, err error) {
+	productService := service.GetProductService()
+
+	product, err := productService.GetById(*input.ProductID)
+	if nil != err {
+		message := fmt.Sprintf("Could not resolve the specified product with [id:%s]", input.ProductID)
+		return nil, errors.New(message)
 	}
-	return errors.New(fmt.Sprintf("Unsupported Order Category \"%s\"", category))
+	if !product.Published {
+		message := fmt.Sprintf("Product \"%s\" is currently not active", product.Title)
+		return nil, errors.New(message)
+	}
+
+	if !requestingUser.IsAdmin {
+		if input.UnitPrice != nil {
+			return nil, errors.New("Invalid request. You can't specify unit price")
+		}
+	}
+
+}
+
+func validateProductOrderItemInput(product *model.Product, iItem dto.OrderItemInput) (err error) {
+
+	return
 }

@@ -1,107 +1,89 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
-	"os"
-
-	"github.com/nkamuo/rasta-server/controller"
-	"github.com/nkamuo/rasta-server/initializers"
-	"github.com/nkamuo/rasta-server/middleware"
-	"github.com/nkamuo/rasta-server/model"
-
-	// "net/http"
-
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"regexp"
+	// "strconv"
 )
 
-func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+const googleMapsAPIKey = "AIzaSyBhgBfG2YQsF_CivgkwKP39AP_d-Q-2aEU"
 
-	s3Bucket := os.Getenv("S3_BUCKET")
-	secretKey := os.Getenv("SECRET_KEY")
-
-	fmt.Println(s3Bucket, secretKey)
-	// now do something with s3 or whatever
-
-	r := gin.Default()
-
-	config, err := initializers.LoadConfig(".")
-
-	if err != nil {
-		fmt.Println("CONFIG ERROR:", err)
-	}
-	model.ConnectDatabase(&config)
-
-	api := r.Group("/api")
-	api.POST("/register", controller.Register)
-	api.POST("/login", controller.Login)
-	api.Use(middleware.JwtAuthMiddleware())
-	api.GET("/me", controller.GetCurrentUser)
-	api.GET("/me/respondent", controller.GetCurrentRespondent)
-
-	api.GET("/products", controller.FindProducts)
-	api.GET("/products/:id", controller.FindProduct)
-	api.POST("/products", controller.CreateProduct)
-	api.PATCH("/products/:id", controller.UpdateProduct)
-	api.DELETE("/products/:id", controller.DeleteProduct)
-
-	api.GET("/users", controller.FindUsers)
-	api.GET("/users/:id", controller.FindUser)
-	api.POST("/users", controller.CreateUser)
-	api.PATCH("/users/:id", controller.UpdateUser)
-	api.DELETE("/users/:id", controller.DeleteUser)
-
-	api.GET("/respondents", controller.FindRespondents)
-	api.GET("/respondents/:id", controller.FindRespondent)
-	api.POST("/respondents", controller.CreateRespondent)
-	api.PATCH("/respondents/:id", controller.UpdateRespondent)
-	api.DELETE("/respondents/:id", controller.DeleteRespondent)
-	// COMPANY RESPONDANTS
-	api.GET("/companies/:id/respondents", controller.FindRespondentsByCompany)
-	api.POST("/companies/:id/respondents", controller.AddRespondentToCompany)
-	api.DELETE("/companies/:id/respondents/:respondent_id", controller.RemoveRespondentFromCompany)
-
-	api.GET("/companies", controller.FindCompanies)
-	api.GET("/companies/:id", controller.FindCompany)
-	api.POST("/companies", controller.CreateCompany)
-	api.PATCH("/companies/:id", controller.UpdateCompany)
-	api.DELETE("/companies/:id", controller.DeleteCompany)
-
-	api.GET("/places", controller.FindPlaces)
-	api.GET("/places/:id", controller.FindPlace)
-	api.POST("/places", controller.CreatePlace)
-	api.PATCH("/places/:id", controller.UpdatePlace)
-	api.DELETE("/places/:id", controller.DeletePlace)
-
-	api.GET("/product_respondent_assignments", controller.FindProductRespondentAssignments)
-	api.GET("/product_respondent_assignments/:id", controller.FindProductRespondentAssignment)
-	api.POST("/product_respondent_assignments", controller.CreateProductRespondentAssignment)
-	api.PATCH("/product_respondent_assignments/:id", controller.UpdateProductRespondentAssignment)
-	api.DELETE("/product_respondent_assignments/:id", controller.DeleteProductRespondentAssignment)
-
-	api.GET("/fuel_types", controller.FindFuelTypes)
-	api.GET("/fuel_types/:id", controller.FindFuelType)
-	api.POST("/fuel_types", controller.CreateFuelType)
-	api.PATCH("/fuel_types/:id", controller.UpdateFuelType)
-	api.DELETE("/fuel_types/:id", controller.DeleteFuelType)
-
-	api.GET("/payment_methods", controller.FindPaymentMethods)
-	api.GET("/payment_methods/:id", controller.FindPaymentMethod)
-	api.POST("/payment_methods", controller.CreatePaymentMethod)
-	api.PATCH("/payment_methods/:id", controller.UpdatePaymentMethod)
-	api.DELETE("/payment_methods/:id", controller.DeletePaymentMethod)
-
-	// USER PAYMENT METHODS
-	api.GET("/users/:id/payment_methods", controller.FindUserPaymentMethods)
-
-	// product_respondent_assignment
-
-	r.Run(":8090")
+type GeocodeResult struct {
+	Results []struct {
+		FormattedAddress string `json:"formatted_address"`
+		Geometry         struct {
+			Location struct {
+				Lat float64 `json:"lat"`
+				Lng float64 `json:"lng"`
+			} `json:"location"`
+		} `json:"geometry"`
+	} `json:"results"`
 }
 
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE3MDM0MjY4MjIsInVzZXJfaWQiOiI4MTJjYzc3NS00NzcyLTQ4NDEtYTA5My1iNjI0ZTQ4N2ZmMmMifQ.cB74Ta0crGVPEhrfwULTI-GiCVbc4jD2tuYFr2yDWTk
+func resolveGeocodingInfo(input string) {
+
+	requestType := identifyInputType(input)
+
+	if requestType == "UNKNOWN" {
+		fmt.Println("Could not resolve request type \"%s\"", input)
+	}
+
+	geocodeURL := fmt.Sprintf("https://maps.googleapis.com/maps/api/geocode/json?key=%s&%s=%s", googleMapsAPIKey, requestType, url.QueryEscape(input))
+
+	resp, err := http.Get(geocodeURL)
+	if err != nil {
+		fmt.Println("Error making the request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading the response:", err)
+		return
+	}
+
+	var result GeocodeResult
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		fmt.Println("Error decoding the response:", err)
+		return
+	}
+
+	if len(result.Results) > 0 {
+		location := result.Results[0].Geometry.Location
+		fmt.Printf("Formatted Address: %s\n", result.Results[0].FormattedAddress)
+		fmt.Printf("Latitude: %f\n", location.Lat)
+		fmt.Printf("Longitude: %f\n", location.Lng)
+	} else {
+		fmt.Println("Location not found")
+	}
+}
+
+func identifyInputType(input string) string {
+	// Regular expressions for matching address, coordinates, and Google Place ID patterns
+	addressPattern := `^[A-Za-z0-9\s.,-]+$`
+	coordinatesPattern := `^-?\d+\.\d+,\s*-?\d+\.\d+$`
+	placeIDPattern := `^ChIJ[0-9A-Za-z_-]+$`
+
+	if matched, _ := regexp.MatchString(addressPattern, input); matched {
+		return "address"
+	} else if matched, _ := regexp.MatchString(coordinatesPattern, input); matched {
+		return "latlng"
+	} else if matched, _ := regexp.MatchString(placeIDPattern, input); matched {
+		return "place_id"
+	}
+
+	return "UNKNOWN"
+}
+
+func main() {
+	// Test cases
+	resolveGeocodingInfo("Divinics Electrical Shop")    // Address
+	resolveGeocodingInfo("6.024519, 7.084139")          // Coordinates (latitude, longitude)
+	resolveGeocodingInfo("ChIJ2eUgeAK6j4ARbn5u_wAGqWA") // Google Place ID
+}

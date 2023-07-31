@@ -9,7 +9,7 @@ type Location struct {
 	Name        string               `gorm:"type:varchar(255);uniqueIndex:idx_location_name,LENGTH(255);not null" json:"name,omitempty"`
 	Street      string               `gorm:"type:varchar(255);uniqueIndex:idx_location_street,LENGTH(255);" json:"longName,omitempty"`
 	Address     string               `gorm:"type:varchar(255);uniqueIndex:idx_location_address,LENGTH(255);" json:"shortName,omitempty"`
-	Coordinates *LocationCoordinates `json:"coordinates"`
+	Coordinates *LocationCoordinates `gorm:"embedded;columnPrefix:coords_" json:"coordinates"`
 	GoogleID    *string              `gorm:"type:varchar(64);uniqueIndex:idx_location_google_id,LENGTH(64);not null" json:"googleId,omitempty"`
 	Description *string              `gorm:"" json:"description,omitempty"`
 	// CreatedAt   time.Time     `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
