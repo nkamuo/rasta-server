@@ -63,6 +63,7 @@ func CreateProduct(c *gin.Context) {
 	}
 
 	product := model.Product{
+		Published:   input.Published,
 		Rate:        input.Rate,
 		Label:       input.Label,
 		Title:       input.Title,
@@ -123,6 +124,10 @@ func UpdateProduct(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find product with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	}
+
+	if nil != input.Published {
+		product.Published = *input.Published
 	}
 
 	if nil != input.Rate {

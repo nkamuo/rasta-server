@@ -2,7 +2,7 @@ package dto
 
 type FuelTypeCreationInput struct {
 	Code        string `json:"code" binding:""`
-	Rate        int64  `json:"rate" binding:"required"`
+	Rate        uint64 `json:"rate" binding:"required"`
 	Title       string `json:"title" binding:""`
 	ShortName   string `json:"shortName" binding:""`
 	Description string `json:"description" binding:""`
@@ -11,7 +11,7 @@ type FuelTypeCreationInput struct {
 
 type FuelTypeUpdateInput struct {
 	Code        *string `json:"code" binding:""`
-	Rate        *int64  `json:"rate" binding:"required"`
+	Rate        *uint64 `json:"rate" binding:"required"`
 	Title       *string `json:"title" binding:""`
 	ShortName   *string `json:"shortName" binding:""`
 	Description *string `json:"description" binding:""`

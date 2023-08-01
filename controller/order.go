@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
+	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
 
@@ -77,12 +78,20 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
-	for _, iItem := range input.Items {
+	var orderItems []model.OrderItem
 
+	for _, iItem := range input.Items {
+		if orderItem, err := buildOrderItem(iItem, requestingUser); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("%s", err.Error())})
+			return
+		} else {
+			orderItems = append(orderItems, *orderItem)
+		}
 	}
 
 	order := model.Order{
 		UserID: &user.ID,
+		Items:  &orderItems,
 	}
 
 	if nil != paymentMethod {
@@ -98,7 +107,6 @@ func CreateOrder(c *gin.Context) {
 }
 
 func FindOrder(c *gin.Context) {
-	orderService := service.GetOrderService()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -106,19 +114,19 @@ func FindOrder(c *gin.Context) {
 		return
 	}
 
-	order, err := orderService.GetById(id)
-	if err != nil {
-		message := fmt.Sprintf("Could not find order with [id:%s]", id)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	var order model.Order
+	if err := model.DB.Where("id = ?", id).Preload("Items").First(&order).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"data": order})
 }
 
 func UpdateOrder(c *gin.Context) {
-	userService := service.GetUserService()
+	// userService := service.GetUserService()
 	orderService := service.GetOrderService()
-	modelService := service.GetOrderModelService()
+	paymentMethodService := service.GetPaymentMethodService()
 
 	var input dto.OrderUpdateInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -137,21 +145,30 @@ func UpdateOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 
-	if nil != input.LicensePlaceNumber {
-		order.LicensePlaceNumber = *input.LicensePlaceNumber
-	}
-	if nil != input.Description {
-		order.Description = *input.Description
+	// requestingUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
 	}
 
-	if nil != input.OwnerID {
-		owner, err := userService.GetById(*input.OwnerID)
-		if nil != err {
-			message := fmt.Sprintf("Could not resolve the specified User with [id:%s]: %s", input.OwnerID, err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
+	var user *model.User
+	var paymentMethod *model.PaymentMethod
+
+	if nil != input.PaymentMethodID {
+		if FpaymentMethod, err := paymentMethodService.GetById(*input.PaymentMethodID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("Could not resolve payment method: %s", err.Error())})
 			return
+		} else {
+			if *FpaymentMethod.UserID != user.ID {
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("Could not resolve user payment method: %s", err.Error())})
+				return
+			}
+			paymentMethod = FpaymentMethod
 		}
-		order.OwnerID = owner.ID
+	}
+
+	if nil != paymentMethod {
+		order.PaymentMethodID = &paymentMethod.ID
 	}
 
 	if err := orderService.Save(order); nil != err {
@@ -179,23 +196,132 @@ func DeleteOrder(c *gin.Context) {
 }
 
 func buildOrderItem(input dto.OrderItemInput, requestingUser *model.User) (orderItem *model.OrderItem, err error) {
+	placeService := service.GetPlaceService()
 	productService := service.GetProductService()
+	locationService := service.GetLocationService()
+	// fuelTypeService := service.GetFuelTypeService()
+	fuelTypeRepository := repository.GetFuelTypeRepository()
+
+	var vehicleInfo *model.OrderItemVehicleInfo
+	var fuelTypeInfo *model.OrderItemFuelTypeInfo
+	var rate uint64
+	var quantity uint64 = 1
+
+	if nil != input.Quantity {
+		quantity = *input.Quantity
+	}
+
+	var origin, destination *model.Location
 
 	product, err := productService.GetById(*input.ProductID)
 	if nil != err {
 		message := fmt.Sprintf("Could not resolve the specified product with [id:%s]", input.ProductID)
 		return nil, errors.New(message)
 	}
+	place, err := placeService.GetById(product.PlaceID)
+	if nil != err {
+		message := fmt.Sprintf("Could not resolve the specified Place with [id:%s]", product.PlaceID)
+		return nil, errors.New(message)
+	}
+
 	if !product.Published {
 		message := fmt.Sprintf("Product \"%s\" is currently not active", product.Title)
 		return nil, errors.New(message)
 	}
 
-	if !requestingUser.IsAdmin {
-		if input.UnitPrice != nil {
+	if input.Rate != nil {
+		if !requestingUser.IsAdmin {
 			return nil, errors.New("Invalid request. You can't specify unit price")
+		} else {
+			rate = *input.Rate
+		}
+	} else {
+		rate = product.Rate
+	}
+
+	if nil != input.Origin {
+		origin, err = locationService.Resolve(*input.Origin)
+		if nil != err {
+			return nil, errors.New(
+				fmt.Sprintf(
+					"Could not resolve origin location \"%s\". Failed with error :%s",
+					*input.Origin,
+					err.Error(),
+				),
+			)
 		}
 	}
+
+	if nil == input.Destination {
+		return nil, errors.New(fmt.Sprintf("Provide the destination location for \"%v\"", product.Title))
+	} else {
+		destination, err = locationService.Resolve(*input.Destination)
+		if nil != err {
+			return nil, errors.New(
+				fmt.Sprintf(
+					"Could not resolve destination location \"%s\". Failed with error :%s",
+					*input.Destination,
+					err.Error(),
+				),
+			)
+		}
+	}
+
+	switch product.Category {
+	case model.PRODUCT_FLAT_TIRE_SERVICE:
+
+		if nil == input.VehicleInfo {
+			return nil, errors.New("You have to provide vehicle Information")
+		}
+		if nil == input.VehicleInfo.VehicleDescription {
+			return nil, errors.New("You have to provide some description about flat tire service")
+		}
+		if dLength := len(*input.VehicleInfo.VehicleDescription); 20 > dLength || dLength > 500 {
+			return nil, errors.New("Description must be upto 20 and less than 500 charachers")
+		}
+		break
+
+	case model.PRODUCT_FUEL_DELIVERY_SERVICE:
+		if nil == input.FuelInfo {
+			return nil, errors.New("You have to provide vehicle Information")
+		}
+
+		fuelType, err := fuelTypeRepository.GetByCode(input.FuelInfo.FuelTypeCode)
+		if nil != err {
+			return nil, errors.New(fmt.Sprintf("Unsupported Fuel type[%s]: %v", input.FuelInfo.FuelTypeCode, err.Error()))
+		}
+		if placeRate, err := fuelTypeRepository.GetRateForTypeInPlace(*fuelType, *place); nil == err && nil != placeRate {
+			rate = placeRate.Rate
+		} else {
+			rate = fuelType.Rate
+		}
+
+		fuelTypeInfo = &model.OrderItemFuelTypeInfo{
+			FuelTypeCode: fuelType.Code,
+			FuelTypeID:   &fuelType.ID,
+		}
+
+		break
+	}
+
+	orderItem = &model.OrderItem{
+		ProductID: &product.ID,
+		Rate:      rate,
+		Quantity:  quantity,
+		//
+		VehicleInfo: vehicleInfo,
+		//
+		FuelTypeInfo: fuelTypeInfo,
+	}
+
+	if nil != origin {
+		orderItem.OriginID = &origin.ID
+	}
+	if nil != destination {
+		orderItem.DestinationID = &destination.ID
+	}
+
+	return orderItem, nil
 
 }
 

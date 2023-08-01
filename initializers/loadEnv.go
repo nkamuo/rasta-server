@@ -4,6 +4,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+var CONFIG *Config
+
 type Config struct {
 	DBHost         string `mapstructure:"MYSQL_HOST"`
 	DBUserName     string `mapstructure:"MYSQL_USER"`
@@ -12,6 +14,8 @@ type Config struct {
 	DBPort         string `mapstructure:"MYSQL_PORT"`
 
 	ClientOrigin string `mapstructure:"CLIENT_ORIGIN"`
+
+	GOOGLE_MAPS_API_KEY string `mapstructure:"GOOGLE_MAPS_API_KEY"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
@@ -27,5 +31,6 @@ func LoadConfig(path string) (config Config, err error) {
 	}
 
 	err = viper.Unmarshal(&config)
+	CONFIG = &config
 	return config, err
 }

@@ -17,7 +17,7 @@ type Product struct {
 	Category    ProductCategory `gorm:"varchar(100)" json:"category,omitempty"`
 	PlaceID     uuid.UUID       `gorm:"" json:"placeId,omitempty"`
 	Place       *Place          `gorm:"foreignKey:PlaceID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"place,omitempty"` // BelongsToMany Association - These mappings may be optional
-	Rate        int64           `gorm:"" json:"rate,omitempty"`
+	Rate        uint64          `gorm:"" json:"rate,omitempty"`
 	IconImage   string          `gorm:"" json:"iconImage,omitempty"`
 	CoverImage  string          `gorm:"" json:"coverImage,omitempty"`
 	Published   bool            `gorm:"default:false;not null" json:"published"`

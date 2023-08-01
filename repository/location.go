@@ -23,6 +23,7 @@ func GetLocationRepository() LocationRepository {
 type LocationRepository interface {
 	FindAll(page int, limit int) (locations []model.Location, total int64, err error)
 	GetById(id uuid.UUID) (location *model.Location, err error)
+	Search(input string) (location *model.Location, err error)
 	Save(location *model.Location) (err error)
 	Delete(location *model.Location) (error error)
 	DeleteById(id uuid.UUID) (location *model.Location, err error)
@@ -50,6 +51,13 @@ func (repo *locationRepository) FindAll(page int, limit int) (locations []model.
 
 func (repo *locationRepository) GetById(id uuid.UUID) (location *model.Location, err error) {
 	if err = model.DB. /*.Joins("OperatorUser")*/ First(&location, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return location, nil
+}
+
+func (repo *locationRepository) Search(input string) (location *model.Location, err error) {
+	if err = model.DB.First(&location, "id = ?", input).Error; err != nil {
 		return nil, err
 	}
 	return location, nil

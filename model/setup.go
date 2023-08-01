@@ -37,14 +37,17 @@ func ConnectDatabase(config *initializers.Config) {
 
 		&Order{},
 		&OrderItem{},
+		&OrderItemVehicleInfo{},
+		&OrderItemFuelTypeInfo{},
 		&Payment{},
 		&PaymentMethod{},
 		// REQUEST_TYPE - SPECIFIC INFORMATION
 		&FuelType{},
+		&FuelTypePlaceRate{},
 		// LOCATIONS
 		&Place{},
 		&Location{},
-		&LocationCoordinates{},
+		// &LocationCoordinates{},
 	)
 	if err != nil {
 		return
