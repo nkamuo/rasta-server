@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
@@ -16,12 +17,18 @@ import (
 // Get all users
 func FindUsers(c *gin.Context) {
 	var users []model.User
-	if err := model.DB.Find(&users).Error; nil != err {
+	var page pagination.Page
+	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": users})
+	if err := model.DB.Scopes(pagination.Paginate(users, &page, model.DB)).Find(&users).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	page.Rows = users
+	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 
 func CreateUser(c *gin.Context) {
@@ -40,6 +47,7 @@ func CreateUser(c *gin.Context) {
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Phone:     input.Phone,
+		IsAdmin:   &input.IsAdmin,
 	}
 
 	userService.HashUserPassword(&user, input.Password)
@@ -88,8 +96,29 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 
-	user.FirstName = input.FirstName
-	user.LastName = input.LastName
+	if nil != input.FirstName {
+		user.FirstName = *input.FirstName
+	}
+
+	if nil != input.LastName {
+		user.LastName = *input.LastName
+	}
+
+	if nil != input.Email {
+		user.Email = *input.Email
+	}
+
+	if nil != input.Phone {
+		user.Phone = *input.Phone
+	}
+
+	if nil != input.IsAdmin {
+		user.IsAdmin = input.IsAdmin
+	}
+
+	if nil != input.Password {
+		userService.HashUserPassword(user, *input.Password)
+	}
 
 	if err := userService.Save(user); nil != err {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})

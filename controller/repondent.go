@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
@@ -16,12 +17,18 @@ import (
 
 func FindRespondents(c *gin.Context) {
 	var respondents []model.Respondent
-	if err := model.DB.Preload("User").Find(&respondents).Error; nil != err {
+	var page pagination.Page
+	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "data": respondents})
+	if err := model.DB.Preload("User").Scopes(pagination.Paginate(respondents, &page, model.DB)).Find(&respondents).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	page.Rows = respondents
+	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 
 func FindRespondentsByCompany(c *gin.Context) {

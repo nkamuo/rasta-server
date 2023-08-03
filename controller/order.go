@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
@@ -17,11 +18,18 @@ import (
 
 func FindOrders(c *gin.Context) {
 	var orders []model.Order
-	if err := model.DB.Find(&orders).Error; nil != err {
+	var page pagination.Page
+	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": orders})
+
+	if err := model.DB.Preload("User").Scopes(pagination.Paginate(orders, &page, model.DB)).Find(&orders).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	page.Rows = orders
+	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 
 func CreateOrder(c *gin.Context) {
@@ -46,7 +54,7 @@ func CreateOrder(c *gin.Context) {
 	var paymentMethod *model.PaymentMethod
 
 	if nil != input.UserID {
-		if !requestingUser.IsAdmin {
+		if !*requestingUser.IsAdmin {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid request"})
 		} else {
 
@@ -230,7 +238,7 @@ func buildOrderItem(input dto.OrderItemInput, requestingUser *model.User) (order
 	}
 
 	if input.Rate != nil {
-		if !requestingUser.IsAdmin {
+		if !*requestingUser.IsAdmin {
 			return nil, errors.New("Invalid request. You can't specify unit price")
 		} else {
 			rate = *input.Rate

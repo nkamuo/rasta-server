@@ -4,9 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
+
+	// "gorm.io/gorm"
+
 	// "github.com/mitchellh/mapstructure"
+	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
@@ -17,11 +22,27 @@ import (
 
 func FindPlaces(c *gin.Context) {
 	var places []model.Place
-	if err := model.DB.Find(&places).Error; nil != err {
+	var page pagination.Page
+	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "success", "data": places})
+
+	query := model.DB
+
+	if page.Search != "" {
+		nameSearchQuery := strings.Join([]string{"%", page.Search, "%"}, "")
+		query = query.Where("name LIKE ?", nameSearchQuery)
+	}
+
+	query = query.Scopes(pagination.Paginate(places, &page, model.DB))
+
+	if err := query.Find(&places).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	page.Rows = places
+	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 
 func CreatePlace(c *gin.Context) {
@@ -47,7 +68,12 @@ func CreatePlace(c *gin.Context) {
 		ShortName:   input.ShortName,
 		LongName:    input.LongName,
 		Description: input.Description,
+		Coordinates: input.Coordinates,
 		Category:    input.Category,
+	}
+
+	if nil != input.GoogleID {
+		place.GoggleID = *input.GoogleID
 	}
 
 	// fmt.Printf("Input USer ID: %s\n user.ID: %s\n place.UserId: %s\n", input.UserId, user.ID, place.UserID)
@@ -94,6 +120,14 @@ func UpdatePlace(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find place with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	}
+
+	if nil != input.Coordinates {
+		place.Coordinates = *input.Coordinates
+	}
+
+	if nil != input.GoogleID {
+		place.GoggleID = *input.GoogleID
 	}
 
 	if nil != input.Code {

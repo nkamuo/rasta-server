@@ -15,7 +15,7 @@ type User struct {
 	HashedPassword string    `gorm:"not null" json:"hashedPassword,omit"`
 	FirstName      string    `gorm:"varchar(100)" json:"firstName,omitempty"`
 	LastName       string    `gorm:"varchar(100)" json:"lastName,omitempty"`
-	IsAdmin        bool      `gorm:"default:false;not null" json:"isAdmin"`
+	IsAdmin        *bool     `gorm:"default:false;not null" json:"isAdmin"`
 	Published      bool      `gorm:"default:false;not null" json:"published"`
 	CreatedAt      time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
 	UpdatedAt      time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`

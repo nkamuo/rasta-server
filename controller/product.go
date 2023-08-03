@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
@@ -17,11 +18,18 @@ import (
 // Get all products
 func FindProducts(c *gin.Context) {
 	var products []model.Product
-	if err := model.DB.Find(&products).Error; nil != err {
+	var page pagination.Page
+	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": products})
+
+	if err := model.DB.Scopes(pagination.Paginate(products, &page, model.DB)).Preload("Place").Find(&products).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	page.Rows = products
+	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 
 func CreateProduct(c *gin.Context) {

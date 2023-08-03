@@ -11,6 +11,7 @@ import (
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/utils/geo"
+	"github.com/nkamuo/rasta-server/utils/slug"
 )
 
 var locationService LocationService
@@ -75,15 +76,15 @@ func (service *locationServiceImpl) Resolve(input string) (location *model.Locat
 			switch Type {
 			case "locality":
 				city = addrComp.LongName
-				cityCode = addrComp.ShortName
+				cityCode = slug.SlugifyWithUnderscore(addrComp.ShortName)
 				break
 			case "administrative_area_level_1":
 				state = addrComp.LongName
-				stateCode = addrComp.ShortName
+				stateCode = slug.SlugifyWithUnderscore(addrComp.ShortName)
 				break
 			case "country":
 				country = addrComp.LongName
-				countryCode = addrComp.ShortName
+				countryCode = slug.SlugifyWithUnderscore(addrComp.ShortName)
 				break
 			case "route":
 				streetName = addrComp.LongName
@@ -148,7 +149,7 @@ func (service *locationServiceImpl) AssertLocationWithinPlace(location *model.Lo
 
 		if !(CodeParts[0] == location.CountryCode &&
 			CodeParts[1] == location.StateCode &&
-			CodeParts[2] == location.CountryCode) {
+			CodeParts[2] == location.CityCode) {
 			return errors.New(fmt.Sprintf("%s is not within %s", location.Address, place.Name))
 		}
 		return nil

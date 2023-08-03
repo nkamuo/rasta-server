@@ -12,6 +12,7 @@ import (
 
 	// "net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -36,6 +37,14 @@ func main() {
 		fmt.Println("CONFIG ERROR:", err)
 	}
 	model.ConnectDatabase(&config)
+
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{"http://localhost:8080"}
+	corsConfig.AddAllowHeaders("Authorization")
+	// config.AllowOrigins = []string{"http://google.com", "http://facebook.com"}
+	// config.AllowAllOrigins = true
+
+	r.Use(cors.New(corsConfig))
 
 	api := r.Group("/api")
 	api.POST("/register", controller.Register)
@@ -95,6 +104,12 @@ func main() {
 	api.POST("/fuel_types", controller.CreateFuelType)
 	api.PATCH("/fuel_types/:id", controller.UpdateFuelType)
 	api.DELETE("/fuel_types/:id", controller.DeleteFuelType)
+
+	api.GET("/fuel_type_place_rates", controller.FindFuelTypePlaceRates)
+	api.GET("/fuel_type_place_rates/:id", controller.FindFuelTypePlaceRate)
+	api.POST("/fuel_type_place_rates", controller.CreateFuelTypePlaceRate)
+	api.PATCH("/fuel_type_place_rates/:id", controller.UpdateFuelTypePlaceRate)
+	api.DELETE("/fuel_type_place_rates/:id", controller.DeleteFuelTypePlaceRate)
 
 	api.GET("/payment_methods", controller.FindPaymentMethods)
 	api.GET("/payment_methods/:id", controller.FindPaymentMethod)

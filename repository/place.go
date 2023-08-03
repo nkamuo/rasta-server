@@ -58,11 +58,9 @@ func (repo *placeRepository) GetById(id uuid.UUID) (place *model.Place, err erro
 func (repo *placeRepository) Save(place *model.Place) (err error) {
 	if (uuid.UUID{} == place.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&place)
-		return repo.db.Error
+		return repo.db.Create(&place).Error
 	}
-	repo.db.Updates(&place)
-	return repo.db.Error
+	return repo.db.Updates(&place).Error
 }
 
 func (repo *placeRepository) Delete(place *model.Place) (err error) {

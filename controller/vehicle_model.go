@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
@@ -14,11 +15,18 @@ import (
 
 func FindVehicleModels(c *gin.Context) {
 	var vehicleModels []model.VehicleModel
-	if err := model.DB.Find(&vehicleModels).Error; nil != err {
+	var page pagination.Page
+	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": vehicleModels})
+
+	if err := model.DB.Scopes(pagination.Paginate(vehicleModels, &page, model.DB)).Find(&vehicleModels).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	page.Rows = vehicleModels
+	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 
 func CreateVehicleModel(c *gin.Context) {

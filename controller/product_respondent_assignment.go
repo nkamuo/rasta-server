@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	// "github.com/mitchellh/mapstructure"
+	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
@@ -18,13 +19,18 @@ import (
 
 func FindProductRespondentAssignments(c *gin.Context) {
 	var assignments []model.ProductRespondentAssignment
-
-	if err := model.DB.Find(&assignments).Error; nil != err {
+	var page pagination.Page
+	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "data": assignments})
+	if err := model.DB.Scopes(pagination.Paginate(assignments, &page, model.DB)).Find(&assignments).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	page.Rows = assignments
+	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 
 func CreateProductRespondentAssignment(c *gin.Context) {
@@ -96,7 +102,7 @@ func CreateProductRespondentAssignment(c *gin.Context) {
 		Description:  input.Description,
 	}
 
-	if user.IsAdmin {
+	if *user.IsAdmin {
 		assignment.Active = input.Active
 		assignment.AllowRespondentActivate = input.AllowRespondentActivate
 	} else {

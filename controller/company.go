@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
@@ -15,11 +16,18 @@ import (
 
 func FindCompanies(c *gin.Context) {
 	var companies []model.Company
-	if err := model.DB.Find(&companies).Error; nil != err {
+	var page pagination.Page
+	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "success", "data": companies})
+
+	if err := model.DB.Scopes(pagination.Paginate(companies, &page, model.DB)).Find(&companies).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	page.Rows = companies
+	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 
 func CreateCompany(c *gin.Context) {
