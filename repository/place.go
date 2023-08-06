@@ -64,8 +64,7 @@ func (repo *placeRepository) Save(place *model.Place) (err error) {
 }
 
 func (repo *placeRepository) Delete(place *model.Place) (err error) {
-	repo.db.Delete(&place)
-	return repo.db.Error
+	return repo.db.Delete(&place).Error
 }
 
 func (repo *placeRepository) DeleteById(id uuid.UUID) (place *model.Place, err error) {
@@ -73,6 +72,6 @@ func (repo *placeRepository) DeleteById(id uuid.UUID) (place *model.Place, err e
 	if err != nil {
 		return nil, err
 	}
-	repo.db.Delete(&place)
-	return place, repo.db.Error
+	err = repo.db.Delete(&place).Error
+	return place, err
 }

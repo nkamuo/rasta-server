@@ -232,7 +232,12 @@ func buildOrderItem(input dto.OrderItemInput, requestingUser *model.User) (order
 		return nil, errors.New(message)
 	}
 
-	if !product.Published {
+	if !*place.Active {
+		message := fmt.Sprintf("Place \"%s\" is currently not active", place.Name)
+		return nil, errors.New(message)
+	}
+
+	if !*product.Published {
 		message := fmt.Sprintf("Product \"%s\" is currently not active", product.Title)
 		return nil, errors.New(message)
 	}

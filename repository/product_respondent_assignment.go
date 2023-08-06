@@ -58,16 +58,13 @@ func (repo *assignmentRepository) GetById(id uuid.UUID) (assignment *model.Produ
 func (repo *assignmentRepository) Save(assignment *model.ProductRespondentAssignment) (err error) {
 	if (uuid.UUID{} == assignment.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&assignment)
-		return repo.db.Error
+		return repo.db.Create(&assignment).Error
 	}
-	repo.db.Updates(&assignment)
-	return repo.db.Error
+	return repo.db.Updates(&assignment).Error
 }
 
 func (repo *assignmentRepository) Delete(assignment *model.ProductRespondentAssignment) (err error) {
-	repo.db.Delete(&assignment)
-	return repo.db.Error
+	return repo.db.Delete(&assignment).Error
 }
 
 func (repo *assignmentRepository) DeleteById(id uuid.UUID) (assignment *model.ProductRespondentAssignment, err error) {
@@ -75,6 +72,6 @@ func (repo *assignmentRepository) DeleteById(id uuid.UUID) (assignment *model.Pr
 	if err != nil {
 		return nil, err
 	}
-	repo.db.Delete(&assignment)
-	return assignment, repo.db.Error
+	err = repo.db.Delete(&assignment).Error
+	return assignment, err
 }

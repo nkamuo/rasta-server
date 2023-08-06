@@ -58,16 +58,13 @@ func (repo *orderItemRepository) GetById(id uuid.UUID) (orderItem *model.OrderIt
 func (repo *orderItemRepository) Save(orderItem *model.OrderItem) (err error) {
 	if (uuid.UUID{} == orderItem.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&orderItem)
-		return nil
+		return repo.db.Create(&orderItem).Error
 	}
-	repo.db.Updates(&orderItem)
-	return nil
+	return repo.db.Updates(&orderItem).Error
 }
 
 func (repo *orderItemRepository) Delete(orderItem *model.OrderItem) (err error) {
-	repo.db.Delete(&orderItem)
-	return nil
+	return repo.db.Delete(&orderItem).Error
 }
 
 func (repo *orderItemRepository) DeleteById(id uuid.UUID) (orderItem *model.OrderItem, err error) {
@@ -75,5 +72,6 @@ func (repo *orderItemRepository) DeleteById(id uuid.UUID) (orderItem *model.Orde
 	if err != nil {
 		return nil, err
 	}
-	return orderItem, nil
+	err = repo.db.Delete(orderItem).Error
+	return orderItem, err
 }

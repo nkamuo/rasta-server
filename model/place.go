@@ -17,7 +17,7 @@ type Place struct {
 	LongName    string           `gorm:"type:varchar(255)" json:"longName,omitempty"`
 	Description string           `gorm:"" json:"description,omitempty"`
 	Category    PlaceCategory    `gorm:"varchar(100)" json:"category,omitempty"`
-	Active      bool             `gorm:"default:false;not null" json:"active"`
+	Active      *bool            `gorm:"default:false;not null" json:"active"`
 	CreatedAt   time.Time        `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
 	UpdatedAt   time.Time        `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }

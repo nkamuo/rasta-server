@@ -8,20 +8,40 @@ import (
 	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
+	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func FindFuelTypePlaceRates(c *gin.Context) {
+
+	placeRepo := repository.GetPlaceRepository()
+
 	var fuelTypePlaceRates []model.FuelTypePlaceRate
 	var page pagination.Page
 	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
+	query := model.DB.Preload("Place").Preload("FuelType")
 
-	if err := model.DB.Scopes(pagination.Paginate(fuelTypePlaceRates, &page, model.DB)).Find(&fuelTypePlaceRates).Error; nil != err {
+	if place_id := c.Query("place_id"); place_id != "" {
+		placeID, err := uuid.Parse(place_id)
+		if nil != err {
+			message := fmt.Sprintf("Error parsing place_id[%s] query: %s", place_id, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		if _, err := placeRepo.GetById(placeID); err != nil {
+			message := fmt.Sprintf("Could not find referenced place[%s]: %s", placeID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		query = query.Where("place_id = ?", placeID)
+	}
+
+	if err := query.Scopes(pagination.Paginate(fuelTypePlaceRates, &page, query)).Find(&fuelTypePlaceRates).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
@@ -59,7 +79,7 @@ func CreateFuelTypePlaceRate(c *gin.Context) {
 
 	if err := model.DB.
 		Where("fuel_type_id = ? AND place_id = ?", input.FuelTypeID, input.PlaceID).
-		First(fuelTypePlaceRate).Error; nil != err {
+		First(&fuelTypePlaceRate).Error; nil != err {
 		if err.Error() != "record not found" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -74,6 +94,7 @@ func CreateFuelTypePlaceRate(c *gin.Context) {
 	fuelTypePlaceRate.FuelTypeID = &input.FuelTypeID
 	fuelTypePlaceRate.PlaceID = &input.PlaceID
 	fuelTypePlaceRate.Active = &input.Active
+	fuelTypePlaceRate.Rate = input.Rate
 
 	// Description: input.Description,
 	// Rate:        input.Rate,

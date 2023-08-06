@@ -11,16 +11,17 @@ import (
 
 type Product struct {
 	ID          uuid.UUID       `gorm:"type:char(36);primary_key" json:"id,omitempty"`
-	Label       string          `gorm:"type:varchar(128);uniqueIndex:idx_product_lable,LENGTH(128);not null" json:"label,omitempty"`
-	Title       string          `gorm:"type:varchar(255);uniqueIndex:idx_product_title,LENGTH(255);not null" json:"title,omitempty"`
+	Label       string          `gorm:"type:varchar(128);not null" json:"label,omitempty"`
+	Title       string          `gorm:"type:varchar(255);not null" json:"title,omitempty"`
 	Description string          `gorm:"not null" json:"description,omitempty"`
 	Category    ProductCategory `gorm:"varchar(100)" json:"category,omitempty"`
 	PlaceID     uuid.UUID       `gorm:"" json:"placeId,omitempty"`
 	Place       *Place          `gorm:"foreignKey:PlaceID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"place,omitempty"` // BelongsToMany Association - These mappings may be optional
 	Rate        uint64          `gorm:"" json:"rate,omitempty"`
+	Bundled     *bool           `gorm:"default:false;not null" json:"bundled"` //Tells that the rate specified when ordering this item applies for all the quantity and not each
 	IconImage   string          `gorm:"" json:"iconImage,omitempty"`
 	CoverImage  string          `gorm:"" json:"coverImage,omitempty"`
-	Published   bool            `gorm:"default:false;not null" json:"published"`
+	Published   *bool           `gorm:"default:false;not null" json:"published"`
 	CreatedAt   time.Time       `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
 	UpdatedAt   time.Time       `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }

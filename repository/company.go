@@ -89,16 +89,13 @@ func (repo *companyRepository) GetByUser(user model.User) (company *model.Compan
 func (repo *companyRepository) Save(company *model.Company) (err error) {
 	if (uuid.UUID{} == company.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&company)
-		return repo.db.Error
+		return repo.db.Create(&company).Error
 	}
-	repo.db.Updates(&company)
-	return repo.db.Error
+	return repo.db.Updates(&company).Error
 }
 
 func (repo *companyRepository) Delete(company *model.Company) (err error) {
-	repo.db.Delete(&company)
-	return repo.db.Error
+	return repo.db.Delete(&company).Error
 }
 
 func (repo *companyRepository) DeleteById(id uuid.UUID) (company *model.Company, err error) {
@@ -106,6 +103,6 @@ func (repo *companyRepository) DeleteById(id uuid.UUID) (company *model.Company,
 	if err != nil {
 		return nil, err
 	}
-	repo.db.Delete(&company)
-	return company, repo.db.Error
+	err = repo.db.Delete(&company).Error
+	return company, err
 }

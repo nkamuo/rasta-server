@@ -35,7 +35,7 @@ func FindPlaces(c *gin.Context) {
 		query = query.Where("name LIKE ?", nameSearchQuery)
 	}
 
-	query = query.Scopes(pagination.Paginate(places, &page, model.DB))
+	query = query.Scopes(pagination.Paginate(places, &page, query))
 
 	if err := query.Find(&places).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
@@ -62,7 +62,7 @@ func CreatePlace(c *gin.Context) {
 
 	// Create place
 	place := model.Place{
-		Active:      input.Active,
+		Active:      &input.Active,
 		Code:        input.Code,
 		Name:        input.Name,
 		ShortName:   input.ShortName,
@@ -146,7 +146,7 @@ func UpdatePlace(c *gin.Context) {
 		place.Description = *input.Description
 	}
 	if nil != input.Active {
-		place.Active = *input.Active
+		place.Active = input.Active
 	}
 	if nil != input.Category {
 		if err := ValidatePlaceCategory(*input.Category); err != nil {

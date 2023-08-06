@@ -74,16 +74,13 @@ func (repo *userRepository) GetByPhone(phone string) (user *model.User, err erro
 func (repo *userRepository) Save(user *model.User) (err error) {
 	if (uuid.UUID{} == user.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&user)
-		return repo.db.Error
+		return repo.db.Create(&user).Error
 	}
-	repo.db.Updates(&user)
-	return repo.db.Error
+	return repo.db.Updates(&user).Error
 }
 
 func (repo *userRepository) Delete(user *model.User) (err error) {
-	repo.db.Delete(&user)
-	return repo.db.Error
+	return repo.db.Delete(&user).Error
 }
 
 func (repo *userRepository) DeleteById(id uuid.UUID) (user *model.User, err error) {
@@ -91,8 +88,6 @@ func (repo *userRepository) DeleteById(id uuid.UUID) (user *model.User, err erro
 	if err != nil {
 		return nil, err
 	}
-
-	repo.db.Delete(&user)
-
-	return user, repo.db.Error
+	err = repo.db.Delete(&user).Error
+	return user, err
 }

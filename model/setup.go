@@ -41,6 +41,7 @@ func ConnectDatabase(config *initializers.Config) {
 		&OrderItemFuelTypeInfo{},
 		&Payment{},
 		&PaymentMethod{},
+		&TowingPlaceRate{},
 		// REQUEST_TYPE - SPECIFIC INFORMATION
 		&FuelType{},
 		&FuelTypePlaceRate{},

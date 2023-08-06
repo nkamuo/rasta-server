@@ -73,16 +73,13 @@ func (repo *fuelTypePlaceRateRepository) GetRateForFuelTypeInPlace(fuelType mode
 func (repo *fuelTypePlaceRateRepository) Save(fuelTypePlaceRate *model.FuelTypePlaceRate) (err error) {
 	if (uuid.UUID{} == fuelTypePlaceRate.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&fuelTypePlaceRate)
-		return nil
+		return repo.db.Create(&fuelTypePlaceRate).Error
 	}
-	repo.db.Updates(&fuelTypePlaceRate)
-	return nil
+	return repo.db.Updates(&fuelTypePlaceRate).Error
 }
 
 func (repo *fuelTypePlaceRateRepository) Delete(fuelTypePlaceRate *model.FuelTypePlaceRate) (err error) {
-	repo.db.Delete(&fuelTypePlaceRate)
-	return nil
+	return repo.db.Delete(&fuelTypePlaceRate).Error
 }
 
 func (repo *fuelTypePlaceRateRepository) DeleteById(id uuid.UUID) (fuelTypePlaceRate *model.FuelTypePlaceRate, err error) {
@@ -90,5 +87,6 @@ func (repo *fuelTypePlaceRateRepository) DeleteById(id uuid.UUID) (fuelTypePlace
 	if err != nil {
 		return nil, err
 	}
-	return fuelTypePlaceRate, nil
+	err = repo.db.Delete(fuelTypePlaceRate).Error
+	return fuelTypePlaceRate, err
 }

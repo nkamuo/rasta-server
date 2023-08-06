@@ -58,16 +58,13 @@ func (repo *paymentMethodRepository) GetById(id uuid.UUID) (paymentMethod *model
 func (repo *paymentMethodRepository) Save(paymentMethod *model.PaymentMethod) (err error) {
 	if (uuid.UUID{} == paymentMethod.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&paymentMethod)
-		return nil
+		return repo.db.Create(&paymentMethod).Error
 	}
-	repo.db.Updates(&paymentMethod)
-	return nil
+	return repo.db.Updates(&paymentMethod).Error
 }
 
 func (repo *paymentMethodRepository) Delete(paymentMethod *model.PaymentMethod) (err error) {
-	repo.db.Delete(&paymentMethod)
-	return nil
+	return repo.db.Delete(&paymentMethod).Error
 }
 
 func (repo *paymentMethodRepository) DeleteById(id uuid.UUID) (paymentMethod *model.PaymentMethod, err error) {
@@ -75,5 +72,6 @@ func (repo *paymentMethodRepository) DeleteById(id uuid.UUID) (paymentMethod *mo
 	if err != nil {
 		return nil, err
 	}
-	return paymentMethod, nil
+	err = repo.db.Delete(paymentMethod).Error
+	return paymentMethod, err
 }

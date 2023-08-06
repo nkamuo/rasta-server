@@ -71,7 +71,8 @@ func CreateProduct(c *gin.Context) {
 	}
 
 	product := model.Product{
-		Published:   input.Published,
+		Published:   &input.Published,
+		Bundled:     &input.Bundled,
 		Rate:        input.Rate,
 		Label:       input.Label,
 		Title:       input.Title,
@@ -135,7 +136,10 @@ func UpdateProduct(c *gin.Context) {
 	}
 
 	if nil != input.Published {
-		product.Published = *input.Published
+		product.Published = input.Published
+	}
+	if nil != input.Bundled {
+		product.Bundled = input.Bundled
 	}
 
 	if nil != input.Rate {

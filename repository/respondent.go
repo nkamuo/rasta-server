@@ -108,16 +108,13 @@ func (repo *respondentRepository) GetByUser(user model.User) (respondent *model.
 func (repo *respondentRepository) Save(respondent *model.Respondent) (err error) {
 	if (uuid.UUID{} == respondent.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&respondent)
-		return repo.db.Error
+		return repo.db.Create(&respondent).Error
 	}
-	repo.db.Updates(&respondent)
-	return repo.db.Error
+	return repo.db.Updates(&respondent).Error
 }
 
 func (repo *respondentRepository) Delete(respondent *model.Respondent) (err error) {
-	repo.db.Delete(&respondent)
-	return repo.db.Error
+	return repo.db.Delete(&respondent).Error
 }
 
 func (repo *respondentRepository) DeleteById(id uuid.UUID) (respondent *model.Respondent, err error) {
@@ -125,6 +122,6 @@ func (repo *respondentRepository) DeleteById(id uuid.UUID) (respondent *model.Re
 	if err != nil {
 		return nil, err
 	}
-	repo.db.Delete(&respondent)
-	return respondent, repo.db.Error
+	err = repo.db.Delete(&respondent).Error
+	return respondent, err
 }

@@ -43,7 +43,6 @@ func CreateCompany(c *gin.Context) {
 	}
 
 	user, err := userService.GetById(input.OperatorUserID)
-
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
@@ -58,10 +57,13 @@ func CreateCompany(c *gin.Context) {
 
 	// Create company
 	company := model.Company{
+		LicenseNumber:  input.LicenseNumber,
 		Title:          input.Title,
 		Description:    input.Description,
 		Category:       input.Category,
 		OperatorUserID: user.ID,
+		Active:         &input.Active,
+		Published:      &input.Published,
 	}
 
 	// fmt.Printf("Input USer ID: %s\n user.ID: %s\n company.UserId: %s\n", input.UserId, user.ID, company.UserID)
@@ -74,22 +76,25 @@ func CreateCompany(c *gin.Context) {
 }
 
 func FindCompany(c *gin.Context) {
-	companyService := service.GetCompanyService()
+	// companyService := service.GetCompanyService()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
 		return
 	}
-	company, err := companyService.GetById(id)
-	if nil != err {
-		message := fmt.Sprintf("Could not find company with [id:%s]", id)
+	// company, err := companyService.GetById(id)
+	var company model.Company
+
+	if err = model.DB.Where("id = ?", id).Preload("OperatorUser").First(&company).Error; nil != err {
+		message := fmt.Sprintf("Could not find company with [id:%s]: %s", id, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": company})
 }
 
 func UpdateCompany(c *gin.Context) {
+	userService := service.GetUserService()
 	companyService := service.GetCompanyService()
 
 	// Validate input
@@ -108,6 +113,30 @@ func UpdateCompany(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find company with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	}
+
+	if nil != input.Active {
+		company.Active = input.Active
+	}
+	if nil != input.Published {
+		company.Published = input.Published
+	}
+	if nil != input.Title {
+		company.Title = *input.Title
+	}
+	if nil != input.LicenseNumber {
+		company.LicenseNumber = *input.LicenseNumber
+	}
+	if nil != input.Category {
+		company.Category = *input.Category
+	}
+	if nil != input.OperatorUserID {
+		user, err := userService.GetById(*input.OperatorUserID)
+		if nil != err {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+		company.OperatorUserID = user.ID
 	}
 
 	if err := companyService.Save(company); nil != err {

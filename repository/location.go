@@ -66,16 +66,13 @@ func (repo *locationRepository) Search(input string) (location *model.Location, 
 func (repo *locationRepository) Save(location *model.Location) (err error) {
 	if (uuid.UUID{} == location.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&location)
-		return repo.db.Error
+		return repo.db.Create(&location).Error
 	}
-	repo.db.Updates(&location)
-	return repo.db.Error
+	return repo.db.Updates(&location).Error
 }
 
 func (repo *locationRepository) Delete(location *model.Location) (err error) {
-	repo.db.Delete(&location)
-	return repo.db.Error
+	return repo.db.Delete(&location).Error
 }
 
 func (repo *locationRepository) DeleteById(id uuid.UUID) (location *model.Location, err error) {
@@ -83,6 +80,6 @@ func (repo *locationRepository) DeleteById(id uuid.UUID) (location *model.Locati
 	if err != nil {
 		return nil, err
 	}
-	repo.db.Delete(&location)
-	return location, repo.db.Error
+	err = repo.db.Delete(&location).Error
+	return location, err
 }

@@ -58,16 +58,13 @@ func (repo *vehicleRepository) GetById(id uuid.UUID) (vehicle *model.Vehicle, er
 func (repo *vehicleRepository) Save(vehicle *model.Vehicle) (err error) {
 	if (uuid.UUID{} == vehicle.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&vehicle)
-		return nil
+		return repo.db.Create(&vehicle).Error
 	}
-	repo.db.Updates(&vehicle)
-	return nil
+	return repo.db.Updates(&vehicle).Error
 }
 
 func (repo *vehicleRepository) Delete(vehicle *model.Vehicle) (err error) {
-	repo.db.Delete(&vehicle)
-	return nil
+	return repo.db.Delete(&vehicle).Error
 }
 
 func (repo *vehicleRepository) DeleteById(id uuid.UUID) (vehicle *model.Vehicle, err error) {
@@ -75,5 +72,6 @@ func (repo *vehicleRepository) DeleteById(id uuid.UUID) (vehicle *model.Vehicle,
 	if err != nil {
 		return nil, err
 	}
-	return vehicle, nil
+	err = repo.db.Delete(vehicle).Error
+	return vehicle, err
 }

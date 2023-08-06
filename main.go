@@ -111,6 +111,12 @@ func main() {
 	api.PATCH("/fuel_type_place_rates/:id", controller.UpdateFuelTypePlaceRate)
 	api.DELETE("/fuel_type_place_rates/:id", controller.DeleteFuelTypePlaceRate)
 
+	api.GET("/towing_place_rates", controller.FindTowingPlaceRates)
+	api.GET("/towing_place_rates/:id", controller.FindTowingPlaceRate)
+	api.POST("/towing_place_rates", controller.CreateTowingPlaceRate)
+	api.PATCH("/towing_place_rates/:id", controller.UpdateTowingPlaceRate)
+	api.DELETE("/towing_place_rates/:id", controller.DeleteTowingPlaceRate)
+
 	api.GET("/payment_methods", controller.FindPaymentMethods)
 	api.GET("/payment_methods/:id", controller.FindPaymentMethod)
 	api.POST("/payment_methods", controller.CreatePaymentMethod)

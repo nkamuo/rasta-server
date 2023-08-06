@@ -66,16 +66,13 @@ func (repo *productRepository) GetByPlaceIdAndCategory(placeID uuid.UUID, catego
 func (repo *productRepository) Save(product *model.Product) (err error) {
 	if (uuid.UUID{} == product.ID) {
 		//NEW - No ID yet
-		repo.db.Create(&product)
-		return nil
+		return repo.db.Create(&product).Error
 	}
-	repo.db.Updates(&product)
-	return nil
+	return repo.db.Updates(&product).Error
 }
 
 func (repo *productRepository) Delete(product *model.Product) (err error) {
-	repo.db.Delete(&product)
-	return nil
+	return repo.db.Delete(&product).Error
 }
 
 func (repo *productRepository) DeleteById(id uuid.UUID) (product *model.Product, err error) {
@@ -83,5 +80,6 @@ func (repo *productRepository) DeleteById(id uuid.UUID) (product *model.Product,
 	if err != nil {
 		return nil, err
 	}
-	return product, nil
+	err = repo.db.Delete(product).Error
+	return product, err
 }
