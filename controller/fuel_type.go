@@ -45,7 +45,7 @@ func CreateFuelType(c *gin.Context) {
 		ShortName:   &input.ShortName,
 		Description: &input.Description,
 		Rate:        input.Rate,
-		Published:   input.Published,
+		Published:   &input.Published,
 	}
 	if err := fuelTypeService.Save(&fuelType); nil != err {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
@@ -106,7 +106,7 @@ func UpdateFuelType(c *gin.Context) {
 		fuelType.ShortName = input.ShortName
 	}
 	if nil != input.Published {
-		fuelType.Published = *input.Published
+		fuelType.Published = input.Published
 	}
 	if nil != input.Description {
 		fuelType.Description = input.Description

@@ -10,6 +10,7 @@ import (
 	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
+	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
 
@@ -18,6 +19,10 @@ import (
 )
 
 func FindProductRespondentAssignments(c *gin.Context) {
+
+	respondentRepo := repository.GetRespondentRepository()
+	placeRepo := repository.GetPlaceRepository()
+
 	var assignments []model.ProductRespondentAssignment
 	var page pagination.Page
 	if err := c.ShouldBindQuery(&page); err != nil {
@@ -25,7 +30,39 @@ func FindProductRespondentAssignments(c *gin.Context) {
 		return
 	}
 
-	if err := model.DB.Scopes(pagination.Paginate(assignments, &page, model.DB)).Find(&assignments).Error; nil != err {
+	query := model.DB.Preload("Respondent")
+
+	if place_id := c.Query("place_id"); place_id != "" {
+		placeID, err := uuid.Parse(place_id)
+		if nil != err {
+			message := fmt.Sprintf("Error parsing place_id[%s] query: %s", place_id, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		if _, err := placeRepo.GetById(placeID); err != nil {
+			message := fmt.Sprintf("Could not find referenced place[%s]: %s", placeID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		query = query.Where("place_id = ?", placeID)
+	}
+
+	if repondent_id := c.Query("repondent_id"); repondent_id != "" {
+		respondentID, err := uuid.Parse(repondent_id)
+		if nil != err {
+			message := fmt.Sprintf("Error parsing repondent_id[%s] query: %s", repondent_id, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		if _, err := respondentRepo.GetById(respondentID); err != nil {
+			message := fmt.Sprintf("Could not find referenced Respondent[%s]: %s", respondentID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		query = query.Where("repondent_id = ?", respondentID)
+	}
+
+	if err := query.Scopes(pagination.Paginate(assignments, &page, query)).Find(&assignments).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}

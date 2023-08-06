@@ -17,6 +17,8 @@ import (
 // GET /products
 // Get all products
 func FindProducts(c *gin.Context) {
+	placeRepo := repository.GetPlaceRepository()
+
 	var products []model.Product
 	var page pagination.Page
 	if err := c.ShouldBindQuery(&page); err != nil {
@@ -24,7 +26,24 @@ func FindProducts(c *gin.Context) {
 		return
 	}
 
-	if err := model.DB.Scopes(pagination.Paginate(products, &page, model.DB)).Preload("Place").Find(&products).Error; nil != err {
+	query := model.DB.Preload("Place")
+
+	if place_id := c.Query("place_id"); place_id != "" {
+		placeID, err := uuid.Parse(place_id)
+		if nil != err {
+			message := fmt.Sprintf("Error parsing place_id[%s] query: %s", place_id, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		if _, err := placeRepo.GetById(placeID); err != nil {
+			message := fmt.Sprintf("Could not find referenced place[%s]: %s", placeID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		query = query.Where("place_id = ?", placeID)
+	}
+
+	if err := query.Scopes(pagination.Paginate(products, &page, query)).Preload("Place").Find(&products).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
