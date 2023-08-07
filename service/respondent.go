@@ -42,15 +42,15 @@ func (service *respondentServiceImpl) Save(respondent *model.Respondent) (err er
 }
 
 func (service *respondentServiceImpl) AssignToCompany(respondent *model.Respondent, company *model.Company) (err error) {
-	respondent.CompanyID = company.ID
+	respondent.CompanyID = &company.ID
 	return service.Save(respondent)
 }
 
 func (service *respondentServiceImpl) RemoveFromCompany(respondent *model.Respondent, company *model.Company) (err error) {
-	if respondent.CompanyID != company.ID {
+	if respondent.CompanyID != &company.ID {
 		return errors.New("Respondent is currently not assigned to this company")
 	}
-	respondent.CompanyID = uuid.Nil
+	respondent.CompanyID = &uuid.Nil
 	return service.Save(respondent)
 }
 

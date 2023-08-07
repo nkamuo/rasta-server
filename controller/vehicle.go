@@ -24,7 +24,10 @@ func FindVehicles(c *gin.Context) {
 		return
 	}
 
-	if err := model.DB.Scopes(pagination.Paginate(vehicles, &page, model.DB)).Find(&vehicles).Error; nil != err {
+	query := model.DB.Model(&model.Vehicle{}).Preload("Model").Preload("Owner")
+	query = query.Scopes(pagination.Paginate(vehicles, &page, query))
+
+	if err := query.Find(&vehicles).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
@@ -59,10 +62,12 @@ func CreateVehicle(c *gin.Context) {
 	}
 
 	vehicle := model.Vehicle{
-		LicensePlaceNumber: *input.LicensePlaceNumber,
-		Description:        input.Description,
-		ModelID:            vehicleModel.ID,
-		OwnerID:            owner.ID,
+		LicensePlateNumber: *input.LicensePlateNumber,
+		ModelID:            &vehicleModel.ID,
+		OwnerID:            &owner.ID,
+		Color:              *input.Color,
+		Description:        *input.Description,
+		Published:          &input.Published,
 	}
 	if err := vehicleService.Save(&vehicle); nil != err {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
@@ -73,7 +78,7 @@ func CreateVehicle(c *gin.Context) {
 }
 
 func FindVehicle(c *gin.Context) {
-	vehicleService := service.GetVehicleService()
+	// vehicleService := service.GetVehicleService()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -81,8 +86,10 @@ func FindVehicle(c *gin.Context) {
 		return
 	}
 
-	vehicle, err := vehicleService.GetById(id)
-	if err != nil {
+	var vehicle model.Vehicle
+
+	query := model.DB.Preload("Model").Preload("Owner")
+	if err := query.First(&vehicle, "id = ?", id).Error; err != nil {
 		message := fmt.Sprintf("Could not find vehicle with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
@@ -112,11 +119,19 @@ func UpdateVehicle(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 
-	if nil != input.LicensePlaceNumber {
-		vehicle.LicensePlaceNumber = *input.LicensePlaceNumber
+	if nil != input.Color {
+		vehicle.Color = *input.Color
+	}
+
+	if nil != input.LicensePlateNumber {
+		vehicle.LicensePlateNumber = *input.LicensePlateNumber
 	}
 	if nil != input.Description {
 		vehicle.Description = *input.Description
+	}
+
+	if nil != input.Published {
+		vehicle.Published = input.Published
 	}
 
 	if nil != input.ModelID {
@@ -126,7 +141,7 @@ func UpdateVehicle(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
 			return
 		}
-		vehicle.ModelID = vehicleModel.ID
+		vehicle.ModelID = &vehicleModel.ID
 	}
 
 	if nil != input.OwnerID {
@@ -136,7 +151,7 @@ func UpdateVehicle(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
 			return
 		}
-		vehicle.OwnerID = owner.ID
+		vehicle.OwnerID = &owner.ID
 	}
 
 	if err := vehicleService.Save(vehicle); nil != err {
@@ -149,6 +164,8 @@ func UpdateVehicle(c *gin.Context) {
 }
 
 func DeleteVehicle(c *gin.Context) {
+	vehicleService := service.GetVehicleService()
+
 	id := c.Param("id")
 
 	var vehicle model.Vehicle
@@ -158,7 +175,13 @@ func DeleteVehicle(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
-	model.DB.Delete(&vehicle)
+
+	if err := vehicleService.Delete(&vehicle); nil != err {
+		message := fmt.Sprintf("An error occurred while deleting entry:\"%s\"", err.Error())
+		c.JSON(http.StatusOK, gin.H{"data": vehicle, "status": "success", "message": message})
+		return
+	}
+
 	message := fmt.Sprintf("Deleted vehicle \"%s\"", vehicle.ID)
 	c.JSON(http.StatusOK, gin.H{"data": vehicle, "status": "success", "message": message})
 }

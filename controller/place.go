@@ -28,7 +28,7 @@ func FindPlaces(c *gin.Context) {
 		return
 	}
 
-	query := model.DB
+	query := model.DB.Model(&model.Place{})
 
 	if page.Search != "" {
 		nameSearchQuery := strings.Join([]string{"%", page.Search, "%"}, "")

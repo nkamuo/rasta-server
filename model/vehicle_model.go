@@ -11,8 +11,8 @@ import (
 
 type VehicleModel struct {
 	ID          uuid.UUID       `gorm:"type:char(36);primary_key" json:"id,omitempty"`
-	Label       string          `gorm:"type:varchar(128);uniqueIndex:idx_product_lable,LENGTH(128);not null" json:"label,omitempty"`
-	Title       string          `gorm:"type:varchar(255);uniqueIndex:idx_product_title,LENGTH(255);not null" json:"title,omitempty"`
+	Label       string          `gorm:"type:varchar(128);not null" json:"label,omitempty"`
+	Title       string          `gorm:"type:varchar(255);not null" json:"title,omitempty"`
 	Description string          `gorm:"not null" json:"description,omitempty"`
 	Category    VehicleCategory `gorm:"" json:"category"`
 	Published   bool            `gorm:"default:false;not null" json:"published"`

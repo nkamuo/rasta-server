@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/data/pagination"
@@ -20,8 +21,14 @@ func FindVehicleModels(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
+	query := model.DB.Model(&model.VehicleModel{})
 
-	if err := model.DB.Scopes(pagination.Paginate(vehicleModels, &page, model.DB)).Find(&vehicleModels).Error; nil != err {
+	if page.Search != "" {
+		nameSearchQuery := strings.Join([]string{"%", page.Search, "%"}, "")
+		query = query.Where("label LIKE ? OR title LIKE ?", nameSearchQuery, nameSearchQuery)
+	}
+	query = query.Scopes(pagination.Paginate(vehicleModels, &page, query))
+	if err := query.Find(&vehicleModels).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
@@ -53,7 +60,8 @@ func CreateVehicleModel(c *gin.Context) {
 		CoverImage:  input.CoverImage,
 	}
 	if err := vehicleModelService.Save(&vehicleModel); nil != err {
-		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
+		message := fmt.Sprintf("An error occurred while saving entry: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
 		return
 	}
 
@@ -121,7 +129,7 @@ func UpdateVehicleModel(c *gin.Context) {
 	}
 
 	if err := vehicleModelService.Save(vehicleModel); nil != err {
-		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
@@ -130,6 +138,8 @@ func UpdateVehicleModel(c *gin.Context) {
 }
 
 func DeleteVehicleModel(c *gin.Context) {
+	vehicleModelService := service.GetVehicleModelService()
+
 	id := c.Param("id")
 
 	var vehicleModel model.VehicleModel
@@ -139,7 +149,13 @@ func DeleteVehicleModel(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
-	model.DB.Delete(&vehicleModel)
+
+	if err := vehicleModelService.Delete(&vehicleModel); nil != err {
+		message := fmt.Sprintf("An error occurred while deleting entry:\"%s\"", err.Error())
+		c.JSON(http.StatusOK, gin.H{"data": vehicleModel, "status": "success", "message": message})
+		return
+	}
+
 	message := fmt.Sprintf("Deleted vehicleModel \"%s\"", vehicleModel.Title)
 	c.JSON(http.StatusOK, gin.H{"data": vehicleModel, "status": "success", "message": message})
 }

@@ -23,7 +23,7 @@ func FindRespondents(c *gin.Context) {
 		return
 	}
 
-	if err := model.DB.Preload("User").Scopes(pagination.Paginate(respondents, &page, model.DB)).Find(&respondents).Error; nil != err {
+	if err := model.DB.Preload("User").Preload("Place").Scopes(pagination.Paginate(respondents, &page, model.DB)).Find(&respondents).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
@@ -140,6 +140,9 @@ func RemoveRespondentFromCompany(c *gin.Context) {
 func CreateRespondent(c *gin.Context) {
 
 	userService := service.GetUserService()
+	placeService := service.GetPlaceService()
+	companyService := service.GetCompanyService()
+	vehicleService := service.GetVehicleService()
 	respondentService := service.GetRespondentService()
 	respondentRepo := repository.GetRespondentRepository()
 	// Validate input
@@ -167,6 +170,37 @@ func CreateRespondent(c *gin.Context) {
 		UserID: &user.ID,
 	}
 
+	if nil != input.VehicleID {
+		if _, err := vehicleService.GetById(*input.VehicleID); nil != err {
+			message := fmt.Sprintf("Could not find vehicle with [id:%s]: %s", input.VehicleID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		respondent.VehicleID = input.VehicleID
+	}
+
+	if nil != input.CompanyID {
+		if _, err := companyService.GetById(*input.CompanyID); nil != err {
+			message := fmt.Sprintf("Could not find company with [id:%s]: %s", input.CompanyID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		respondent.CompanyID = input.CompanyID
+	}
+
+	if nil != input.PlaceID {
+		if _, err := placeService.GetById(*input.PlaceID); nil != err {
+			message := fmt.Sprintf("Could not find place with [id:%s]: %s", input.PlaceID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		respondent.PlaceID = input.PlaceID
+	}
+
+	if nil != input.Active {
+		respondent.Active = *input.Active
+	}
+
 	// fmt.Printf("Input USer ID: %s\n user.ID: %s\n respondent.UserId: %s\n", input.UserId, user.ID, respondent.UserID)
 
 	if err := respondentService.Save(&respondent); nil != err {
@@ -177,14 +211,16 @@ func CreateRespondent(c *gin.Context) {
 }
 
 func FindRespondent(c *gin.Context) {
-	respondentService := service.GetRespondentService()
+	// respondentService := service.GetRespondentService()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
 		return
 	}
-	respondent, err := respondentService.GetById(id)
+	// respondent, err := respondentService.GetById(id)
+	var respondent model.Respondent
+	err = model.DB.Where("id = ?", id).Preload("User").Preload("Place").First(&respondent).Error
 	if nil != err {
 		message := fmt.Sprintf("Could not find respondent with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
@@ -210,6 +246,9 @@ func GetCurrentRespondent(c *gin.Context) {
 }
 
 func UpdateRespondent(c *gin.Context) {
+	placeService := service.GetPlaceService()
+	companyService := service.GetCompanyService()
+	vehicleService := service.GetVehicleService()
 	respondentService := service.GetRespondentService()
 
 	// Validate input
@@ -228,6 +267,38 @@ func UpdateRespondent(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find respondent with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if nil != input.VehicleID {
+		if _, err := vehicleService.GetById(*input.VehicleID); nil != err {
+			message := fmt.Sprintf("Could not find vehicle with [id:%s]: %s", input.VehicleID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		respondent.VehicleID = input.VehicleID
+	}
+
+	if nil != input.CompanyID {
+		if _, err := companyService.GetById(*input.CompanyID); nil != err {
+			message := fmt.Sprintf("Could not find company with [id:%s]: %s", input.CompanyID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		respondent.CompanyID = input.CompanyID
+	}
+
+	if nil != input.PlaceID {
+		if _, err := placeService.GetById(*input.PlaceID); nil != err {
+			message := fmt.Sprintf("Could not find place with [id:%s]: %s", input.PlaceID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		respondent.PlaceID = input.PlaceID
+	}
+
+	if nil != input.Active {
+		respondent.Active = *input.Active
 	}
 
 	if err := respondentService.Save(respondent); nil != err {

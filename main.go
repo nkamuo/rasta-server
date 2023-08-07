@@ -87,6 +87,18 @@ func main() {
 	api.PATCH("/companies/:id", controller.UpdateCompany)
 	api.DELETE("/companies/:id", controller.DeleteCompany)
 
+	api.GET("/vehicles", controller.FindVehicles)
+	api.GET("/vehicles/:id", controller.FindVehicle)
+	api.POST("/vehicles", controller.CreateVehicle)
+	api.PATCH("/vehicles/:id", controller.UpdateVehicle)
+	api.DELETE("/vehicles/:id", controller.DeleteVehicle)
+
+	api.GET("/vehicle_models", controller.FindVehicleModels)
+	api.GET("/vehicle_models/:id", controller.FindVehicleModel)
+	api.POST("/vehicle_models", controller.CreateVehicleModel)
+	api.PATCH("/vehicle_models/:id", controller.UpdateVehicleModel)
+	api.DELETE("/vehicle_models/:id", controller.DeleteVehicleModel)
+
 	api.GET("/places", controller.FindPlaces)
 	api.GET("/places/:id", controller.FindPlace)
 	api.POST("/places", controller.CreatePlace)

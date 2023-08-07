@@ -9,13 +9,14 @@ import (
 
 type Vehicle struct {
 	ID                 uuid.UUID     `gorm:"type:char(36);primary_key" json:"id,omitempty"`
-	Description        string        `gorm:"not null" json:"description,omitempty"`
-	LicensePlaceNumber string        `gorm:"" json:"licensePlaceNumber,omitempty"`
-	OwnerID            uuid.UUID     `gorm:"not null" json:"ownerId,omitempty"`
+	LicensePlateNumber string        `gorm:"" json:"licensePlateNumber,omitempty"`
+	Color              string        `gorm:"varchar(64);" json:"color,omitempty"`
+	OwnerID            *uuid.UUID    `gorm:"not null" json:"ownerId,omitempty"`
 	Owner              *User         `gorm:"" json:"owner"`
-	ModelID            uuid.UUID     `gorm:"not null" json:"modelId,omitempty"`
+	ModelID            *uuid.UUID    `gorm:"" json:"modelId,omitempty"`
 	Model              *VehicleModel `gorm:"" json:"model"`
-	Published          bool          `gorm:"default:false;not null" json:"published"`
+	Published          *bool         `gorm:"default:false;not null" json:"published"`
+	Description        string        `gorm:"not null" json:"description,omitempty"`
 	CreatedAt          time.Time     `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
 	UpdatedAt          time.Time     `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }
