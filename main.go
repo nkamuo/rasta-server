@@ -39,7 +39,7 @@ func main() {
 	model.ConnectDatabase(&config)
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:8080"}
+	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:56140"}
 	corsConfig.AddAllowHeaders("Authorization")
 	// config.AllowOrigins = []string{"http://google.com", "http://facebook.com"}
 	// config.AllowAllOrigins = true
@@ -70,12 +70,22 @@ func main() {
 	api.POST("/orders", controller.CreateOrder)
 	api.PATCH("/orders/:id", controller.UpdateOrder)
 	api.DELETE("/orders/:id", controller.DeleteOrder)
+	//REQUESTS -> ORDER-ITEMS
+	api.GET("/requests", controller.FindRequests)
 
 	api.GET("/respondents", controller.FindRespondents)
 	api.GET("/respondents/:id", controller.FindRespondent)
 	api.POST("/respondents", controller.CreateRespondent)
 	api.PATCH("/respondents/:id", controller.UpdateRespondent)
 	api.DELETE("/respondents/:id", controller.DeleteRespondent)
+
+	//RESPONDENT REVIEWS
+	api.GET("/respondent_service_reviews", controller.FindRespondentServiceReviews)
+	api.GET("/respondent_service_reviews/:id", controller.FindRespondentServiceReview)
+	api.POST("/respondent_service_reviews", controller.CreateRespondentServiceReview)
+	api.PATCH("/respondent_service_reviews/:id", controller.UpdateRespondentServiceReview)
+	api.DELETE("/respondent_service_reviews/:id", controller.DeleteRespondentServiceReview)
+
 	// COMPANY RESPONDANTS
 	api.GET("/companies/:id/respondents", controller.FindRespondentsByCompany)
 	api.POST("/companies/:id/respondents", controller.AddRespondentToCompany)

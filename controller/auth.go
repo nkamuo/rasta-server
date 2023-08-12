@@ -85,6 +85,6 @@ func GetCurrentUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusBadRequest, gin.H{"status": "success", "data": user})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": user})
 
 }

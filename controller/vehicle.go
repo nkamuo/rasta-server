@@ -66,7 +66,7 @@ func CreateVehicle(c *gin.Context) {
 		ModelID:            &vehicleModel.ID,
 		OwnerID:            &owner.ID,
 		Color:              *input.Color,
-		Description:        *input.Description,
+		Description:        input.Description,
 		Published:          &input.Published,
 	}
 	if err := vehicleService.Save(&vehicle); nil != err {

@@ -16,7 +16,7 @@ type Location struct {
 	StateCode   string               `gorm:"type:varchar(64)" json:"stateCode,omitempty"`
 	CountryCode string               `gorm:"type:varchar(64)" json:"countryCode,omitempty"`
 	Address     string               `gorm:"type:varchar(255)" json:"address,omitempty"`
-	Coordinates *LocationCoordinates `gorm:"embedded;columnPrefix:coords_" json:"coordinates"`
+	Coordinates *LocationCoordinates `gorm:"embedded;columnPrefix:coords_" json:"coords"`
 	PostCode    string               `json:"postcode"`
 	GoogleID    *string              `gorm:"type:varchar(64);" json:"googleId,omitempty"`
 	Description *string              `gorm:"" json:"description,omitempty"`

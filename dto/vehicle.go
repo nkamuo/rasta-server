@@ -9,7 +9,7 @@ type VehicleCreationInput struct {
 	OwnerID            uuid.UUID `json:"ownerId" binding:"required"`
 	Color              *string   `json:"color" binding:"required"`
 	Published          bool      `json:"published" binding:""`
-	Description        *string   `json:"description" binding:""`
+	Description        string    `json:"description" binding:""`
 	LicensePlateNumber *string   `json:"licensePlateNumber" binding:"required"`
 }
 

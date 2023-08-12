@@ -86,20 +86,20 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
-	var orderItems []model.OrderItem
+	var Requests []model.Request
 
 	for _, iItem := range input.Items {
-		if orderItem, err := buildOrderItem(iItem, requestingUser); err != nil {
+		if Request, err := buildRequest(iItem, requestingUser); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("%s", err.Error())})
 			return
 		} else {
-			orderItems = append(orderItems, *orderItem)
+			Requests = append(Requests, *Request)
 		}
 	}
 
 	order := model.Order{
 		UserID: &user.ID,
-		Items:  &orderItems,
+		Items:  &Requests,
 	}
 
 	if nil != paymentMethod {
@@ -203,15 +203,15 @@ func DeleteOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success", "message": message})
 }
 
-func buildOrderItem(input dto.OrderItemInput, requestingUser *model.User) (orderItem *model.OrderItem, err error) {
+func buildRequest(input dto.RequestInput, requestingUser *model.User) (Request *model.Request, err error) {
 	placeService := service.GetPlaceService()
 	productService := service.GetProductService()
 	locationService := service.GetLocationService()
 	// fuelTypeService := service.GetFuelTypeService()
 	fuelTypeRepository := repository.GetFuelTypeRepository()
 
-	var vehicleInfo *model.OrderItemVehicleInfo
-	var fuelTypeInfo *model.OrderItemFuelTypeInfo
+	var vehicleInfo *model.RequestVehicleInfo
+	var fuelTypeInfo *model.RequestFuelTypeInfo
 	var rate uint64
 	var quantity uint64 = 1
 
@@ -309,7 +309,7 @@ func buildOrderItem(input dto.OrderItemInput, requestingUser *model.User) (order
 			rate = fuelType.Rate
 		}
 
-		fuelTypeInfo = &model.OrderItemFuelTypeInfo{
+		fuelTypeInfo = &model.RequestFuelTypeInfo{
 			FuelTypeCode: fuelType.Code,
 			FuelTypeID:   &fuelType.ID,
 		}
@@ -317,7 +317,7 @@ func buildOrderItem(input dto.OrderItemInput, requestingUser *model.User) (order
 		break
 	}
 
-	orderItem = &model.OrderItem{
+	Request = &model.Request{
 		ProductID: &product.ID,
 		Rate:      rate,
 		Quantity:  quantity,
@@ -328,17 +328,17 @@ func buildOrderItem(input dto.OrderItemInput, requestingUser *model.User) (order
 	}
 
 	if nil != origin {
-		orderItem.OriginID = &origin.ID
+		Request.OriginID = &origin.ID
 	}
 	if nil != destination {
-		orderItem.DestinationID = &destination.ID
+		Request.DestinationID = &destination.ID
 	}
 
-	return orderItem, nil
+	return Request, nil
 
 }
 
-func validateProductOrderItemInput(product *model.Product, iItem dto.OrderItemInput) (err error) {
+func validateProductRequestInput(product *model.Product, iItem dto.RequestInput) (err error) {
 
 	return
 }

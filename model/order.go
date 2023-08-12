@@ -14,7 +14,7 @@ type Order struct {
 	AdjustmentsTotal uint64    `json:"adjustmentTotal,omitempty"`
 	Total            uint64    `json:"total,omitempty"`
 
-	Items *[]OrderItem `gorm:"foreignKey:OrderID"`
+	Items *[]Request `gorm:"foreignKey:OrderID"`
 
 	Status string `json:"status,omitempty"`
 
