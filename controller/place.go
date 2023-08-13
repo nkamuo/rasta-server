@@ -14,6 +14,7 @@ import (
 	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
+	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 
 	"github.com/gin-gonic/gin"
@@ -96,6 +97,32 @@ func FindPlace(c *gin.Context) {
 	place, err := placeService.GetById(id)
 	if nil != err {
 		message := fmt.Sprintf("Could not find place with [id:%s]", id)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": place})
+}
+
+func FindPlaceByLocation(c *gin.Context) {
+	placeRepo := repository.GetPlaceRepository()
+	locationService := service.GetLocationService()
+
+	location_ref := c.Query("location")
+
+	if location_ref == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "location query parameter not provided"})
+		return
+	}
+
+	location, err := locationService.Search(location_ref)
+	if nil != err {
+		message := fmt.Sprintf("Could not resolve the specified location[%s]", location_ref)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	place, err := placeRepo.GetByLocation(location)
+	if nil != err {
+		message := fmt.Sprintf("Could not find place with for location[address:%s]", location.Address)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": place})

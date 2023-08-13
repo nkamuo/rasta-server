@@ -39,7 +39,7 @@ func main() {
 	model.ConnectDatabase(&config)
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:56140", "http://localhost:58962"}
+	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:55926"}
 	corsConfig.AddAllowHeaders("Authorization")
 	// config.AllowOrigins = []string{"http://google.com", "http://facebook.com"}
 	// config.AllowAllOrigins = true
@@ -112,6 +112,7 @@ func main() {
 
 	api.GET("/places", controller.FindPlaces)
 	api.GET("/places/:id", controller.FindPlace)
+	api.GET("/places/find-by-location", controller.FindPlaceByLocation)
 	api.POST("/places", controller.CreatePlace)
 	api.PATCH("/places/:id", controller.UpdatePlace)
 	api.DELETE("/places/:id", controller.DeletePlace)

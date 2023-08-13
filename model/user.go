@@ -66,7 +66,7 @@ func generateReferralCode() string {
 	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	rand.Seed(time.Now().UnixNano())
 
-	b := make([]byte, 6)
+	b := make([]byte, 12)
 	for i := range b {
 		b[i] = charset[rand.Intn(len(charset))]
 	}

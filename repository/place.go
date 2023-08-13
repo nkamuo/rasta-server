@@ -89,9 +89,21 @@ func (repo *placeRepository) DeleteById(id uuid.UUID) (place *model.Place, err e
 
 func (repo *placeRepository) GetByLocation(location *model.Location) (place *model.Place, err error) {
 
-	CodeParts := []string{location.CountryCode, location.StateCode, location.CityCode}
+	CodeParts := make([]string, 0, 3)
 
-	for length := len(CodeParts); length > 0; {
+	if location.CountryCode != "" {
+		CodeParts = append(CodeParts, location.CountryCode)
+	}
+	if location.StateCode != "" {
+		CodeParts = append(CodeParts, location.StateCode)
+	}
+	if location.CityCode != "" {
+		CodeParts = append(CodeParts, location.CityCode)
+	}
+	// location.CountryCode, location.StateCode, location.CityCode
+
+	for len(CodeParts) > 0 {
+		length := len(CodeParts)
 		placeCode := strings.Join(CodeParts, "-")
 
 		place, err := repo.GetByCode(placeCode)
