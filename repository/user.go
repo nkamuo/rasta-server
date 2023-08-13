@@ -25,9 +25,13 @@ type UserRepository interface {
 	GetById(id uuid.UUID) (user *model.User, err error)
 	GetByEmail(email string) (user *model.User, err error)
 	GetByPhone(phone string) (user *model.User, err error)
+	GetByReferralCode(phone string) (user *model.User, err error)
 	Save(user *model.User) (err error)
 	Delete(user *model.User) (error error)
 	DeleteById(id uuid.UUID) (user *model.User, err error)
+	//
+	GetPassword(user *model.User) (password *model.UserPassword, err error)
+	SavePassword(password *model.UserPassword) (err error)
 }
 
 type userRepository struct {
@@ -57,6 +61,20 @@ func (repo *userRepository) GetById(id uuid.UUID) (user *model.User, err error) 
 	return user, nil
 }
 
+func (repo *userRepository) GetByReferralCode(code string) (user *model.User, err error) {
+	if err = repo.db.Where("referral_code = ?", code).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (repo *userRepository) GetPassword(user *model.User) (password *model.UserPassword, err error) {
+	if err = repo.db.Where("user_id = ?", user.ID).First(&password).Error; err != nil {
+		return nil, err
+	}
+	return password, nil
+}
+
 func (repo *userRepository) GetByEmail(email string) (user *model.User, err error) {
 	if err = repo.db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
@@ -77,6 +95,10 @@ func (repo *userRepository) Save(user *model.User) (err error) {
 		return repo.db.Create(&user).Error
 	}
 	return repo.db.Updates(&user).Error
+}
+
+func (repo *userRepository) SavePassword(password *model.UserPassword) (err error) {
+	return repo.db.Save(&password).Error
 }
 
 func (repo *userRepository) Delete(user *model.User) (err error) {

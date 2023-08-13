@@ -48,6 +48,8 @@ func ConnectDatabase(config *initializers.Config) {
 		// LOCATIONS
 		&Place{},
 		&Location{},
+		&RespondentServiceReview{},
+		&UserPassword{},
 		// &LocationCoordinates{},
 	)
 	if err != nil {

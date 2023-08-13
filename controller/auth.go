@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -18,7 +19,10 @@ import (
 
 func Register(c *gin.Context) {
 
+	userRepo := repository.GetUserRepository()
 	userSerice := service.GetUserService()
+
+	var referrer *model.User
 
 	var input dto.UserRegistrationInput
 
@@ -27,11 +31,26 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	if input.ReferrerCode != nil {
+
+		if _referrer, err := userRepo.GetByReferralCode(*input.ReferrerCode); nil != err {
+			message := fmt.Sprintf("Could not resolve referrer from referralCode[%s]: %s", *input.ReferrerCode, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		} else {
+			referrer = _referrer
+		}
+	}
+
 	user := model.User{
 		Email:     strings.TrimSpace(input.Email),
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Phone:     input.Phone,
+	}
+
+	if nil != referrer {
+		user.ReferrerID = &referrer.ID
 	}
 
 	// u.HashedPassword = input.Password

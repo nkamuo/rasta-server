@@ -2,11 +2,12 @@ package dto
 
 type UserRegistrationInput struct {
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,"`
+	Password string `json:"password" binding:"required"`
 	//PROFILE INFORMATION
-	FirstName string `json:"firstName" binding:"required"`
-	LastName  string `json:"lastName" binding:"required"`
-	Phone     string `json:"phone" binding:"required"`
+	FirstName    string  `json:"firstName" binding:"required"`
+	LastName     string  `json:"lastName" binding:"required"`
+	Phone        string  `json:"phone" binding:"required"`
+	ReferrerCode *string `json:"referrerCode" binding:""`
 }
 
 type UserFormLoginInput struct {

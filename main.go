@@ -39,7 +39,7 @@ func main() {
 	model.ConnectDatabase(&config)
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:56140"}
+	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:56140", "http://localhost:58962"}
 	corsConfig.AddAllowHeaders("Authorization")
 	// config.AllowOrigins = []string{"http://google.com", "http://facebook.com"}
 	// config.AllowAllOrigins = true
@@ -54,6 +54,7 @@ func main() {
 	api.GET("/me/respondent", controller.GetCurrentRespondent)
 
 	api.GET("/products", controller.FindProducts)
+	api.GET("/products/find_by_category_and_location", controller.FindProductByCategoryAndLocation)
 	api.GET("/products/:id", controller.FindProduct)
 	api.POST("/products", controller.CreateProduct)
 	api.PATCH("/products/:id", controller.UpdateProduct)
@@ -114,6 +115,12 @@ func main() {
 	api.POST("/places", controller.CreatePlace)
 	api.PATCH("/places/:id", controller.UpdatePlace)
 	api.DELETE("/places/:id", controller.DeletePlace)
+
+	//LOCATION
+	api.GET("/locations", controller.FindLocations)
+	api.GET("/locations/:id", controller.FindLocation)
+	api.GET("/locations/distance", controller.ResolveDistanceMatrix)
+	api.DELETE("/locations/:id", controller.DeleteLocation)
 
 	api.GET("/product_respondent_assignments", controller.FindProductRespondentAssignments)
 	api.GET("/product_respondent_assignments/:id", controller.FindProductRespondentAssignment)

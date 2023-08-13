@@ -20,3 +20,12 @@ type LocationCoordinatesInput struct {
 	Heading   *float32 `json:"heading,omitempty"`
 	Speed     *float32 `json:"speed,omitempty"`
 }
+
+type TransitLocationRequestInput struct {
+	Origin      string `json:"origin,omitempty;" form:"origin" binding:"required"`
+	Destination string `json:"destination,omitempty;" form:"destination" binding:"required"`
+}
+
+type DistanceMatrixRequestInput struct {
+	TransitLocationRequestInput
+}

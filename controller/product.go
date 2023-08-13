@@ -28,6 +28,16 @@ func FindProducts(c *gin.Context) {
 
 	query := model.DB.Preload("Place")
 
+	if category := c.Query("category"); category != "" {
+		err := model.ValidateProductCategory(category)
+		if nil != err {
+			message := fmt.Sprintf("%s", err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		query = query.Where("category = ?", category)
+	}
+
 	if place_id := c.Query("place_id"); place_id != "" {
 		placeID, err := uuid.Parse(place_id)
 		if nil != err {
@@ -43,12 +53,78 @@ func FindProducts(c *gin.Context) {
 		query = query.Where("place_id = ?", placeID)
 	}
 
+	if location_ref := c.Query("location"); location_ref != "" {
+		location, err := service.GetLocationService().Search(location_ref)
+		if nil != err {
+			message := fmt.Sprintf("Error parsing loation[%s] query: %s", location_ref, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		place, err := placeRepo.GetByLocation(location)
+		if err != nil {
+			message := fmt.Sprintf("There was an error identifying your province[%s]. It might not be supported yet: %s", location.Address, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		query = query.Where("place_id = ?", place.ID)
+	}
+
 	if err := query.Scopes(pagination.Paginate(products, &page, query)).Preload("Place").Find(&products).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 	page.Rows = products
 	c.JSON(http.StatusOK, gin.H{"data": page})
+}
+
+func FindProductByCategoryAndLocation(c *gin.Context) {
+	placeRepo := repository.GetPlaceRepository()
+
+	query := model.DB.Preload("Place")
+
+	if category := c.Query("category"); category != "" {
+		err := model.ValidateProductCategory(category)
+		if nil != err {
+			message := fmt.Sprintf("%s", err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		query = query.Where("category = ?", category)
+	} else {
+		message := fmt.Sprintf("\"category\" query parameter is required")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if location_ref := c.Query("location"); location_ref != "" {
+		location, err := service.GetLocationService().Search(location_ref)
+		if nil != err {
+			message := fmt.Sprintf("Error parsing loation[%s] query: %s", location_ref, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		place, err := placeRepo.GetByLocation(location)
+		if err != nil {
+			message := fmt.Sprintf("There was an error identifying your province[%s]. It might not be supported yet: %s", location.Address, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		query = query.Where("place_id = ?", place.ID)
+	} else {
+		message := fmt.Sprintf("\"location\" query parameter is required")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	var product model.Product
+
+	err := query.First(&product).Error
+	if err != nil {
+		message := fmt.Sprintf("Could not find product for the location and category")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": product})
 }
 
 func CreateProduct(c *gin.Context) {

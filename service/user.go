@@ -59,12 +59,23 @@ func (service *userServiceImpl) DeleteById(id uuid.UUID) (user *model.User, err 
 }
 
 func (service *userServiceImpl) HashUserPassword(user *model.User, Password string) (err error) {
-	//turn password into hash
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	user.HashedPassword = string(hashedPassword)
+	var password *model.UserPassword
+
+	password, err = service.repo.GetPassword(user)
+	if err != nil {
+		if err.Error() == "record not found" {
+			password = &model.UserPassword{}
+		} else {
+			return err
+		}
+	}
+	//turn password into hash
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
+	password.HashedPassword = string(hashedPassword)
+	user.Password = password
 
 	return nil
 }

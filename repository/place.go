@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -23,6 +25,8 @@ func GetPlaceRepository() PlaceRepository {
 type PlaceRepository interface {
 	FindAll(page int, limit int) (places []model.Place, total int64, err error)
 	GetById(id uuid.UUID) (place *model.Place, err error)
+	GetByCode(code string) (place *model.Place, err error)
+	GetByLocation(location *model.Location) (place *model.Place, err error)
 	Save(place *model.Place) (err error)
 	Delete(place *model.Place) (error error)
 	DeleteById(id uuid.UUID) (place *model.Place, err error)
@@ -55,6 +59,13 @@ func (repo *placeRepository) GetById(id uuid.UUID) (place *model.Place, err erro
 	return place, nil
 }
 
+func (repo *placeRepository) GetByCode(code string) (place *model.Place, err error) {
+	if err = model.DB. /*.Joins("OperatorUser")*/ First(&place, "code = ?", code).Error; err != nil {
+		return nil, err
+	}
+	return place, nil
+}
+
 func (repo *placeRepository) Save(place *model.Place) (err error) {
 	if (uuid.UUID{} == place.ID) {
 		//NEW - No ID yet
@@ -74,4 +85,25 @@ func (repo *placeRepository) DeleteById(id uuid.UUID) (place *model.Place, err e
 	}
 	err = repo.db.Delete(&place).Error
 	return place, err
+}
+
+func (repo *placeRepository) GetByLocation(location *model.Location) (place *model.Place, err error) {
+
+	CodeParts := []string{location.CountryCode, location.StateCode, location.CityCode}
+
+	for length := len(CodeParts); length > 0; {
+		placeCode := strings.Join(CodeParts, "-")
+
+		place, err := repo.GetByCode(placeCode)
+		if nil != err {
+			if err.Error() != "record not found" {
+				return nil, err
+			}
+		} else {
+			return place, nil
+		}
+		CodeParts = CodeParts[:length-1]
+	}
+	return nil, errors.New("Could not find the corresponding place")
+
 }

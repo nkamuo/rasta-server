@@ -11,8 +11,6 @@ import (
 	// "strconv"
 )
 
-const googleMapsAPIKey = "AIzaSyBhgBfG2YQsF_CivgkwKP39AP_d-Q-2aEU"
-
 type AddressComponent struct {
 	LongName  string   `json:"long_name"`
 	ShortName string   `json:"short_name"`
