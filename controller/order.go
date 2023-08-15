@@ -221,7 +221,7 @@ func buildRequest(input dto.RequestInput, requestingUser *model.User) (Request *
 
 	var origin, destination *model.Location
 
-	product, err := productService.GetById(*input.ProductID)
+	product, err := productService.GetById(input.ProductID)
 	if nil != err {
 		message := fmt.Sprintf("Could not resolve the specified product with [id:%s]", input.ProductID)
 		return nil, errors.New(message)

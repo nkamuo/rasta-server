@@ -10,7 +10,7 @@ import (
 type Place struct {
 	ID          uuid.UUID        `gorm:"type:char(36);primary_key" json:"id,omitempty"`
 	Code        string           `gorm:"type:varchar(64);uniqueIndex:idx_place_code,LENGTH(64);not null" json:"code,omitempty"`
-	GoggleID    string           `gorm:"type:varchar(64);uniqueIndex:idx_place_goggle_id,LENGTH(64);not null" json:"goggleId,omitempty"`
+	GoggleID    string           `gorm:"type:varchar(64);uniqueIndex:idx_place_goggle_id,LENGTH(64);not null" json:"googleId,omitempty"`
 	Coordinates PlaceCoordinates `gorm:"embedded;columnPrefix:coords_" json:"coords"`
 	Name        string           `gorm:"type:varchar(255);not null" json:"name,omitempty"`
 	ShortName   string           `gorm:"type:varchar(255)" json:"shortName,omitempty"`

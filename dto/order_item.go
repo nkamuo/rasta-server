@@ -3,7 +3,7 @@ package dto
 import "github.com/google/uuid"
 
 type RequestInput struct {
-	ProductID   *uuid.UUID                      `json:"productId,omitempty"`
+	ProductID   uuid.UUID                       `json:"productId,omitempty" binding:"required,notNull"`
 	VehicleInfo *RequestVehicleInformationInput `json:"vehicleInfo"`
 	FuelInfo    *RequestFuelInformationInput    `json:"fuelInfo"`
 	Rate        *uint64                         `json:"rate"`
@@ -25,5 +25,8 @@ type RequestFuelInformationInput struct {
 
 type RequestVehicleInformationInput struct {
 	VehicleModelID     *uuid.UUID `json:"vehicleModelId,omitempty"`
+	Make               *string    `json:"make"`
+	Model              *string    `json:"model"`
+	Color              *string    `json:"color"`
 	VehicleDescription *string    `json:"vehicleDescription"`
 }

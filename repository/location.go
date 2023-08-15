@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -58,9 +60,33 @@ func (repo *locationRepository) GetById(id uuid.UUID) (location *model.Location,
 
 func (repo *locationRepository) Search(input string) (location *model.Location, err error) {
 	if err = model.DB.First(&location, "id = ?", input).Error; err != nil {
-		return nil, err
+		if err.Error() != "record not found" {
+			return nil, err
+		}
+	} else {
+		return location, nil
 	}
-	return location, nil
+	if err = model.DB.First(&location, "google_id = ?", input).Error; err != nil {
+		if err.Error() != "record not found" {
+			return nil, err
+		}
+	} else {
+		return location, nil
+	}
+
+	parts := strings.Split(input, ",")
+
+	if len(parts) == 2 {
+		if err = model.DB.First(&location, "latitude = ? AND longitude = ?", parts[0], parts[1]).Error; err != nil {
+			if err.Error() != "record not found" {
+				return nil, err
+			}
+		} else {
+			return location, nil
+		}
+	}
+
+	return nil, errors.New("record not found")
 }
 
 func (repo *locationRepository) Save(location *model.Location) (err error) {

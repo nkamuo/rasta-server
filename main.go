@@ -39,7 +39,7 @@ func main() {
 	model.ConnectDatabase(&config)
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:55926"}
+	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:56145"}
 	corsConfig.AddAllowHeaders("Authorization")
 	// config.AllowOrigins = []string{"http://google.com", "http://facebook.com"}
 	// config.AllowAllOrigins = true
@@ -155,6 +155,8 @@ func main() {
 
 	// USER PAYMENT METHODS
 	api.GET("/users/:id/payment_methods", controller.FindUserPaymentMethods)
+
+	api.GET("payment_intent", controller.CreatePaymentIntent)
 
 	// product_respondent_assignment
 
