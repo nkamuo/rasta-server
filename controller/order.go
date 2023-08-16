@@ -106,6 +106,11 @@ func CreateOrder(c *gin.Context) {
 		order.PaymentMethodID = &paymentMethod.ID
 	}
 
+	if err := orderService.Process(&order); nil != err {
+		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
 	if err := orderService.Save(&order); nil != err {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
 		return
@@ -123,7 +128,7 @@ func FindOrder(c *gin.Context) {
 	}
 
 	var order model.Order
-	if err := model.DB.Where("id = ?", id).Preload("Items").First(&order).Error; nil != err {
+	if err := model.DB.Where("id = ?", id).Preload("Items").Preload("Adjustments").First(&order).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
@@ -177,6 +182,11 @@ func UpdateOrder(c *gin.Context) {
 
 	if nil != paymentMethod {
 		order.PaymentMethodID = &paymentMethod.ID
+	}
+
+	if err := orderService.Process(order); nil != err {
+		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
+		return
 	}
 
 	if err := orderService.Save(order); nil != err {

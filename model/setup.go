@@ -37,6 +37,7 @@ func ConnectDatabase(config *initializers.Config) {
 
 		&Order{},
 		&Request{},
+		&OrderAdjustment{},
 		&RequestVehicleInfo{},
 		&RequestFuelTypeInfo{},
 		&Payment{},

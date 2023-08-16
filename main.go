@@ -71,6 +71,8 @@ func main() {
 	api.POST("/orders", controller.CreateOrder)
 	api.PATCH("/orders/:id", controller.UpdateOrder)
 	api.DELETE("/orders/:id", controller.DeleteOrder)
+	//
+	api.GET("/orders/:id/payment", controller.CreatePaymentIntent)
 	//REQUESTS -> ORDER-ITEMS
 	api.GET("/requests", controller.FindRequests)
 
@@ -155,8 +157,6 @@ func main() {
 
 	// USER PAYMENT METHODS
 	api.GET("/users/:id/payment_methods", controller.FindUserPaymentMethods)
-
-	api.GET("payment_intent", controller.CreatePaymentIntent)
 
 	// product_respondent_assignment
 
