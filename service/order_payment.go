@@ -31,6 +31,7 @@ type OrderPaymentService interface {
 	// GetByEmail(email string) (payment *model.OrderPayment, err error)
 	// GetByPhone(phone string) (payment *model.OrderPayment, err error)
 	InitOrderPayment(order *model.Order) (payment *model.OrderPayment, err error)
+	UpdatePaymentStatus(payment *model.OrderPayment) (err error)
 	Save(payment *model.OrderPayment) (err error)
 	Delete(payment *model.OrderPayment) (error error)
 }
@@ -58,10 +59,40 @@ func (service *paymentServiceImpl) DeleteById(id uuid.UUID) (payment *model.Orde
 	return payment, err
 }
 
+func (service *paymentServiceImpl) UpdatePaymentStatus(payment *model.OrderPayment) (err error) {
+	if nil == payment.StripeID {
+		return errors.New("No stripe Payment Intent ID is associated with this payment")
+	}
+
+	pIntent, err := paymentintent.Get(*payment.StripeID, nil)
+
+	if err != nil {
+		message := fmt.Sprintf("Could not fetch payment intent[%s]: %s", *payment.StripeID, err.Error())
+		return errors.New(message)
+	}
+	payment.Status = string(pIntent.Status)
+
+	if err := service.Save(payment); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (service *paymentServiceImpl) InitOrderPayment(order *model.Order) (payment *model.OrderPayment, err error) {
 
+	// var fOrder model.Order //A Fully Loaded order
+	// query := model.DB.
+	// 	Preload("Payment").Preload("Items").
+	// 	Preload("Adjustments").Preload("Items.Product").
+	// 	Preload("Items.Origin").Preload("Items.Destination").
+	// 	Preload("Items.FuelTypeInfo").Preload("Items.VehicleInfo")
+	// if err := query.First(&fOrder).Error; nil != err {
+	// 	return nil, err
+	// }
+
 	orderService := GetOrderService()
-	orderTotal, err := order.CalculateTotal()
+	orderTotal, err := order.GetTotal()
 
 	if nil != err {
 		message := fmt.Sprintf("Could not calculate order total: %s", err.Error())

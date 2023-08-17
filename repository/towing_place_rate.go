@@ -65,8 +65,9 @@ func (repo *towingPlaceRateRepository) GetByCode(code string) (towingPlaceRate *
 
 func (repo *towingPlaceRateRepository) GetByPlaceAndDistance(place model.Place, distance int64) (rate *model.TowingPlaceRate, err error) {
 	// var rates []model.TowingPlaceRate
-	if err = model.DB.Where("place_id = ? AND (? BETWEEN min_distance AND max_distance)", place.ID, distance). /*.Order("sequence ASC")*/
-															Find(&rate).Error; err != nil {
+	const QUERY = "place_id = ? AND (? BETWEEN min_distance AND max_distance)"
+	if err = model.DB.Where(QUERY, place.ID, distance). /*.Order("sequence ASC")*/
+								First(&rate).Error; err != nil {
 		return nil, err
 	}
 

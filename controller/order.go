@@ -54,12 +54,14 @@ func CreateOrder(c *gin.Context) {
 	var paymentMethod *model.PaymentMethod
 
 	if nil != input.UserID {
-		if !*requestingUser.IsAdmin {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid request"})
+		if *input.UserID != requestingUser.ID && !*requestingUser.IsAdmin {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid request: You may not specify userId other than yours"})
+			return
 		} else {
 
 			if ruser, err := userService.GetById(*input.UserID); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("Could not resolve user: %s", err.Error())})
+				return
 			} else {
 				user = ruser
 			}
@@ -121,16 +123,43 @@ func CreateOrder(c *gin.Context) {
 
 func FindOrder(c *gin.Context) {
 
+	orderService := service.GetOrderService()
+	paymentService := service.GetOrderPaymentService()
+
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
 		return
 	}
 
+	query := model.DB.Where("id = ?", id).
+		Preload("Payment").Preload("Items").
+		Preload("Adjustments").Preload("Items.Product").
+		Preload("Items.Origin").Preload("Items.Destination").
+		Preload("Items.FuelTypeInfo").Preload("Items.VehicleInfo")
 	var order model.Order
-	if err := model.DB.Where("id = ?", id).Preload("Items").Preload("Adjustments").First(&order).Error; nil != err {
+	if err := query.First(&order).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
+	}
+
+	if order.Payment != nil {
+		if err := paymentService.UpdatePaymentStatus(order.Payment); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+	} else {
+
+		if rOrder, err := orderService.GetById(order.ID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			return
+		} else {
+			if _, err := paymentService.InitOrderPayment(rOrder); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+				return
+			}
+		}
+
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": order})
@@ -304,6 +333,38 @@ func buildRequest(input dto.RequestInput, requestingUser *model.User) (Request *
 		}
 		break
 
+	case model.PRODUCT_TOWING_SERVICE:
+
+		if origin == nil || destination == nil {
+			return nil, errors.New(fmt.Sprintf("Origin and Destination are requried for %v", model.PRODUCT_TOWING_SERVICE))
+		}
+
+		if nil == input.VehicleInfo {
+			return nil, errors.New("You have to provide vehicle Information")
+		}
+		vehicleInfo, err = buildVehicleInfo(*input.VehicleInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		distanceInfo, err := locationService.GetDistance(origin, destination)
+		if err != nil {
+			return nil, err
+		}
+
+		towRate, err := service.GetTowingPlaceRateService().GetByPlaceAndDistance(*place, int64(distanceInfo.Distance.Value))
+		if err != nil {
+			if err.Error() != "record not found" {
+				return nil, err
+			} else {
+				rate = product.Rate
+			}
+		} else {
+			rate = *towRate.Rate
+		}
+
+		break
+
 	case model.PRODUCT_FUEL_DELIVERY_SERVICE:
 		if nil == input.FuelInfo {
 			return nil, errors.New("You have to provide vehicle Information")
@@ -345,6 +406,23 @@ func buildRequest(input dto.RequestInput, requestingUser *model.User) (Request *
 	}
 
 	return Request, nil
+
+}
+
+func buildVehicleInfo(input dto.RequestVehicleInformationInput) (vehicleInfo *model.RequestVehicleInfo, err error) {
+
+	// if nil == input.VehicleDescription {
+	// 	return nil, errors.New("You have to provide some description about flat tire service")
+	// }
+	// if dLength := len(*input.VehicleDescription); 20 > dLength || dLength > 500 {
+	// 	return nil, errors.New("Description must be upto 20 and less than 500 charachers")
+	// }
+
+	return &model.RequestVehicleInfo{
+		MakeName:  input.Make,
+		ModelName: input.Model,
+		BodyColor: input.Color,
+	}, nil
 
 }
 

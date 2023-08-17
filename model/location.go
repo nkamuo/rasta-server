@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -36,4 +38,15 @@ type LocationCoordinates struct {
 func (location *Location) BeforeCreate(tx *gorm.DB) (err error) {
 	location.ID = uuid.New()
 	return nil
+}
+
+func (location Location) GetReference() (ref string) {
+	if location.GoogleID != nil {
+		return fmt.Sprintf("place_id:%s", *location.GoogleID)
+	}
+	if location.Coordinates != nil {
+		coords := location.Coordinates
+		return fmt.Sprintf("%f,%f", coords.Latitude, coords.Longitude)
+	}
+	return location.Address
 }

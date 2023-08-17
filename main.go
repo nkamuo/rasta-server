@@ -145,6 +145,8 @@ func main() {
 
 	api.GET("/towing_place_rates", controller.FindTowingPlaceRates)
 	api.GET("/towing_place_rates/:id", controller.FindTowingPlaceRate)
+	api.GET("/towing_place_rates/find_by_place_and_distance", controller.FindTowingRateByPlaceAndDistance)
+	api.GET("/towing_place_rates/find_by_origin_and_destination", controller.FindTowingRateByOriginAndDestination)
 	api.POST("/towing_place_rates", controller.CreateTowingPlaceRate)
 	api.PATCH("/towing_place_rates/:id", controller.UpdateTowingPlaceRate)
 	api.DELETE("/towing_place_rates/:id", controller.DeleteTowingPlaceRate)

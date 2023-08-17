@@ -95,6 +95,94 @@ func CreateTowingPlaceRate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": towingPlaceRate, "status": "success"})
 }
 
+func FindTowingRateByOriginAndDestination(c *gin.Context) {
+
+	placeRepo := repository.GetPlaceRepository()
+	locationService := service.GetLocationService()
+	towingPlaceRateService := service.GetTowingPlaceRateService()
+
+	var _query dto.TowingPlaceRateRequestQuery
+	if err := c.ShouldBindQuery(&_query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	origin, err := locationService.Search(_query.Origin)
+	if err != nil {
+		message := fmt.Sprintf("Could not find the specified origin with [id:%s]: %s", _query.Origin, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	destination, err := locationService.Search(_query.Destination)
+	if err != nil {
+		message := fmt.Sprintf("Could not find the specified destination with [id:%s]: %s", _query.Destination, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	distanceInfo, err := locationService.GetDistance(origin, destination)
+	if err != nil {
+		message := fmt.Sprintf("Could not resolve the distance between %s and %s : %s", *origin.Name, *destination.Name, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	fmt.Println("ENSURE TO CONFIRM THAT THE ORIGIN AND DESTINATION ARE WITHIN THE SAME PLACE")
+
+	place, err := placeRepo.GetByLocation(origin)
+	if err != nil {
+		message := fmt.Sprintf("Error Resolving Place for location[%s]: %s", *origin.Name, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	towingPlaceRate, err := towingPlaceRateService.GetByPlaceAndDistance(*place, int64(distanceInfo.Distance.Value))
+	if err != nil {
+		message := fmt.Sprintf("Error Resolving rate %s", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "routing": distanceInfo, "message": message})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": towingPlaceRate, "routing": distanceInfo, "status": "success"})
+}
+
+func FindTowingRateByPlaceAndDistance(c *gin.Context) {
+
+	placeService := service.GetPlaceService()
+	towingPlaceRateService := service.GetTowingPlaceRateService()
+
+	var _query dto.TowingPlaceRateDistanceRequestQuery
+	if err := c.ShouldBindQuery(&_query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	placeID, err := uuid.Parse(_query.PlaceID)
+
+	if err != nil {
+		message := fmt.Sprintf("Could not parse [place_id:%s] into UUID: %s", _query.PlaceID, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	place, err := placeService.GetById(placeID)
+	if err != nil {
+		message := fmt.Sprintf("Could not find place with [id:%s]: %s", _query.PlaceID, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	towingPlaceRate, err := towingPlaceRateService.GetByPlaceAndDistance(*place, int64(_query.Distance))
+	if err != nil {
+		message := fmt.Sprintf("Error Resolving rate %s", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": towingPlaceRate, "status": "success"})
+}
+
 func FindTowingPlaceRate(c *gin.Context) {
 	towingPlaceRateService := service.GetTowingPlaceRateService()
 

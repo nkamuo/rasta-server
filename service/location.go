@@ -35,7 +35,7 @@ type LocationService interface {
 	Search(data string) (location *model.Location, err error)
 	AssertLocationWithinPlace(location *model.Location, place *model.Place) (err error)
 	ResolveDistanceMatrix(origin *model.Location, destination *model.Location) (response *geo.DistanceMatrixResponse, err error)
-	GetDistanceInfo(origin *model.Location, destination *model.Location) (element *geo.DistanceMatrixElement, err error)
+	GetDistance(origin *model.Location, destination *model.Location) (element *geo.DistanceMatrixElement, err error)
 	Save(location *model.Location) (err error)
 	Delete(location *model.Location) (error error)
 }
@@ -49,7 +49,7 @@ func (service *locationServiceImpl) GetById(id uuid.UUID) (location *model.Locat
 	return service.repo.GetById(id)
 }
 
-func (service locationServiceImpl) GetDistanceInfo(origin *model.Location, destination *model.Location) (element *geo.DistanceMatrixElement, err error) {
+func (service locationServiceImpl) GetDistance(origin *model.Location, destination *model.Location) (element *geo.DistanceMatrixElement, err error) {
 
 	data, err := service.ResolveDistanceMatrix(origin, destination)
 

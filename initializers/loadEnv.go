@@ -2,6 +2,7 @@ package initializers
 
 import (
 	"github.com/spf13/viper"
+	"github.com/stripe/stripe-go/v74"
 )
 
 var CONFIG *Config
@@ -33,5 +34,8 @@ func LoadConfig(path string) (config Config, err error) {
 
 	err = viper.Unmarshal(&config)
 	CONFIG = &config
+
+	stripe.Key = config.STRIPE_SECRET_KEY
+
 	return config, err
 }

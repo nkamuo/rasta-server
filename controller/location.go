@@ -45,6 +45,39 @@ func FindLocations(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 
+func ResolveDistanc(c *gin.Context) {
+
+	locationService := service.GetLocationService()
+
+	var input dto.DistanceMatrixRequestInput
+	if err := c.ShouldBindQuery(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	origin, err := locationService.Search(input.Origin)
+	if nil != err {
+		message := fmt.Sprintf("Could not resolve origin location[%s]:%s", input.Origin, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+	destination, err := locationService.Search(input.Destination)
+	if nil != err {
+		message := fmt.Sprintf("Could not resolve destination location[%s]:%s", input.Destination, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	response, err := locationService.GetDistance(origin, destination)
+	if nil != err {
+		message := fmt.Sprintf("Could not resolve distance: %s", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": response})
+}
+
 func ResolveDistanceMatrix(c *gin.Context) {
 
 	locationService := service.GetLocationService()

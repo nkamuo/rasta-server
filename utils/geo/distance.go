@@ -31,8 +31,8 @@ func ResolveDistanceMatrix(origin *model.Location, destination *model.Location) 
 	// origin := "37.7749,-122.4194"      // Latitude and longitude of origin
 	// destination := "34.0522,-118.2437" // Latitude and longitude of destination
 
-	iOrigin := *origin.GoogleID
-	iDestination := *destination.GoogleID
+	iOrigin := origin.GetReference()
+	iDestination := destination.GetReference()
 
 	apiURL := "https://maps.googleapis.com/maps/api/distancematrix/json"
 	params := url.Values{}
@@ -54,7 +54,7 @@ func ResolveDistanceMatrix(origin *model.Location, destination *model.Location) 
 		return nil, err
 	}
 
-	err = json.Unmarshal(body, &data)
+	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return nil, err
 	}

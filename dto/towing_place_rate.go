@@ -9,7 +9,7 @@ type TowingPlaceRateCreationInput struct {
 	//
 	Sequence uint64 `json:"sequence" binding:"gte=0"`
 	//
-	PlaceID uuid.UUID `gorm:"not null" json:"placeId,omitempty" binding:"required"`
+	PlaceID uuid.UUID `json:"placeId,omitempty" binding:"required"`
 	//
 	Active      bool    `json:"active" binding:""`
 	Description *string `json:"description,omitempty" binding:""`
@@ -24,4 +24,14 @@ type TowingPlaceRateUpdateInput struct {
 	//
 	Active      *bool   `json:"active" binding:""`
 	Description *string `json:"description,omitempty" binding:""`
+}
+
+type TowingPlaceRateRequestQuery struct {
+	Origin      string `json:"origin,omitempty" form:"origin" binding:"required"`
+	Destination string `json:"destination,omitempty" form:"destination" binding:"required"`
+}
+
+type TowingPlaceRateDistanceRequestQuery struct {
+	Distance uint64 `json:"distance" form:"distance" binding:"gte=0"`
+	PlaceID  string `json:"placeId,omitempty" form:"place_id" binding:"required"`
 }

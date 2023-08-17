@@ -4,7 +4,8 @@ import (
 	// "fmt"
 	"fmt"
 	"net/http"
-	"os"
+
+	// "os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -53,15 +54,15 @@ func createPaymentMethod(c *gin.Context) {
 }
 
 func CreatePaymentIntent(c *gin.Context) {
-	orderService := service.GetOrderService()
 	paymentService := service.GetOrderPaymentService()
-	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+	orderService := service.GetOrderService()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
 		return
 	}
+
 	order, err := orderService.GetById(id)
 	if nil != err {
 		message := fmt.Sprintf("Could not find product with [id:%s]", id)

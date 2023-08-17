@@ -30,7 +30,7 @@ type Request struct {
 
 	// OPTIONAL VEHICLE INFORMATIOn PROVIDED FOR ORDERS WHERE VEHICLE INFORMATION IS NECCESARY
 	VehicleInfoID *uuid.UUID          `gorm:"" json:"vehicleInfoId,omitempty"`
-	VehicleInfo   *RequestVehicleInfo `gorm:"foreignKey:FuelTypeInfoID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"vehicleInfo,omitempty"`
+	VehicleInfo   *RequestVehicleInfo `gorm:"foreignKey:VehicleInfoID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"vehicleInfo,omitempty"`
 	// OPTIONAL FUEL TYPE INFORMATION TO DESCRIBE FUEL TYPE NEEDED BY THE REQUESTING USER
 	FuelTypeInfoID *uuid.UUID           `gorm:"" json:"fuelTypeInfoId,omitempty"`
 	FuelTypeInfo   *RequestFuelTypeInfo `gorm:"foreignKey:FuelTypeInfoID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"fuelType,omitempty"`

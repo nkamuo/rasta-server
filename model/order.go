@@ -43,44 +43,58 @@ func (order *Order) BeforeCreate(tx *gorm.DB) (err error) {
 	order.ID = uuid.New()
 	itemTotal := order.CalculateItemTotal()
 	adjustmentTotal := order.CalculateAdjustmentTotal()
-	if adjustmentTotal < 0 {
-		if uint64(adjustmentTotal) > itemTotal {
-			return errors.New(fmt.Sprintf("Negetive Adjustment total of [%d] is greater than order total [%d]", adjustmentTotal, itemTotal))
-		}
+	total, err := order.CalculateTotal()
+	if nil != err {
+		return err
 	}
+
 	order.ItemsTotal = itemTotal
 	order.AdjustmentsTotal = adjustmentTotal
-	order.Total = itemTotal + uint64(adjustmentTotal)
+	order.Total = total
 	return nil
 }
 
 func (order *Order) CalculateItemTotal() (itemTotal uint64) {
-	var total uint64
-	for _, item := range *order.Items {
-		total += (item.Quantity * item.Rate)
+	items := order.Items
+	if nil == items {
+		items = &[]Request{}
 	}
-	return total
+	for _, item := range *items {
+		quantity := item.Quantity
+		if quantity == 0 {
+			quantity = 1
+		}
+		itemTotal += (quantity * item.Rate)
+	}
+	return itemTotal
+}
+
+func (order *Order) GetTotal() (total uint64, err error) {
+	if order.Total != 0 {
+		return order.Total, nil
+	}
+	return order.CalculateTotal()
 }
 
 func (order *Order) CalculateTotal() (total uint64, err error) {
-	order.ID = uuid.New()
 	itemTotal := order.CalculateItemTotal()
 	adjustmentTotal := order.CalculateAdjustmentTotal()
 	if adjustmentTotal < 0 {
 		if uint64(adjustmentTotal) > itemTotal {
 			return 0, errors.New(fmt.Sprintf("Negetive Adjustment total of [%d] is greater than order total [%d]", adjustmentTotal, itemTotal))
 		}
+		total = itemTotal - uint64(adjustmentTotal)
+	} else {
+		total = itemTotal + uint64(adjustmentTotal)
 	}
-	total = itemTotal + uint64(adjustmentTotal)
 	return total, nil
 }
 
 func (order *Order) CalculateAdjustmentTotal() (adjustmentTotal int64) {
-	var total int64
 	for _, adjustment := range order.Adjustments {
-		total += adjustment.Amount
+		adjustmentTotal += adjustment.Amount
 	}
-	return total
+	return adjustmentTotal
 }
 
 func (order *Order) AddAdjustment(adjustment OrderAdjustment) (err error) {
