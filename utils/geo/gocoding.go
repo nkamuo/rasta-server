@@ -80,12 +80,12 @@ func IdentifyInputType(input string) string {
 	coordinatesPattern := `^-?\d+\.\d+,\s*-?\d+\.\d+$`
 	placeIDPattern := `^ChIJ[0-9A-Za-z_-]+$`
 
-	if matched, _ := regexp.MatchString(addressPattern, input); matched {
-		return "address"
+	if matched, _ := regexp.MatchString(placeIDPattern, input); matched {
+		return "place_id"
 	} else if matched, _ := regexp.MatchString(coordinatesPattern, input); matched {
 		return "latlng"
-	} else if matched, _ := regexp.MatchString(placeIDPattern, input); matched {
-		return "place_id"
+	} else if matched, _ := regexp.MatchString(addressPattern, input); matched {
+		return "address"
 	}
 
 	return "UNKNOWN"

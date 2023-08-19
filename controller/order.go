@@ -24,7 +24,21 @@ func FindOrders(c *gin.Context) {
 		return
 	}
 
-	if err := model.DB.Preload("User").Scopes(pagination.Paginate(orders, &page, model.DB)).Find(&orders).Error; nil != err {
+	requestingUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	query := model.DB.Preload("User").
+		Preload("Items").Preload("Items.Product").
+		Preload("Items.Origin").Preload("Items.Destination")
+
+	if !*requestingUser.IsAdmin {
+		query = query.Where("orders.user_id = ?", requestingUser.ID)
+	}
+
+	if err := query.Scopes(pagination.Paginate(orders, &page, model.DB)).Find(&orders).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}

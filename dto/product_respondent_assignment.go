@@ -12,8 +12,8 @@ type ProductRespondentAssignmentCreationInput struct {
 }
 
 type ProductRespondentAssignmentUpdateInput struct {
-	Note                    string `json:"note" binding:""`
-	Description             string `json:"description" binding:""`
-	Active                  bool   `json:"active" binding:""`
-	AllowRespondentActivate bool   `json:"allowRespondentActivate" binding:""`
+	Note                    *string `json:"note" binding:""`
+	Description             *string `json:"description" binding:""`
+	Active                  *bool   `json:"active" binding:""`
+	AllowRespondentActivate *bool   `json:"allowRespondentActivate" binding:""`
 }

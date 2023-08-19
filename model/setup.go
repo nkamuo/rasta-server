@@ -34,6 +34,8 @@ func ConnectDatabase(config *initializers.Config) {
 		&Product{},
 		&Respondent{},
 		&ProductRespondentAssignment{},
+		&RespondentSession{},
+		&RespondentSessionAssignedProduct{},
 
 		&Order{},
 		&Request{},
