@@ -11,7 +11,7 @@ type ProductRespondentAssignment struct {
 	ID uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
 
 	//ASSOCIATED USER ACCOUNT
-	RespondentID *uuid.UUID  `gorm:"not null" json:"userId,omitempty"`
+	RespondentID *uuid.UUID  `gorm:"not null" json:"respondentId,omitempty"`
 	Respondent   *Respondent `gorm:"foreignKey:RespondentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"respondent,omitempty"` // BelongsToMany Association - These mappings may be optional
 	//Product OF THE REPSONDANT
 	ProductID *uuid.UUID `gorm:"not null" json:"productId,omitempty"`

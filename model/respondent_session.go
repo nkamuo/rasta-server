@@ -11,7 +11,7 @@ type RespondentSession struct {
 	ID uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
 
 	//ASSOCIATED USER ACCOUNT
-	RespondentID *uuid.UUID  `gorm:"not null" json:"userId,omitempty"`
+	RespondentID *uuid.UUID  `gorm:"not null" json:"respondentId,omitempty"`
 	Respondent   *Respondent `gorm:"foreignKey:RespondentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"respondent,omitempty"` // BelongsToMany Association - These mappings may be optional
 	//TOGGLES
 	Active *bool `gorm:"default:false;not null" json:"active"`
@@ -19,7 +19,7 @@ type RespondentSession struct {
 	Note        string `gorm:"LENGTH(255);" json:"note,omitempty"`
 	Description string `gorm:"not null" json:"description,omitempty"`
 	//
-	StartingCoordinates LocationCoordinates                `gorm:"embedded;columnPrefix:coords_" json:"coords"`
+	StartingCoordinates LocationCoordinates                `gorm:"embedded;columnPrefix:starting_coords_" json:"startingCoords"`
 	Assignments         []RespondentSessionAssignedProduct `gorm:"foreignKey:SessionID" json:"assignments"`
 	// Assignments         []ProductRespondentAssignment `gorm:"many2many:respondent_session_active_product_assignments;"`
 	// TIMESTAMPS

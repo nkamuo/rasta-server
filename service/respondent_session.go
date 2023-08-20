@@ -2,6 +2,7 @@ package service
 
 import (
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/model"
@@ -22,6 +23,7 @@ func GetRespondentSessionService() RespondentSessionService {
 
 type RespondentSessionService interface {
 	GetById(id uuid.UUID) (session *model.RespondentSession, err error)
+	Close(session *model.RespondentSession) (err error)
 	Save(session *model.RespondentSession) (err error)
 	Delete(session *model.RespondentSession) (error error)
 }
@@ -32,6 +34,13 @@ type sessionServiceImpl struct {
 
 func (service *sessionServiceImpl) GetById(id uuid.UUID) (session *model.RespondentSession, err error) {
 	return service.repo.GetById(id)
+}
+
+func (service *sessionServiceImpl) Close(session *model.RespondentSession) (err error) {
+	now := time.Now()
+	session.EndedAt = &now
+	*session.Active = false
+	return service.repo.Save(session)
 }
 
 func (service *sessionServiceImpl) Save(session *model.RespondentSession) (err error) {

@@ -222,7 +222,7 @@ func FindRespondent(c *gin.Context) {
 	var respondent model.Respondent
 	err = model.DB.Where("id = ?", id).Preload("User").Preload("Place").First(&respondent).Error
 	if nil != err {
-		message := fmt.Sprintf("Could not find respondent with [id:%s]", id)
+		message := fmt.Sprintf("Could not find respondent with [id:%s]: %s", id, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": respondent})
@@ -236,12 +236,12 @@ func GetCurrentRespondent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	respondent, err := respondentRepo.GetByUser(*user)
+	respondent, err := respondentRepo.GetByUser(*user, "User", "Place")
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusBadRequest, gin.H{"status": "success", "data": respondent})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": respondent})
 
 }
 
@@ -250,6 +250,7 @@ func UpdateRespondent(c *gin.Context) {
 	companyService := service.GetCompanyService()
 	vehicleService := service.GetVehicleService()
 	respondentService := service.GetRespondentService()
+	respondentRepo := repository.GetRespondentRepository()
 
 	// Validate input
 	var input dto.RespondentUpdateInput
@@ -306,8 +307,14 @@ func UpdateRespondent(c *gin.Context) {
 		return
 	}
 
+	nRespondent, err := respondentRepo.GetById(respondent.ID, "Place", "User", "Vehicle")
+	if nil != err {
+		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
 	message := fmt.Sprintf("Updated respondent \"%s\"", respondent.ID)
-	c.JSON(http.StatusOK, gin.H{"data": respondent, "status": "success", "message": message})
+	c.JSON(http.StatusOK, gin.H{"data": nRespondent, "status": "success", "message": message})
 }
 
 func DeleteRespondent(c *gin.Context) {

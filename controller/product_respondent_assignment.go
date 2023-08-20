@@ -32,6 +32,21 @@ func FindProductRespondentAssignments(c *gin.Context) {
 
 	query := model.DB.Preload("Respondent").Preload("Product") //.Preload("Place")
 
+	if product_id := c.Query("product_id"); product_id != "" {
+		productID, err := uuid.Parse(product_id)
+		if nil != err {
+			message := fmt.Sprintf("Error parsing product_id[%s] query: %s", product_id, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		if _, err := placeRepo.GetById(productID); err != nil {
+			message := fmt.Sprintf("Could not find referenced place[%s]: %s", productID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		query = query.Where("product_id = ?", productID)
+	}
+
 	if place_id := c.Query("place_id"); place_id != "" {
 		placeID, err := uuid.Parse(place_id)
 		if nil != err {
@@ -44,13 +59,13 @@ func FindProductRespondentAssignments(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
-		query = query.Where("place_id = ?", placeID)
+		query = query.Joins("Product").Where("place_id = ?", placeID)
 	}
 
-	if repondent_id := c.Query("repondent_id"); repondent_id != "" {
-		respondentID, err := uuid.Parse(repondent_id)
+	if respondent_id := c.Query("respondent_id"); respondent_id != "" {
+		respondentID, err := uuid.Parse(respondent_id)
 		if nil != err {
-			message := fmt.Sprintf("Error parsing repondent_id[%s] query: %s", repondent_id, err.Error())
+			message := fmt.Sprintf("Error parsing respondent_id[%s] query: %s", respondent_id, err.Error())
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
@@ -59,7 +74,7 @@ func FindProductRespondentAssignments(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
-		query = query.Where("repondent_id = ?", respondentID)
+		query = query.Where("respondent_id = ?", respondentID)
 	}
 
 	if err := query.Scopes(pagination.Paginate(assignments, &page, query)).Find(&assignments).Error; nil != err {

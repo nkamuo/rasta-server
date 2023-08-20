@@ -31,7 +31,7 @@ func FindRespondentSessions(c *gin.Context) {
 		return
 	}
 
-	query := model.DB.Preload("Respondent").Preload("Product") //.Preload("Place")
+	query := model.DB.Preload("Respondent").Preload("Assignments").Preload("Assignments.Assignment.Product") //.Preload("Place")
 
 	if place_id := c.Query("place_id"); place_id != "" {
 		placeID, err := uuid.Parse(place_id)
@@ -48,10 +48,10 @@ func FindRespondentSessions(c *gin.Context) {
 		query = query.Where("place_id = ?", placeID)
 	}
 
-	if repondent_id := c.Query("repondent_id"); repondent_id != "" {
-		respondentID, err := uuid.Parse(repondent_id)
+	if respondent_id := c.Query("respondent_id"); respondent_id != "" {
+		respondentID, err := uuid.Parse(respondent_id)
 		if nil != err {
-			message := fmt.Sprintf("Error parsing repondent_id[%s] query: %s", repondent_id, err.Error())
+			message := fmt.Sprintf("Error parsing respondent_id[%s] query: %s", respondent_id, err.Error())
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
@@ -60,7 +60,7 @@ func FindRespondentSessions(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
-		query = query.Where("repondent_id = ?", respondentID)
+		query = query.Where("respondent_id = ?", respondentID)
 	}
 
 	if err := query.Scopes(pagination.Paginate(sessions, &page, query)).Find(&sessions).Error; nil != err {
@@ -78,13 +78,14 @@ func CreateRespondentSession(c *gin.Context) {
 	// productService := service.GetProductService()
 	respondentService := service.GetRespondentService()
 	sessionService := service.GetRespondentSessionService()
+	sessionRepo := repository.GetRespondentSessionRepository()
 	assignmentService := service.GetProductRespondentAssignmentService()
 
-	rUser, err := auth.GetCurrentUser(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
+	// rUser, err := auth.GetCurrentUser(c)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+	// 	return
+	// }
 
 	var input dto.RespondentSessionCreationInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -118,23 +119,44 @@ func CreateRespondentSession(c *gin.Context) {
 		return
 	}
 
-	var crntAssignment model.RespondentSession
-	var existingCount int64
-	err = model.DB.Where("respondent_id = ? AND active = ?", respondant.ID, true).Model(&crntAssignment).Count(&existingCount).Error
-	if nil != err {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		return
+	// var crntAssignment model.RespondentSession
+	// var existingCount int64
+	// err = model.DB.Where("respondent_id = ? AND active = ?", respondant.ID, true).Model(&crntAssignment).Count(&existingCount).Error
+	// if nil != err {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+	// 	return
 
-	}
+	// }
 
-	if existingCount > 0 {
-		message := fmt.Sprintf(
-			"There is already an active session for \"%v\"",
-			user.FullName(),
-		)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-		return
+	// if existingCount > 0 {
+	// 	message := fmt.Sprintf(
+	// 		"There is already an active session for \"%v\"",
+	// 		user.FullName(),
+	// 	)
+	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	// 	return
 
+	// }
+
+	crntSession, err := sessionRepo.GetActiveByRespondent(*respondant)
+	if err != nil {
+		if err.Error() != "record not found" {
+			message := fmt.Sprintf(
+				"There was an error searching active session for \"%v\"",
+				user.FullName(),
+			)
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+	} else {
+		if err := sessionService.Close(crntSession); err != nil {
+			message := fmt.Sprintf(
+				"There was an error closing active session for \"%v\"",
+				user.FullName(),
+			)
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
 	}
 
 	var assignedProducts []model.RespondentSessionAssignedProduct
@@ -175,11 +197,17 @@ func CreateRespondentSession(c *gin.Context) {
 		Description:         input.Description,
 	}
 
-	if *rUser.IsAdmin {
-		session.Active = &input.Active
+	if input.Active != nil {
+		session.Active = input.Active
 	} else {
-
+		*session.Active = true
 	}
+
+	// if *rUser.IsAdmin {
+	// 	session.Active = input.Active
+	// } else {
+
+	// }
 
 	// fmt.Printf("Input USer ID: %s\n user.ID: %s\n session.UserId: %s\n", input.UserId, user.ID, session.UserID)
 
@@ -202,6 +230,31 @@ func FindRespondentSession(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find session with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": session})
+}
+
+func FindCurrentRespondentSession(c *gin.Context) {
+	respondentRepo := repository.GetRespondentRepository()
+	sessionRepo := repository.GetRespondentSessionRepository()
+
+	requestingUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	respondant, err := respondentRepo.GetByUser(*requestingUser)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	session, err := sessionRepo.GetActiveByRespondent(*respondant, "Assignments", "Assignments.Assignment", "Assignments.Assignment.Product")
+	if nil != err {
+		message := fmt.Sprintf("Could not find active session for respondent[id:%s]", respondant.ID)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": session})
 }

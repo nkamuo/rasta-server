@@ -14,8 +14,8 @@ type RespondentSessionAssignedProduct struct {
 	SessionID *uuid.UUID         `gorm:"not null" json:"sessionId,omitempty"`
 	Session   *RespondentSession `gorm:"foreignKey:SessionID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"session,omitempty"` // BelongsToMany Association - These mappings may be optional
 	//Product OF THE REPSONDANT
-	AssignmentID *uuid.UUID                        `gorm:"not null" json:"productId,omitempty"`
-	Assignment   *RespondentSessionAssignedProduct `gorm:"foreignKey:AssignmentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"assignment,omitempty"` // BelongsToMany Association - These mappings may be optional
+	AssignmentID *uuid.UUID                   `gorm:"not null" json:"assignmentId,omitempty"`
+	Assignment   *ProductRespondentAssignment `gorm:"foreignKey:AssignmentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"assignment,omitempty"` // BelongsToMany Association - These mappings may be optional
 	//TOGGLES
 	Active *bool `gorm:"default:false;not null" json:"active"`
 	//DOCUMENTATION
