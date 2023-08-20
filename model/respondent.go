@@ -24,7 +24,7 @@ type Respondent struct {
 	CompanyID *uuid.UUID `gorm:"" json:"companyId,omitempty"`
 	Company   *Company   `gorm:"foreignKey:CompanyID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"company,omitempty"`
 	// PLACE THE RESPONDENT CAN OPERATE IN
-	PlaceID *uuid.UUID `gorm:"unique" json:"placeId,omitempty"`
+	PlaceID *uuid.UUID `gorm:"" json:"placeId,omitempty"`
 	Place   *Place     `gorm:"foreignKey:PlaceID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"place,omitempty"`
 	// TIMESTAMPS
 	CreatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`

@@ -23,11 +23,11 @@ func GetRespondentRepository() RespondentRepository {
 type RespondentRepository interface {
 	FindAll(page int, limit int) (respondents []model.Respondent, total int64, err error)
 	FindAllByCompanyID(companyID uuid.UUID, page int, limit int) (respondents []model.Respondent, total int64, err error)
-	GetById(id uuid.UUID) (respondent *model.Respondent, err error)
-	GetByEmail(email string) (respondent *model.Respondent, err error)
-	GetByPhone(phone string) (respondent *model.Respondent, err error)
-	GetByUser(user model.User) (respondent *model.Respondent, err error)
-	GetByUserId(userID uuid.UUID) (respondent *model.Respondent, err error)
+	GetById(id uuid.UUID, preload ...string) (respondent *model.Respondent, err error)
+	GetByEmail(email string, preload ...string) (respondent *model.Respondent, err error)
+	GetByPhone(phone string, preload ...string) (respondent *model.Respondent, err error)
+	GetByUser(user model.User, preload ...string) (respondent *model.Respondent, err error)
+	GetByUserId(userID uuid.UUID, preload ...string) (respondent *model.Respondent, err error)
 	Save(respondent *model.Respondent) (err error)
 	Delete(respondent *model.Respondent) (error error)
 	DeleteById(id uuid.UUID) (respondent *model.Respondent, err error)
@@ -71,38 +71,63 @@ func (repo *respondentRepository) FindAllByCompanyID(companyID uuid.UUID, page i
 	return
 }
 
-func (repo *respondentRepository) GetById(id uuid.UUID) (respondent *model.Respondent, err error) {
-	if err = model.DB.First(&respondent, "respondents.id = ?", id).Error; err != nil {
+func (repo *respondentRepository) GetById(id uuid.UUID, preload ...string) (respondent *model.Respondent, err error) {
+
+	query := model.DB
+	for _, pLoad := range preload {
+		query = query.Preload(pLoad)
+	}
+
+	if err = query.First(&respondent, "respondents.id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return respondent, nil
 }
 
-func (repo *respondentRepository) GetByEmail(email string) (respondent *model.Respondent, err error) {
-	if err = model.DB.Where("email = ?", email).First(&respondent).Error; err != nil {
+func (repo *respondentRepository) GetByEmail(email string, preload ...string) (respondent *model.Respondent, err error) {
+	query := model.DB
+
+	for _, pLoad := range preload {
+		query = query.Preload(pLoad)
+	}
+
+	if err = query.Where("email = ?", email).First(&respondent).Error; err != nil {
 		return nil, err
 	}
 	return respondent, nil
 }
 
-func (repo *respondentRepository) GetByPhone(phone string) (respondent *model.Respondent, err error) {
-	if err = model.DB.Where("phone = ?", phone).First(&respondent).Error; err != nil {
+func (repo *respondentRepository) GetByPhone(phone string, preload ...string) (respondent *model.Respondent, err error) {
+
+	query := model.DB
+	for _, pLoad := range preload {
+		query = query.Preload(pLoad)
+	}
+
+	if err = query.Where("phone = ?", phone).First(&respondent).Error; err != nil {
 		return nil, err
 	}
 	return respondent, nil
 }
 
-func (repo *respondentRepository) GetByUserId(userId uuid.UUID) (respondent *model.Respondent, err error) {
-	if err = model.DB.
+func (repo *respondentRepository) GetByUserId(userId uuid.UUID, preload ...string) (respondent *model.Respondent, err error) {
+
+	query := model.DB.
 		Joins("JOIN users on users.id = respondents.user_id").
-		Where("users.id = ?", userId).First(&respondent).Error; err != nil {
+		Where("users.id = ?", userId)
+
+	for _, pLoad := range preload {
+		query = query.Preload(pLoad)
+	}
+
+	if err = query.First(&respondent).Error; err != nil {
 		return nil, err
 	}
 	return respondent, nil
 }
 
-func (repo *respondentRepository) GetByUser(user model.User) (respondent *model.Respondent, err error) {
-	return repo.GetByUserId(user.ID)
+func (repo *respondentRepository) GetByUser(user model.User, preload ...string) (respondent *model.Respondent, err error) {
+	return repo.GetByUserId(user.ID, preload...)
 }
 
 func (repo *respondentRepository) Save(respondent *model.Respondent) (err error) {

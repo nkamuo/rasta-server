@@ -30,7 +30,22 @@ func FindProductRespondentAssignments(c *gin.Context) {
 		return
 	}
 
-	query := model.DB.Preload("Respondent")
+	query := model.DB.Preload("Respondent").Preload("Product") //.Preload("Place")
+
+	if product_id := c.Query("product_id"); product_id != "" {
+		productID, err := uuid.Parse(product_id)
+		if nil != err {
+			message := fmt.Sprintf("Error parsing product_id[%s] query: %s", product_id, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		if _, err := placeRepo.GetById(productID); err != nil {
+			message := fmt.Sprintf("Could not find referenced place[%s]: %s", productID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		query = query.Where("product_id = ?", productID)
+	}
 
 	if place_id := c.Query("place_id"); place_id != "" {
 		placeID, err := uuid.Parse(place_id)
@@ -44,13 +59,13 @@ func FindProductRespondentAssignments(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
-		query = query.Where("place_id = ?", placeID)
+		query = query.Joins("Product").Where("place_id = ?", placeID)
 	}
 
-	if repondent_id := c.Query("repondent_id"); repondent_id != "" {
-		respondentID, err := uuid.Parse(repondent_id)
+	if respondent_id := c.Query("respondent_id"); respondent_id != "" {
+		respondentID, err := uuid.Parse(respondent_id)
 		if nil != err {
-			message := fmt.Sprintf("Error parsing repondent_id[%s] query: %s", repondent_id, err.Error())
+			message := fmt.Sprintf("Error parsing respondent_id[%s] query: %s", respondent_id, err.Error())
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
@@ -59,7 +74,7 @@ func FindProductRespondentAssignments(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
-		query = query.Where("repondent_id = ?", respondentID)
+		query = query.Where("respondent_id = ?", respondentID)
 	}
 
 	if err := query.Scopes(pagination.Paginate(assignments, &page, query)).Find(&assignments).Error; nil != err {
@@ -72,12 +87,13 @@ func FindProductRespondentAssignments(c *gin.Context) {
 
 func CreateProductRespondentAssignment(c *gin.Context) {
 
+	userService := service.GetUserService()
 	placeService := service.GetPlaceService()
 	productService := service.GetProductService()
 	respondentService := service.GetRespondentService()
 	assignmentService := service.GetProductRespondentAssignmentService()
 
-	user, err := auth.GetCurrentUser(c)
+	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
@@ -109,6 +125,12 @@ func CreateProductRespondentAssignment(c *gin.Context) {
 		return
 	}
 
+	user, err := userService.GetById(*respondant.UserID)
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
 	var crntAssignment model.ProductRespondentAssignment
 	var existingCount int64
 	err = model.DB.Where("product_id = ? AND respondent_id = ?", product.ID, respondant.ID).Model(&crntAssignment).Count(&existingCount).Error
@@ -122,7 +144,7 @@ func CreateProductRespondentAssignment(c *gin.Context) {
 	if existingCount > 0 {
 		message := fmt.Sprintf(
 			"There is already an assignment for \"%v\" on \"%v\" in \"%v\"",
-			respondant.User.FullName(),
+			user.FullName(),
 			product.Label,
 			place.Name,
 		)
@@ -133,15 +155,15 @@ func CreateProductRespondentAssignment(c *gin.Context) {
 
 	// Create assignment
 	assignment := model.ProductRespondentAssignment{
-		ProductID:    product.ID,
-		RespondentID: respondant.ID,
+		ProductID:    &product.ID,
+		RespondentID: &respondant.ID,
 		Note:         input.Note,
 		Description:  input.Description,
 	}
 
-	if *user.IsAdmin {
-		assignment.Active = input.Active
-		assignment.AllowRespondentActivate = input.AllowRespondentActivate
+	if *rUser.IsAdmin {
+		assignment.Active = &input.Active
+		assignment.AllowRespondentActivate = &input.AllowRespondentActivate
 	} else {
 
 	}
@@ -174,14 +196,20 @@ func FindProductRespondentAssignment(c *gin.Context) {
 func UpdateProductRespondentAssignment(c *gin.Context) {
 	assignmentService := service.GetProductRespondentAssignmentService()
 
-	var requestBody map[string]interface{}
-	if err := c.Copy().BindJSON(&requestBody); err != nil {
+	var input dto.ProductRespondentAssignmentUpdateInput
+	if err := c.Copy().ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
 	// var input dto.ProductRespondentAssignmentUpdateInput
 	// mapstructure.Decode(requestBody, input)
+
+	requestingUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -192,17 +220,27 @@ func UpdateProductRespondentAssignment(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find assignment with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
 
-	if note, ok := requestBody["note"]; ok {
-		assignment.Note = note.(string)
+	if input.Note != nil {
+		assignment.Note = *input.Note
 	}
-	if description, ok := requestBody["description"]; ok {
-		assignment.Description = description.(string)
+	if input.Description != nil {
+		assignment.Description = *input.Description
 	}
 
-	if active, ok := requestBody["active"]; ok {
-		assignment.Active = active.(bool)
+	if input.Active != nil {
+		assignment.Active = input.Active
+	}
+
+	if input.AllowRespondentActivate != nil {
+		if !*requestingUser.IsAdmin {
+			message := fmt.Sprintf("Invalid Request: You may not specify the \"AllowRespondentActivate\" option")
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		assignment.Active = input.Active
 	}
 
 	if err := assignmentService.Save(assignment); nil != err {

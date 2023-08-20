@@ -52,6 +52,8 @@ func main() {
 	api.Use(middleware.JwtAuthMiddleware())
 	api.GET("/me", controller.GetCurrentUser)
 	api.GET("/me/respondent", controller.GetCurrentRespondent)
+	api.GET("/me/respondent/session", controller.FindCurrentRespondentSession)
+	api.GET("/me/respondent/session/requests", controller.FindAvailableOrdersForRespondent)
 
 	api.GET("/products", controller.FindProducts)
 	api.GET("/products/find_by_category_and_location", controller.FindProductByCategoryAndLocation)
@@ -81,6 +83,12 @@ func main() {
 	api.POST("/respondents", controller.CreateRespondent)
 	api.PATCH("/respondents/:id", controller.UpdateRespondent)
 	api.DELETE("/respondents/:id", controller.DeleteRespondent)
+
+	api.GET("/respondent_sessions", controller.FindRespondentSessions)
+	api.GET("/respondent_sessions/:id", controller.FindRespondentSessions)
+	api.POST("/respondent_sessions", controller.CreateRespondentSession)
+	api.PATCH("/respondent_sessions/:id", controller.UpdateRespondentSession)
+	api.DELETE("/respondent_sessions/:id", controller.DeleteRespondentSession)
 
 	//RESPONDENT REVIEWS
 	api.GET("/respondent_service_reviews", controller.FindRespondentServiceReviews)
