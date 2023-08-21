@@ -7,7 +7,7 @@ import (
 
 type OrderPayment struct {
 	ID     uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
-	Status string    `gorm:"not null;varchar(16)" json:"status,omitempty"`
+	Status string    `gorm:"type:varchar(32);not null;" json:"status,omitempty"`
 	Amount int64     `json:"amount,omitempty"`
 	// Code        string    `gorm:"not null;varchar(32)" json:"code,omitempty"`
 	Title       string  `gorm:"varchar(64)" json:"title,omitempty"`

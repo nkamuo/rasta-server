@@ -89,6 +89,7 @@ func FindCompany(c *gin.Context) {
 	if err = model.DB.Where("id = ?", id).Preload("OperatorUser").First(&company).Error; nil != err {
 		message := fmt.Sprintf("Could not find company with [id:%s]: %s", id, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": company})
 }

@@ -200,7 +200,8 @@ func CreateRespondentSession(c *gin.Context) {
 	if input.Active != nil {
 		session.Active = input.Active
 	} else {
-		*session.Active = true
+		var _true = true
+		session.Active = &_true
 	}
 
 	// if *rUser.IsAdmin {
@@ -230,7 +231,32 @@ func FindRespondentSession(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find session with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": session})
+}
+
+func CloseRespondentSession(c *gin.Context) {
+	sessionService := service.GetRespondentSessionService()
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+	session, err := sessionService.GetById(id)
+	if nil != err {
+		message := fmt.Sprintf("Could not find session with [id:%s]", id)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if err := sessionService.Close(session); nil != err {
+		message := fmt.Sprintf("Could not close session [id:%s]: %s", id, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": session})
 }
 

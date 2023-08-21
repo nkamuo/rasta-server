@@ -28,5 +28,6 @@ type RequestVehicleInformationInput struct {
 	Make               *string    `json:"make"`
 	Model              *string    `json:"model"`
 	Color              *string    `json:"color"`
+	LicensePlateNumber *string    `json:"licensePlateNumber"`
 	VehicleDescription *string    `json:"vehicleDescription"`
 }

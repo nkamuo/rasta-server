@@ -13,9 +13,10 @@ type RequestVehicleInfo struct {
 	ModelID *uuid.UUID    `gorm:"" json:"modelId,omitempty"`
 	Model   *VehicleModel `gorm:"foreignKey:ModelID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"model,omitempty"`
 
-	MakeName  *string `gorm:"" json:"makeName,omitempty"`
-	ModelName *string `gorm:"" json:"modelName,omitempty"`
-	BodyColor *string `gorm:"" json:"bodyColor,omitempty"`
+	MakeName           *string `gorm:"" json:"makeName,omitempty"`
+	ModelName          *string `gorm:"" json:"modelName,omitempty"`
+	BodyColor          *string `gorm:"" json:"bodyColor,omitempty"`
+	LicensePlateNumber *string `gorm:"" json:"licensePlateNumber,omitempty"`
 
 	Description *string   `gorm:"" json:"description,omitempty"`
 	CreatedAt   time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`

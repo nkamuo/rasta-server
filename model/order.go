@@ -9,6 +9,18 @@ import (
 	"gorm.io/gorm"
 )
 
+type OrderStatus string
+
+const (
+	ORDER_STATUS_PENDING              OrderStatus = "pending"
+	ORDER_STATUS_RESPONDENT_ASSIGNED  OrderStatus = "respondent_assigned"
+	ORDER_STATUS_RESPONDENT_ARRIVED   OrderStatus = "respondent_arrived"
+	ORDER_STATUS_RESPONDENT_CONFIRMED OrderStatus = "respondent_confirmed"
+	ORDER_STATUS_RESPONDENT_REJECTED  OrderStatus = "respondent_rejected"
+	ORDER_STATUS_CANCELLED            OrderStatus = "cancelled"
+	ORDER_STATUS_COMPLETED            OrderStatus = "completed"
+)
+
 type Order struct {
 	ID               uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
 	Code             string    `gorm:"" json:"code"`
@@ -19,7 +31,8 @@ type Order struct {
 	Items       *[]Request        `gorm:"foreignKey:OrderID"`
 	Adjustments []OrderAdjustment `gorm:"foreignKey:OrderID"`
 
-	Status string `json:"status,omitempty"`
+	//
+	Status OrderStatus `gorm:"type:varchar(32);not null;default:'pending'" json:"status,omitempty"`
 
 	//ASSOCIATED USER ACCOUNT
 	UserID *uuid.UUID `gorm:"" json:"userId,omitempty"`
@@ -31,9 +44,9 @@ type Order struct {
 
 	//Payment Method
 	PaymentID *uuid.UUID    `gorm:"" json:"paymentId,omitempty"`
-	Payment   *OrderPayment `gorm:"foreignKey:PaymentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"payment,omitempty"`
+	Payment   *OrderPayment ` json:"payment,omitempty"` //gorm:"foreignKey:PaymentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"
 
-	//TIMESTAMPs
+	//TIMESTAMPS
 	CheckoutCompletedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"checkoutCompletedAt,omitempty"`
 	CreatedAt           time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
 	UpdatedAt           time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`

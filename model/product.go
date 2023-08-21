@@ -14,8 +14,8 @@ type Product struct {
 	Label       string          `gorm:"type:varchar(128);not null" json:"label,omitempty"`
 	Title       string          `gorm:"type:varchar(255);not null" json:"title,omitempty"`
 	Description string          `gorm:"not null" json:"description,omitempty"`
-	Category    ProductCategory `gorm:"varchar(100)" json:"category,omitempty"`
-	PlaceID     uuid.UUID       `gorm:"" json:"placeId,omitempty"`
+	Category    ProductCategory `gorm:"type:varchar(100);not null;uniqueIndex:UNIQUE_PLACE_PRODUCT_CATEGORY" json:"category,omitempty"`
+	PlaceID     uuid.UUID       `gorm:"uniqueIndex:UNIQUE_PLACE_PRODUCT_CATEGORY" json:"placeId,omitempty"`
 	Place       *Place          `gorm:"foreignKey:PlaceID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"place,omitempty"` // BelongsToMany Association - These mappings may be optional
 	Rate        uint64          `gorm:"" json:"rate,omitempty"`
 	Bundled     *bool           `gorm:"default:false;not null" json:"bundled"` //Tells that the rate specified when ordering this item applies for all the quantity and not each

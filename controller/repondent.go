@@ -224,6 +224,7 @@ func FindRespondent(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find respondent with [id:%s]: %s", id, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": respondent})
 }

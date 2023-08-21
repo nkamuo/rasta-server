@@ -89,6 +89,7 @@ func main() {
 	api.POST("/respondent_sessions", controller.CreateRespondentSession)
 	api.PATCH("/respondent_sessions/:id", controller.UpdateRespondentSession)
 	api.DELETE("/respondent_sessions/:id", controller.DeleteRespondentSession)
+	api.POST("/respondent_sessions/:id/close", controller.CloseRespondentSession)
 
 	//RESPONDENT REVIEWS
 	api.GET("/respondent_service_reviews", controller.FindRespondentServiceReviews)

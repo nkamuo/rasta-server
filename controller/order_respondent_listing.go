@@ -45,10 +45,10 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 	}
 
 	query := model.DB.
-		Preload("Order")
-		// .Preload("Order.Items").
-		// Preload("Order.User").Preload("Order.Items.Origin").Preload("Order.Items.Destination").
-		// Preload("FuelTypeInfo").Preload("VehicleInfo")
+		Preload("Order").
+		Preload("Order.Items").Preload("Order.Items.Product").
+		Preload("Order.User").Preload("Order.Items.Origin").Preload("Order.Items.Destination").
+		Preload("FuelTypeInfo").Preload("VehicleInfo")
 	// Preload("Origin").Preload("Destination")
 
 	//THE ASSIGNMENTS THIS RESPONDENT's SESSION IS CURRENTLY RESPONDING TO
@@ -81,6 +81,6 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 		orders = make([]model.Order, 0)
 	}
 
-	page.Rows = requests
+	page.Rows = orders
 	c.JSON(http.StatusOK, gin.H{"data": page})
 }

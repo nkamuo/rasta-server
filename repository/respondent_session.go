@@ -57,8 +57,8 @@ func (repo *sessionRepository) GetById(id uuid.UUID) (session *model.RespondentS
 }
 
 func (repo *sessionRepository) GetActiveByRespondent(respondent model.Respondent, prefetch ...string) (session *model.RespondentSession, err error) {
-	query := model.DB.Preload("Assignments.Assignment.Product").
-		Where("respondent_id = ? AND active = ? AND ended_at IS NULL", respondent.ID, true)
+	query := model.DB //.Preload("Assignments.Assignment.Product").
+	query = query.Where("respondent_id = ? AND active = ? AND ended_at IS NULL", respondent.ID, true)
 
 	for _, pFetch := range prefetch {
 		query = query.Preload(pFetch)

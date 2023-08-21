@@ -333,32 +333,23 @@ func buildRequest(input dto.RequestInput, requestingUser *model.User) (Request *
 		}
 	}
 
+	if nil == input.VehicleInfo {
+		return nil, errors.New("You have to provide vehicle Information")
+	}
+	vehicleInfo, err = buildVehicleInfo(*input.VehicleInfo)
+	if err != nil {
+		return nil, err
+	}
+
 	switch product.Category {
 	case model.PRODUCT_FLAT_TIRE_SERVICE:
 
-		if nil == input.VehicleInfo {
-			return nil, errors.New("You have to provide vehicle Information")
-		}
-		if nil == input.VehicleInfo.VehicleDescription {
-			return nil, errors.New("You have to provide some description about flat tire service")
-		}
-		if dLength := len(*input.VehicleInfo.VehicleDescription); 20 > dLength || dLength > 500 {
-			return nil, errors.New("Description must be upto 20 and less than 500 charachers")
-		}
 		break
 
 	case model.PRODUCT_TOWING_SERVICE:
 
 		if origin == nil || destination == nil {
 			return nil, errors.New(fmt.Sprintf("Origin and Destination are requried for %v", model.PRODUCT_TOWING_SERVICE))
-		}
-
-		if nil == input.VehicleInfo {
-			return nil, errors.New("You have to provide vehicle Information")
-		}
-		vehicleInfo, err = buildVehicleInfo(*input.VehicleInfo)
-		if err != nil {
-			return nil, err
 		}
 
 		distanceInfo, err := locationService.GetDistance(origin, destination)
@@ -433,9 +424,10 @@ func buildVehicleInfo(input dto.RequestVehicleInformationInput) (vehicleInfo *mo
 	// }
 
 	return &model.RequestVehicleInfo{
-		MakeName:  input.Make,
-		ModelName: input.Model,
-		BodyColor: input.Color,
+		MakeName:           input.Make,
+		ModelName:          input.Model,
+		BodyColor:          input.Color,
+		LicensePlateNumber: input.LicensePlateNumber,
 	}, nil
 
 }
