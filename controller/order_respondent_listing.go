@@ -1,12 +1,15 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/nkamuo/rasta-server/data/pagination"
+	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
+	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
 
 	"github.com/gin-gonic/gin"
@@ -16,9 +19,11 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 
 	respondentRepo := repository.GetRespondentRepository()
 	sessionRepo := repository.GetRespondentSessionRepository()
+	locationService := service.GetLocationService()
 
 	var requests []model.Request
 	var orders []model.Order
+	var result []dto.RespondentOrderEntryIOutput
 	var page pagination.Page
 	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
@@ -74,13 +79,66 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 		return
 	}
 
+	currentCoords := session.CurrentCoordinates
+
+	if nil == currentCoords {
+		currentCoords = &session.StartingCoordinates
+	}
+
+	curntLocation, err := model.CreateLocationFromCoordinates(currentCoords.Latitude, currentCoords.Longitude)
+
 	for _, request := range requests {
-		orders = append(orders, *request.Order)
+		// orders = append(orders, *request.Order)
+
+		order := request.Order
+		location, err := getOrderPrimaryLocation(*order)
+
+		var entry = dto.RespondentOrderEntryIOutput{
+			Order: *order,
+		}
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+
+		routingInfo, err := locationService.GetDistance(curntLocation, location)
+
+		if nil != err {
+
+		} else {
+			entry.Routing = *routingInfo
+		}
+
+		result = append(result, entry)
+
 	}
 	if orders == nil {
 		orders = make([]model.Order, 0)
 	}
+	if result == nil {
+		result = make([]dto.RespondentOrderEntryIOutput, 0)
+	}
 
-	page.Rows = orders
+	page.Rows = result
 	c.JSON(http.StatusOK, gin.H{"data": page})
+}
+
+func getOrderPrimaryLocation(order model.Order) (location *model.Location, err error) {
+
+	if len(*order.Items) < 1 {
+		return nil, errors.New("Order must have at least one Item")
+	}
+	item := (*order.Items)[0]
+
+	if item.Origin != nil {
+		return item.Origin, nil
+	}
+
+	if item.Destination != nil {
+		return item.Destination, nil
+	}
+
+	return nil, errors.New("Order Item must have destination")
+
 }

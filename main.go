@@ -39,7 +39,7 @@ func main() {
 	model.ConnectDatabase(&config)
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:56145"}
+	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:3000"}
 	corsConfig.AddAllowHeaders("Authorization")
 	// config.AllowOrigins = []string{"http://google.com", "http://facebook.com"}
 	// config.AllowAllOrigins = true
@@ -47,14 +47,25 @@ func main() {
 	r.Use(cors.New(corsConfig))
 
 	api := r.Group("/api")
+
+	// PUBLIC ENDPOINTS
 	api.POST("/register", controller.Register)
 	api.POST("/login", controller.Login)
+
+	api.GET("/motorist_request_situations", controller.FindMotoristRequestSituations)
+	api.GET("/motorist_request_situations/:id", controller.FindMotoristRequestSituation)
+	api.POST("/motorist_request_situations", controller.CreateMotoristRequestSituation)
+	api.PATCH("/motorist_request_situations/:id", controller.UpdateMotoristRequestSituation)
+	api.DELETE("/motorist_request_situations/:id", controller.DeleteMotoristRequestSituation)
+
+	// AUTHENTICATION MIDDLEWARE
 	api.Use(middleware.JwtAuthMiddleware())
 	api.GET("/me", controller.GetCurrentUser)
 	api.GET("/me/respondent", controller.GetCurrentRespondent)
 	api.GET("/me/respondent/session", controller.FindCurrentRespondentSession)
 	api.GET("/me/respondent/session/requests", controller.FindAvailableOrdersForRespondent)
 
+	//PROTECTED ENDPOINTS
 	api.GET("/products", controller.FindProducts)
 	api.GET("/products/find_by_category_and_location", controller.FindProductByCategoryAndLocation)
 	api.GET("/products/:id", controller.FindProduct)
@@ -83,13 +94,6 @@ func main() {
 	api.POST("/respondents", controller.CreateRespondent)
 	api.PATCH("/respondents/:id", controller.UpdateRespondent)
 	api.DELETE("/respondents/:id", controller.DeleteRespondent)
-
-	api.GET("/respondent_sessions", controller.FindRespondentSessions)
-	api.GET("/respondent_sessions/:id", controller.FindRespondentSessions)
-	api.POST("/respondent_sessions", controller.CreateRespondentSession)
-	api.PATCH("/respondent_sessions/:id", controller.UpdateRespondentSession)
-	api.DELETE("/respondent_sessions/:id", controller.DeleteRespondentSession)
-	api.POST("/respondent_sessions/:id/close", controller.CloseRespondentSession)
 
 	//RESPONDENT REVIEWS
 	api.GET("/respondent_service_reviews", controller.FindRespondentServiceReviews)
@@ -132,6 +136,8 @@ func main() {
 	api.GET("/locations", controller.FindLocations)
 	api.GET("/locations/:id", controller.FindLocation)
 	api.GET("/locations/distance", controller.ResolveDistanceMatrix)
+	api.GET("/locations/resolve", controller.ResolveLocation)
+	api.GET("/locations/resolve_by_ip", controller.ResolveLocationByIPAddress)
 	api.DELETE("/locations/:id", controller.DeleteLocation)
 
 	api.GET("/product_respondent_assignments", controller.FindProductRespondentAssignments)

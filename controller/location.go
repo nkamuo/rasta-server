@@ -123,6 +123,37 @@ func FindLocation(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find location with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": location})
+}
+
+func ResolveLocation(c *gin.Context) {
+	locationService := service.GetLocationService()
+
+	location_ref := c.Query("location")
+	if location_ref == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Please provide \"location\" query parameter"})
+		return
+	}
+	location, err := locationService.Search(location_ref)
+	if nil != err {
+		message := fmt.Sprintf("Could not resolve location[%s]", location_ref)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": location})
+}
+
+func ResolveLocationByIPAddress(c *gin.Context) {
+	locationService := service.GetLocationService()
+
+	ipAddress := c.Copy().RemoteIP()
+	location, err := locationService.SearchByIpAddress(ipAddress)
+	if nil != err {
+		message := fmt.Sprintf("Could not resolve location by IpAddress[%s]: %s", ipAddress, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": location})
 }

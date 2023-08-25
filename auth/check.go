@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/utils/token"
@@ -28,7 +30,8 @@ func LoginCheck(user model.User, password string) (authToken string, err error) 
 	err = VerifyPassword(password, userPassword.HashedPassword)
 
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
-		return "", err
+		// return "", err
+		return "", errors.New("username or password not correct")
 	}
 
 	authToken, err = token.GenerateToken(user.ID)

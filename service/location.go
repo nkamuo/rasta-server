@@ -3,6 +3,8 @@ package service
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
 	"sync"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/utils/geo"
 	"github.com/nkamuo/rasta-server/utils/slug"
+	"github.com/tidwall/gjson"
 )
 
 var locationService LocationService
@@ -33,6 +36,7 @@ type LocationService interface {
 	GetById(id uuid.UUID) (location *model.Location, err error)
 	Resolve(data string) (location *model.Location, err error)
 	Search(data string) (location *model.Location, err error)
+	SearchByIpAddress(data string) (location *model.Location, err error)
 	AssertLocationWithinPlace(location *model.Location, place *model.Place) (err error)
 	ResolveDistanceMatrix(origin *model.Location, destination *model.Location) (response *geo.DistanceMatrixResponse, err error)
 	GetDistance(origin *model.Location, destination *model.Location) (element *geo.DistanceMatrixElement, err error)
@@ -85,6 +89,32 @@ func (service *locationServiceImpl) Resolve(input string) (location *model.Locat
 		return nil, err
 	}
 	return location, err
+}
+
+func (service *locationServiceImpl) SearchByIpAddress(ip string) (location *model.Location, err error) {
+
+	url := fmt.Sprintf("https://ipinfo.io/%s/json", ip)
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return
+	}
+
+	bodyString := string(bodyBytes)
+
+	jsonData := gjson.Parse(bodyString)
+	lat := jsonData.Get("lat").Float()
+	lon := jsonData.Get("lon").Float()
+
+	var reference = fmt.Sprintf("%f,%f", lat, lon)
+	return service.Search(reference)
+
 }
 
 func (service *locationServiceImpl) Search(input string) (location *model.Location, err error) {

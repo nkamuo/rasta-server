@@ -20,6 +20,7 @@ type RespondentSession struct {
 	Description string `gorm:"not null" json:"description,omitempty"`
 	//
 	StartingCoordinates LocationCoordinates                `gorm:"embedded;columnPrefix:starting_coords_" json:"startingCoords"`
+	CurrentCoordinates  *LocationCoordinates               `gorm:"embedded;columnPrefix:current_coords_" json:"currentCoords"`
 	Assignments         []RespondentSessionAssignedProduct `gorm:"foreignKey:SessionID" json:"assignments"`
 	// Assignments         []ProductRespondentAssignment `gorm:"many2many:respondent_session_active_product_assignments;"`
 	// TIMESTAMPS

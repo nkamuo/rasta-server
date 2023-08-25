@@ -50,3 +50,13 @@ func (location Location) GetReference() (ref string) {
 	}
 	return location.Address
 }
+
+func CreateLocationFromCoordinates(latitude, longitude float32) (location *Location, err error) {
+	return &Location{
+		Coordinates: &LocationCoordinates{
+			Latitude:  latitude,
+			Longitude: longitude,
+		},
+	}, nil
+
+}
