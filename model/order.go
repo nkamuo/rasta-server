@@ -28,8 +28,8 @@ type Order struct {
 	AdjustmentsTotal int64     `json:"adjustmentTotal,omitempty"`
 	Total            uint64    `json:"total,omitempty"`
 
-	Items       *[]Request        `gorm:"foreignKey:OrderID"`
-	Adjustments []OrderAdjustment `gorm:"foreignKey:OrderID"`
+	Items       *[]Request        `gorm:"foreignKey:OrderID" json:"items,omitempty"`
+	Adjustments []OrderAdjustment `gorm:"foreignKey:OrderID" json:"adjustments,omitempty"`
 
 	//
 	Status OrderStatus `gorm:"type:varchar(32);not null;default:'pending'" json:"status,omitempty"`
