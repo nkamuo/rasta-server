@@ -17,3 +17,8 @@ type FuelTypePlaceRateUpdateInput struct {
 	Active      *bool   `json:"active" binding:""`
 	Description *string `json:"description,omitempty" binding:""`
 }
+
+type FuelTypePlaceRateRequestQuery struct {
+	Location   string    `json:"location,omitempty" form:"location" binding:""`
+	FuelTypeID uuid.UUID `json:"fuelTypeId,omitempty" form:"fuelTypeId" binding:"required"`
+}

@@ -126,6 +126,53 @@ func FindFuelTypePlaceRate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": fuelTypePlaceRate})
 }
 
+func FindFuelTypePlaceRateByTypeAndLocation(c *gin.Context) {
+
+	placeRepo := repository.GetPlaceRepository()
+	locationService := service.GetLocationService()
+	fuelTypeService := service.GetFuelTypeService()
+
+	var _query dto.FuelTypePlaceRateRequestQuery
+	if err := c.ShouldBindQuery(&_query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	query := model.DB.Preload("Place")
+
+	location, err := locationService.Search(_query.Location)
+	if err != nil {
+		message := fmt.Sprintf("Could not find the specified location with [id:%s]: %s", _query.Location, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	place, err := placeRepo.GetByLocation(location)
+	if err != nil {
+		message := fmt.Sprintf("Error Resolving Place for location[%s]: %s", *location.Name, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+	query = query.Where("place_id = ?", place.ID)
+
+	fuelType, err := fuelTypeService.GetById(_query.FuelTypeID)
+	if err != nil {
+		message := fmt.Sprintf("Could not find the specified  fuel Type [id:%s]: %s", _query.FuelTypeID, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+	query = query.Where("fuel_type_id = ?", fuelType.ID)
+
+	var fuelTypePlaceRate *model.FuelTypePlaceRate
+
+	if err := query.First(fuelTypePlaceRate).Error; err != nil {
+		message := fmt.Sprintf("Error Resolving rate %s", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": fuelTypePlaceRate, "status": "success"})
+}
+
 func UpdateFuelTypePlaceRate(c *gin.Context) {
 	fuelTypePlaceRateService := service.GetFuelTypePlaceRateService()
 

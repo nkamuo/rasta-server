@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
@@ -14,6 +15,48 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+func RespondentClaimOrder(c *gin.Context) {
+
+	orderService := service.GetOrderService()
+	respondentRepo := repository.GetRespondentRepository()
+	// respondentService := service.GetRespondentService()
+
+	requestingUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Authentication error")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	respondent, err := respondentRepo.GetByUser(*requestingUser)
+	if err != nil {
+		message := fmt.Sprintf("Authentication error")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	order, err := orderService.GetById(id)
+	if err != nil {
+		message := fmt.Sprintf("Could not find Order with [id:%s]", id)
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if err := orderService.AssignResponder(order, respondent); err != nil {
+		message := fmt.Sprintf("Task failed: %s", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success"})
+}
 
 func FindAvailableOrdersForRespondent(c *gin.Context) {
 

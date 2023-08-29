@@ -26,6 +26,7 @@ type OrderService interface {
 	// GetByPhone(phone string) (order *model.Order, err error)
 
 	Process(order *model.Order) (err error)
+	AssignResponder(order *model.Order, responder *model.Respondent) (err error)
 	Save(order *model.Order) (err error)
 	Delete(order *model.Order) (error error)
 }
@@ -40,6 +41,14 @@ func (service *orderServiceImpl) GetById(id uuid.UUID) (order *model.Order, err 
 
 func (service *orderServiceImpl) Save(order *model.Order) (err error) {
 	return service.repo.Save(order)
+}
+
+func (service *orderServiceImpl) AssignResponder(order *model.Order, responder *model.Respondent) (err error) {
+	order.ResponderID = &responder.ID
+	if err := service.Save(order); err != nil {
+		return err
+	}
+	return err
 }
 
 func (service *orderServiceImpl) Process(order *model.Order) (err error) {

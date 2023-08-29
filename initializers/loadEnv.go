@@ -18,6 +18,9 @@ type Config struct {
 
 	GOOGLE_MAPS_API_KEY string `mapstructure:"GOOGLE_MAPS_API_KEY"`
 	STRIPE_SECRET_KEY   string `mapstructure:"STRIPE_SECRET_KEY"`
+	//APP CONFIG
+	APP_URL    string `mapstructure:"APP_URL"`
+	APP_SECRET string `mapstructure:"APP_SECRET"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

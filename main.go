@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/nkamuo/rasta-server/controller"
@@ -14,14 +13,14 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	// "github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatal("Error loading .env file")
+	// }
 
 	s3Bucket := os.Getenv("S3_BUCKET")
 	secretKey := os.Getenv("SECRET_KEY")
@@ -60,10 +59,18 @@ func main() {
 
 	// AUTHENTICATION MIDDLEWARE
 	api.Use(middleware.JwtAuthMiddleware())
+	//AUTHENICATED ENDPOINTS
 	api.GET("/me", controller.GetCurrentUser)
 	api.GET("/me/respondent", controller.GetCurrentRespondent)
 	api.GET("/me/respondent/session", controller.FindCurrentRespondentSession)
 	api.GET("/me/respondent/session/requests", controller.FindAvailableOrdersForRespondent)
+	api.POST("/me/respondent/session/requests/:id/claim", controller.RespondentClaimOrder)
+
+	api.GET("/respondent_sessions", controller.FindRespondentSessions)
+	api.GET("/respondent_sessions/:id", controller.FindRespondentSession)
+	api.POST("/respondent_sessions", controller.CreateRespondentSession)
+	api.PATCH("/respondent_sessions/:id", controller.UpdateRespondentSession)
+	api.DELETE("/respondent_sessions/:id", controller.DeleteRespondentSession)
 
 	//PROTECTED ENDPOINTS
 	api.GET("/products", controller.FindProducts)
@@ -155,6 +162,7 @@ func main() {
 	api.GET("/fuel_type_place_rates", controller.FindFuelTypePlaceRates)
 	api.GET("/fuel_type_place_rates/:id", controller.FindFuelTypePlaceRate)
 	api.POST("/fuel_type_place_rates", controller.CreateFuelTypePlaceRate)
+	api.PATCH("/fuel_type_place_rates/find_by_type_and_location", controller.FindFuelTypePlaceRateByTypeAndLocation)
 	api.PATCH("/fuel_type_place_rates/:id", controller.UpdateFuelTypePlaceRate)
 	api.DELETE("/fuel_type_place_rates/:id", controller.DeleteFuelTypePlaceRate)
 

@@ -11,11 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/service"
 )
 
 func GenerateToken(user_id uuid.UUID) (string, error) {
 
+	appSecret := initializers.CONFIG.APP_SECRET
 	TOKEN_LIFESPAN := os.Getenv("TOKEN_HOUR_LIFESPAN")
 	if "" == TOKEN_LIFESPAN {
 		TOKEN_LIFESPAN = "3600"
@@ -33,8 +35,8 @@ func GenerateToken(user_id uuid.UUID) (string, error) {
 	claims["exp"] = time.Now().Add(time.Hour * time.Duration(token_lifespan)).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString([]byte(os.Getenv("API_SECRET")))
-
+	return token.SignedString([]byte(appSecret))
+	// return token.SignedString([]byte(os.Getenv("API_SECRET")))
 }
 
 func TokenValid(context *gin.Context) error {

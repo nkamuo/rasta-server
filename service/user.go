@@ -1,9 +1,13 @@
 package service
 
 import (
+	"encoding/base64"
+	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"golang.org/x/crypto/bcrypt"
@@ -44,6 +48,26 @@ func (service *userServiceImpl) Save(user *model.User) (err error) {
 }
 
 func (service *userServiceImpl) ValidateEmail(user *model.User) (err error) {
+	return nil
+}
+
+func (service *userServiceImpl) ResetPassword(user *model.User) (err error) {
+
+	requestService := GetUserPasswordResetRequestService()
+	request, err := requestService.GenerateForUser(user)
+	if err != nil {
+		message := fmt.Sprintf("%s", err.Error())
+		return errors.New(message)
+	}
+
+	token := request.Token
+	tokenString := []byte(token)
+	appUrl := initializers.CONFIG.APP_URL
+
+	resetLink := fmt.Sprintf("%s/reset?token=%s", appUrl, base64.URLEncoding.EncodeToString(tokenString))
+
+	fmt.Print(resetLink)
+
 	return nil
 }
 

@@ -38,6 +38,10 @@ type Order struct {
 	UserID *uuid.UUID `gorm:"" json:"userId,omitempty"`
 	User   *User      `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user,omitempty"`
 
+	//REQUESTING USER ACCOUNT
+	ResponderID *uuid.UUID  `gorm:"" json:"responderId,omitempty"`
+	Responder   *Respondent `gorm:"foreignKey:ResponderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"responder,omitempty"`
+
 	//Payment Method
 	PaymentMethodID *uuid.UUID     `gorm:"" json:"paymentMethodId,omitempty"`
 	PaymentMethod   *PaymentMethod `gorm:"foreignKey:PaymentMethodID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"paymentMethod,omitempty"`

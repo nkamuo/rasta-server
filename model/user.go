@@ -27,17 +27,6 @@ type User struct {
 	UpdatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }
 
-type UserPassword struct {
-	ID             uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
-	HashedPassword string    `gorm:"not null" json:"hashedPassword,omit"`
-	//
-	UserID *uuid.UUID `gorm:"unique;not null;" json:"userId,omitempty"`
-	User   *User      `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user,omitempty"`
-	//
-	CreatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
-	UpdatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
-}
-
 func (User *User) BeforeCreate(tx *gorm.DB) (err error) {
 	User.ID = uuid.New()
 	refCode := generateReferralCode()
@@ -61,6 +50,22 @@ func (u *User) PrepareGive() {
 // 	}
 // 	return scope.SetColumn("ID", uuid)
 //    }
+
+type UserPassword struct {
+	ID             uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
+	HashedPassword string    `gorm:"not null" json:"hashedPassword,omit"`
+	//
+	UserID *uuid.UUID `gorm:"unique;not null;" json:"userId,omitempty"`
+	User   *User      `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user,omitempty"`
+	//
+	CreatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
+	UpdatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
+}
+
+func (password *UserPassword) BeforeCreate(tx *gorm.DB) (err error) {
+	password.ID = uuid.New()
+	return nil
+}
 
 func generateReferralCode() string {
 	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
