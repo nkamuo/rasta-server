@@ -31,6 +31,9 @@ func (User *User) BeforeCreate(tx *gorm.DB) (err error) {
 	User.ID = uuid.New()
 	refCode := generateReferralCode()
 	User.ReferralCode = &refCode
+
+	User.CreatedAt = time.Now()
+	User.UpdatedAt = time.Now()
 	return nil
 }
 
@@ -64,6 +67,8 @@ type UserPassword struct {
 
 func (password *UserPassword) BeforeCreate(tx *gorm.DB) (err error) {
 	password.ID = uuid.New()
+	password.CreatedAt = time.Now()
+	password.UpdatedAt = time.Now()
 	return nil
 }
 

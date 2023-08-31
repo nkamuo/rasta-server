@@ -64,6 +64,7 @@ func main() {
 	api.GET("/me/respondent", controller.GetCurrentRespondent)
 	api.GET("/me/respondent/session", controller.FindCurrentRespondentSession)
 	api.GET("/me/respondent/session/requests", controller.FindAvailableOrdersForRespondent)
+	api.GET("/me/respondent/session/requests/:id", controller.FindOrderForRespondent)
 	api.POST("/me/respondent/session/requests/:id/claim", controller.RespondentClaimOrder)
 
 	api.GET("/respondent_sessions", controller.FindRespondentSessions)

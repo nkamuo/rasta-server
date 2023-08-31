@@ -24,6 +24,8 @@ type Place struct {
 
 func (place *Place) BeforeCreate(tx *gorm.DB) (err error) {
 	place.ID = uuid.New()
+	place.CreatedAt = time.Now()
+	place.UpdatedAt = time.Now()
 	return nil
 }
 

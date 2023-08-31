@@ -28,5 +28,8 @@ type RespondentServiceReview struct {
 
 func (review *RespondentServiceReview) BeforeCreate(tx *gorm.DB) (err error) {
 	review.ID = uuid.New()
+
+	review.CreatedAt = time.Now()
+	review.UpdatedAt = time.Now()
 	return nil
 }

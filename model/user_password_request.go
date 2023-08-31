@@ -17,9 +17,12 @@ type UserPasswordResetRequest struct {
 	//
 	ExpiresAt time.Time `gorm:"not null;" json:"expiresAt,omitempty"`
 	CreatedAt time.Time `gorm:"not null;" json:"createdAt,omitempty"`
+	UpdatedAt time.Time `gorm:";" json:"updatedAt,omitempty"`
 }
 
 func (request *UserPasswordResetRequest) BeforeCreate(tx *gorm.DB) (err error) {
 	request.ID = uuid.New()
+	request.CreatedAt = time.Now()
+	request.UpdatedAt = time.Now()
 	return nil
 }

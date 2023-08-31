@@ -33,5 +33,7 @@ type Respondent struct {
 
 func (Respondent *Respondent) BeforeCreate(tx *gorm.DB) (err error) {
 	Respondent.ID = uuid.New()
+	Respondent.CreatedAt = time.Now()
+	Respondent.UpdatedAt = time.Now()
 	return nil
 }

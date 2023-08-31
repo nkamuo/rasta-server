@@ -27,5 +27,7 @@ type TowingPlaceRate struct {
 
 func (towingPlaceRate *TowingPlaceRate) BeforeCreate(tx *gorm.DB) (err error) {
 	towingPlaceRate.ID = uuid.New()
+	towingPlaceRate.CreatedAt = time.Now()
+	towingPlaceRate.UpdatedAt = time.Now()
 	return nil
 }

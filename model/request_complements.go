@@ -25,6 +25,8 @@ type RequestVehicleInfo struct {
 
 func (RequestVehicleInfo *RequestVehicleInfo) BeforeCreate(tx *gorm.DB) (err error) {
 	RequestVehicleInfo.ID = uuid.New()
+	RequestVehicleInfo.CreatedAt = time.Now()
+	RequestVehicleInfo.UpdatedAt = time.Now()
 	return nil
 }
 
@@ -42,5 +44,7 @@ type RequestFuelTypeInfo struct {
 
 func (RequestFuelTypeInfo *RequestFuelTypeInfo) BeforeCreate(tx *gorm.DB) (err error) {
 	RequestFuelTypeInfo.ID = uuid.New()
+	RequestFuelTypeInfo.CreatedAt = time.Now()
+	RequestFuelTypeInfo.UpdatedAt = time.Now()
 	return nil
 }

@@ -58,6 +58,87 @@ func RespondentClaimOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success"})
 }
 
+func FindOrderForRespondent(c *gin.Context) {
+
+	respondentRepo := repository.GetRespondentRepository()
+	sessionRepo := repository.GetRespondentSessionRepository()
+	locationService := service.GetLocationService()
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	requestingUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": err.Error()})
+		return
+	} else {
+
+	}
+
+	respondant, err := respondentRepo.GetByUser(*requestingUser)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	session, err := sessionRepo.GetActiveByRespondent(*respondant, "Assignments.Assignment.Product")
+	if nil != err {
+		message := fmt.Sprintf("Could not find active session for respondent[id:%s]", respondant.ID)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	query := model.DB.Where("id = ?", id).
+		Preload("User").
+		Preload("Payment").Preload("Items").
+		Preload("Adjustments").Preload("Items.Product").
+		Preload("Items.Origin").Preload("Items.Destination").
+		Preload("Items.FuelTypeInfo").Preload("Items.VehicleInfo")
+
+	var order model.Order
+	if err := query.First(&order).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	if !*requestingUser.IsAdmin && order.UserID.String() != requestingUser.ID.String() {
+		// c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": "Not Authorized"})
+		// return
+	}
+
+	currentCoords := session.CurrentCoordinates
+
+	if nil == currentCoords {
+		currentCoords = &session.StartingCoordinates
+	}
+
+	curntLocation, err := model.CreateLocationFromCoordinates(currentCoords.Latitude, currentCoords.Longitude)
+
+	location, err := getOrderPrimaryLocation(order)
+
+	var entry = dto.RespondentOrderEntryIOutput{
+		Order: order,
+	}
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	routingInfo, err := locationService.GetDistance(curntLocation, location)
+
+	if nil != err {
+
+	} else {
+		entry.Routing = *routingInfo
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": entry, "status": "success"})
+}
+
 func FindAvailableOrdersForRespondent(c *gin.Context) {
 
 	respondentRepo := repository.GetRespondentRepository()

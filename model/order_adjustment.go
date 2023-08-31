@@ -19,5 +19,7 @@ type OrderAdjustment struct {
 
 func (adjustment *OrderAdjustment) BeforeCreate(tx *gorm.DB) (err error) {
 	adjustment.ID = uuid.New()
+	// situation.CreatedAt = time.Now()
+	// situation.UpdatedAt = time.Now()
 	return nil
 }

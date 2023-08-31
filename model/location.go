@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -22,8 +23,8 @@ type Location struct {
 	PostCode    string               `json:"postcode"`
 	GoogleID    *string              `gorm:"type:varchar(64);" json:"googleId,omitempty"`
 	Description *string              `gorm:"" json:"description,omitempty"`
-	// CreatedAt   time.Time     `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
-	// UpdatedAt   time.Time     `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
+	CreatedAt   time.Time            `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
+	UpdatedAt   time.Time            `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }
 
 type LocationCoordinates struct {
@@ -37,6 +38,8 @@ type LocationCoordinates struct {
 
 func (location *Location) BeforeCreate(tx *gorm.DB) (err error) {
 	location.ID = uuid.New()
+	location.CreatedAt = time.Now()
+	location.UpdatedAt = time.Now()
 	return nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Payment struct {
@@ -32,6 +33,14 @@ type Payment struct {
 	//TIMESTAMPs
 	CreatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
 	UpdatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
+}
+
+func (payment *Payment) BeforeCreate(tx *gorm.DB) (err error) {
+	payment.ID = uuid.New()
+	payment.CreatedAt = time.Now()
+	payment.UpdatedAt = time.Now()
+	//
+	return nil
 }
 
 type JSON json.RawMessage

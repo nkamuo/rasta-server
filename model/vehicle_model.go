@@ -24,6 +24,8 @@ type VehicleModel struct {
 
 func (product *VehicleModel) BeforeCreate(tx *gorm.DB) (err error) {
 	product.ID = uuid.New()
+	product.CreatedAt = time.Now()
+	product.UpdatedAt = time.Now()
 	return nil
 }
 

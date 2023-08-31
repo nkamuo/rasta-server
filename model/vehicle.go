@@ -23,5 +23,7 @@ type Vehicle struct {
 
 func (product *Vehicle) BeforeCreate(tx *gorm.DB) (err error) {
 	product.ID = uuid.New()
+	product.CreatedAt = time.Now()
+	product.UpdatedAt = time.Now()
 	return nil
 }

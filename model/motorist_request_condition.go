@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -17,12 +19,15 @@ type MotoristRequestSituation struct {
 	Note        string `gorm:"" json:"note,omitempty"`
 	//
 	// Active      *bool     `gorm:"default:false;not null" json:"active"`
-	// CreatedAt   time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
-	// UpdatedAt   time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
+	CreatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
+	UpdatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }
 
 func (situation *MotoristRequestSituation) BeforeCreate(tx *gorm.DB) (err error) {
 	situation.ID = uuid.New()
+
+	situation.CreatedAt = time.Now()
+	situation.UpdatedAt = time.Now()
 	return nil
 }
 

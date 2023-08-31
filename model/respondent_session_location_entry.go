@@ -25,5 +25,8 @@ type RespondentSessionLocationEntry struct {
 
 func (assignment *RespondentSessionLocationEntry) BeforeCreate(tx *gorm.DB) (err error) {
 	assignment.ID = uuid.New()
+
+	assignment.CreatedAt = time.Now()
+	assignment.UpdatedAt = time.Now()
 	return nil
 }

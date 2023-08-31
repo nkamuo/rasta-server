@@ -23,5 +23,7 @@ type Company struct {
 
 func (company *Company) BeforeCreate(tx *gorm.DB) (err error) {
 	company.ID = uuid.New()
+	company.CreatedAt = time.Now()
+	company.UpdatedAt = time.Now()
 	return nil
 }

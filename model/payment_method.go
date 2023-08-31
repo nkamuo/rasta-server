@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type PaymentMethod struct {
@@ -24,6 +25,14 @@ type PaymentMethod struct {
 
 	CreatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
 	UpdatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
+}
+
+func (paymentMethod *PaymentMethod) BeforeCreate(tx *gorm.DB) (err error) {
+	paymentMethod.ID = uuid.New()
+	paymentMethod.CreatedAt = time.Now()
+	paymentMethod.UpdatedAt = time.Now()
+	//
+	return nil
 }
 
 type PaymentMethodCategory = string

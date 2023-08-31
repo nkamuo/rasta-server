@@ -33,3 +33,6 @@ func (UserRequest) TableName() string {
 func (VehicleTowUserRequest) TableName() string {
 	return "user_requests"
 }
+
+// request.CreatedAt = time.Now()
+// request.UpdatedAt = time.Now()

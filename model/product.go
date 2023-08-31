@@ -28,6 +28,8 @@ type Product struct {
 
 func (product *Product) BeforeCreate(tx *gorm.DB) (err error) {
 	product.ID = uuid.New()
+	product.CreatedAt = time.Now()
+	product.UpdatedAt = time.Now()
 	return nil
 }
 

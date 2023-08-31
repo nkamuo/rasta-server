@@ -58,6 +58,9 @@ type Order struct {
 
 func (order *Order) BeforeCreate(tx *gorm.DB) (err error) {
 	order.ID = uuid.New()
+	order.CreatedAt = time.Now()
+	order.UpdatedAt = time.Now()
+	//
 	itemTotal := order.CalculateItemTotal()
 	adjustmentTotal := order.CalculateAdjustmentTotal()
 	total, err := order.CalculateTotal()

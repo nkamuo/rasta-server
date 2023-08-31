@@ -21,5 +21,7 @@ type FuelType struct {
 
 func (fuelType *FuelType) BeforeCreate(tx *gorm.DB) (err error) {
 	fuelType.ID = uuid.New()
+	fuelType.CreatedAt = time.Now()
+	fuelType.UpdatedAt = time.Now()
 	return nil
 }

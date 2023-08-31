@@ -31,7 +31,10 @@ type RespondentSession struct {
 	UpdatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }
 
-func (assignment *RespondentSession) BeforeCreate(tx *gorm.DB) (err error) {
-	assignment.ID = uuid.New()
+func (session *RespondentSession) BeforeCreate(tx *gorm.DB) (err error) {
+	session.ID = uuid.New()
+	session.CreatedAt = time.Now()
+	session.UpdatedAt = time.Now()
+
 	return nil
 }

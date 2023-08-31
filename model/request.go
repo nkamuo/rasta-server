@@ -42,5 +42,8 @@ type Request struct {
 
 func (Request *Request) BeforeCreate(tx *gorm.DB) (err error) {
 	Request.ID = uuid.New()
+
+	Request.CreatedAt = time.Now()
+	Request.UpdatedAt = time.Now()
 	return nil
 }

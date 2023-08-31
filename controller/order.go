@@ -147,6 +147,7 @@ func FindOrder(c *gin.Context) {
 	}
 
 	query := model.DB.Where("id = ?", id).
+		Preload("User").
 		Preload("Payment").Preload("Items").
 		Preload("Adjustments").Preload("Items.Product").
 		Preload("Items.Origin").Preload("Items.Destination").
@@ -155,6 +156,16 @@ func FindOrder(c *gin.Context) {
 	if err := query.First(&order).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
+	}
+
+	if requestingUser, err := auth.GetCurrentUser(c); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": err.Error()})
+		return
+	} else {
+		if !*requestingUser.IsAdmin && order.UserID.String() != requestingUser.ID.String() {
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
 	}
 
 	if order.Payment != nil {
@@ -176,7 +187,7 @@ func FindOrder(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": order})
+	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success"})
 }
 
 func UpdateOrder(c *gin.Context) {
