@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/google/uuid"
@@ -44,7 +45,38 @@ func (service *orderServiceImpl) Save(order *model.Order) (err error) {
 }
 
 func (service *orderServiceImpl) AssignResponder(order *model.Order, responder *model.Respondent) (err error) {
-	order.ResponderID = &responder.ID
+	var fulfilment *model.OrderFulfilment
+
+	fulfilmentService := GetOrderFulfilmentService()
+
+	if order.FulfilmentID != nil {
+		if fulfilment, err = fulfilmentService.GetById(*order.FulfilmentID); err != nil {
+			if err.Error() != "record not found" {
+				return err
+			}
+		}
+		return errors.New("Cannot overidde order responder assignment")
+	}
+
+	if fulfilment != nil && fulfilment.ResponderID.String() != responder.ID.String() {
+		if err := fulfilmentService.Delete(fulfilment); err != nil {
+			return err
+		}
+		fulfilment = nil
+	}
+
+	if fulfilment == nil {
+		fulfilment = &model.OrderFulfilment{}
+	}
+	fulfilment.ResponderID = &responder.ID
+	order.Status = model.ORDER_STATUS_RESPONDENT_ASSIGNED
+
+	if err := fulfilmentService.Save(fulfilment); err != nil {
+		return err
+	}
+
+	order.FulfilmentID = &fulfilment.ID
+
 	if err := service.Save(order); err != nil {
 		return err
 	}

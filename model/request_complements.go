@@ -35,7 +35,7 @@ type RequestFuelTypeInfo struct {
 
 	FuelTypeCode string     `gorm:"not null" json:"fuelTypeCode,omitempty"`
 	FuelTypeID   *uuid.UUID `gorm:"" json:"fuelTypeId,omitempty"`
-	FuelType     *Place     `gorm:"foreignKey:FuelTypeID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"fuelType,omitempty"`
+	FuelType     *FuelType  `gorm:"foreignKey:FuelTypeID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"fuelType,omitempty"`
 	//
 	Description *string   `gorm:"" json:"description,omitempty"`
 	CreatedAt   time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`

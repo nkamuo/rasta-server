@@ -66,6 +66,8 @@ func main() {
 	api.GET("/me/respondent/session/requests", controller.FindAvailableOrdersForRespondent)
 	api.GET("/me/respondent/session/requests/:id", controller.FindOrderForRespondent)
 	api.POST("/me/respondent/session/requests/:id/claim", controller.RespondentClaimOrder)
+	api.POST("/me/respondent/session/requests/:id/verify-client", controller.RespondentVerifyOrderClientDetails)
+	api.POST("/me/respondent/session/requests/:id/cancel", controller.RespondentCancelOrder)
 
 	api.GET("/respondent_sessions", controller.FindRespondentSessions)
 	api.GET("/respondent_sessions/:id", controller.FindRespondentSession)

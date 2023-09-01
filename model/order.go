@@ -39,8 +39,8 @@ type Order struct {
 	User   *User      `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user,omitempty"`
 
 	//REQUESTING USER ACCOUNT
-	ResponderID *uuid.UUID  `gorm:"" json:"responderId,omitempty"`
-	Responder   *Respondent `gorm:"foreignKey:ResponderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"responder,omitempty"`
+	FulfilmentID *uuid.UUID       `gorm:"unique" json:"fulfilmentId,omitempty"`
+	Fulfilment   *OrderFulfilment `gorm:"foreignKey:FulfilmentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"fulfilment,omitempty"`
 
 	//Payment Method
 	PaymentMethodID *uuid.UUID     `gorm:"" json:"paymentMethodId,omitempty"`

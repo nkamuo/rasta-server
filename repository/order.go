@@ -24,6 +24,7 @@ type OrderRepository interface {
 	FindAll(page int, limit int) (orders []model.Order, total int64, err error)
 	GetById(id uuid.UUID) (order *model.Order, err error)
 	Save(order *model.Order) (err error)
+	Update(order *model.Order, fields map[string]interface{}) (err error)
 	Delete(order *model.Order) (error error)
 	DeleteById(id uuid.UUID) (order *model.Order, err error)
 }
@@ -61,6 +62,10 @@ func (repo *orderRepository) Save(order *model.Order) (err error) {
 		return repo.db.Create(&order).Error
 	}
 	return repo.db.Updates(&order).Error
+}
+
+func (repo *orderRepository) Update(order *model.Order, fields map[string]interface{}) (err error) {
+	return repo.db.Model(order).Updates(fields).Error
 }
 
 func (repo *orderRepository) Delete(order *model.Order) (err error) {

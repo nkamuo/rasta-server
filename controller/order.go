@@ -148,6 +148,7 @@ func FindOrder(c *gin.Context) {
 
 	query := model.DB.Where("id = ?", id).
 		Preload("User").
+		Preload("Fulfilment.Responder.User").
 		Preload("Payment").Preload("Items").
 		Preload("Adjustments").Preload("Items.Product").
 		Preload("Items.Origin").Preload("Items.Destination").
@@ -383,7 +384,7 @@ func buildRequest(input dto.RequestInput, requestingUser *model.User) (Request *
 
 	case model.PRODUCT_FUEL_DELIVERY_SERVICE:
 		if nil == input.FuelInfo {
-			return nil, errors.New("You have to provide vehicle Information")
+			return nil, errors.New("You have to provide fuel Information")
 		}
 
 		fuelType, err := fuelTypeRepository.GetByCode(input.FuelInfo.FuelTypeCode)
@@ -430,6 +431,22 @@ func buildVehicleInfo(input dto.RequestVehicleInformationInput) (vehicleInfo *mo
 	// if nil == input.VehicleDescription {
 	// 	return nil, errors.New("You have to provide some description about flat tire service")
 	// }
+	// if dLength := len(*input.VehicleDescription); 20 > dLength || dLength > 500 {
+	// 	return nil, errors.New("Description must be upto 20 and less than 500 charachers")
+	// }
+
+	if nil == input.Make {
+		return nil, errors.New("Vehicle Make not Specified")
+	}
+	if nil == input.Model {
+		return nil, errors.New("Vehicle Model not Specified")
+	}
+	if nil == input.Color {
+		return nil, errors.New("Vehicle Color not Specified")
+	}
+	if nil == input.LicensePlateNumber {
+		return nil, errors.New("Vehicle License Plate Number not Specified")
+	}
 	// if dLength := len(*input.VehicleDescription); 20 > dLength || dLength > 500 {
 	// 	return nil, errors.New("Description must be upto 20 and less than 500 charachers")
 	// }
