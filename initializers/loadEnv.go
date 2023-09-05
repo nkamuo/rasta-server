@@ -21,6 +21,9 @@ type Config struct {
 	//APP CONFIG
 	APP_URL    string `mapstructure:"APP_URL"`
 	APP_SECRET string `mapstructure:"APP_SECRET"`
+
+	CLIENT_ORDER_SERVICE_FEE    uint64 `mapstructure:"ORDER_SERVICE_FEE"`
+	RESPONDER_ORDER_SERVICE_FEE uint64 `mapstructure:"RESPONDER_ORDER_SERVICE_FEE"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

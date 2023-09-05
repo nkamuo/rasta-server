@@ -24,6 +24,7 @@ func GetRespondentSessionService() RespondentSessionService {
 type RespondentSessionService interface {
 	GetById(id uuid.UUID) (session *model.RespondentSession, err error)
 	Close(session *model.RespondentSession) (err error)
+	UpdateLocationEntry(session *model.RespondentSession, locationEntry model.RespondentSessionLocationEntry) (err error)
 	Save(session *model.RespondentSession) (err error)
 	Delete(session *model.RespondentSession) (error error)
 }
@@ -56,4 +57,27 @@ func (service *sessionServiceImpl) Delete(session *model.RespondentSession) (err
 func (service *sessionServiceImpl) DeleteById(id uuid.UUID) (session *model.RespondentSession, err error) {
 	session, err = service.repo.DeleteById(id)
 	return session, err
+}
+
+func (service *sessionServiceImpl) UpdateLocationEntry(session *model.RespondentSession, locationEntry model.RespondentSessionLocationEntry) (err error) {
+	orderService := GetOrderService()
+	orderRepo := repository.GetOrderRepository()
+
+	var fulfilments []model.OrderFulfilment
+
+	query := model.DB.Where("session_id = ?", session.ID).Preload("Order.Items")
+
+	if err := query.Find(&fulfilments).Error; err != nil {
+		return err
+	}
+
+	for _, fulfilment := range fulfilments {
+		if order, err := orderRepo.GetByFulfilment(fulfilment); err != nil {
+
+		} else {
+			/*err := */ orderService.UpdateResponderLocationEntry(order, locationEntry)
+		}
+	}
+
+	return nil
 }

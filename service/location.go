@@ -136,7 +136,7 @@ func (service *locationServiceImpl) Search(input string) (location *model.Locati
 		return nil, err
 	}
 
-	var address, city, state, country, cityCode, stateCode, countryCode, streetName, streetNumber, googleId, postcode string
+	var name, address, city, state, country, cityCode, stateCode, countryCode, streetName, streetNumber, googleId, postcode string
 
 	coordinates := gResult.Results[0].Geometry.Location
 	address = gResult.Results[0].FormattedAddress
@@ -192,6 +192,11 @@ func (service *locationServiceImpl) Search(input string) (location *model.Locati
 			Latitude:  coordinates.Lat,
 			Longitude: coordinates.Lng,
 		},
+	}
+
+	name, err = geo.GetPlaceName(service.googleMapsAPIKey, googleId)
+	if err == nil {
+		location.Name = &name
 	}
 
 	return location, nil

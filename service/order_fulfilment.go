@@ -22,7 +22,7 @@ func GetOrderFulfilmentService() OrderFulfilmentService {
 }
 
 type OrderFulfilmentService interface {
-	GetById(id uuid.UUID) (fulfilment *model.OrderFulfilment, err error)
+	GetById(id uuid.UUID, preload ...string) (fulfilment *model.OrderFulfilment, err error)
 	// GetByEmail(email string) (fulfilment *model.OrderFulfilment, err error)
 	// GetByPhone(phone string) (fulfilment *model.OrderFulfilment, err error)
 	Save(fulfilment *model.OrderFulfilment) (err error)
@@ -33,7 +33,7 @@ type fulfilmentServiceImpl struct {
 	repo repository.OrderFulfilmentRepository
 }
 
-func (service *fulfilmentServiceImpl) GetById(id uuid.UUID) (fulfilment *model.OrderFulfilment, err error) {
+func (service *fulfilmentServiceImpl) GetById(id uuid.UUID, preload ...string) (fulfilment *model.OrderFulfilment, err error) {
 	return service.repo.GetById(id)
 }
 

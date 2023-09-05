@@ -4,7 +4,7 @@ package dto
 
 type RespondentSessionLocationEntryInput struct {
 	// AssignmentID uuid.UUID `json:"assignmentId" binding:"required"`
-	Coordinates LocationCoordinatesInput `json:"coords" json:""`
+	Coordinates LocationCoordinatesInput `json:"coords" json:"required"`
 	Note        string                   `json:"note" binding:""`
 	Description string                   `json:"description" binding:""`
 	Active      bool                     `json:"active" binding:""`

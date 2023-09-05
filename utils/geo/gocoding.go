@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
+
+	"github.com/tidwall/gjson"
 	// "strconv"
 )
 
@@ -36,7 +38,8 @@ func ResolveGeocodingInfo(googleMapsAPIKey string, input string) (result *Geocod
 	requestType := IdentifyInputType(input)
 
 	if requestType == "UNKNOWN" {
-		fmt.Println(fmt.Sprintf("Could not resolve request type \"%s\"", input))
+		message := fmt.Sprintf("Could not resolve request type \"%s\"", input)
+		return nil, errors.New(message)
 	}
 
 	geocodeURL := fmt.Sprintf("https://maps.googleapis.com/maps/api/geocode/json?key=%s&%s=%s", googleMapsAPIKey, requestType, url.QueryEscape(input))
@@ -48,7 +51,7 @@ func ResolveGeocodingInfo(googleMapsAPIKey string, input string) (result *Geocod
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading the response:", err)
 		return
@@ -72,6 +75,30 @@ func ResolveGeocodingInfo(googleMapsAPIKey string, input string) (result *Geocod
 	}
 
 	return result, nil
+}
+
+func GetPlaceName(googleMapApiKey string, placeId string) (name string, err error) {
+
+	var requestUrl = fmt.Sprintf("https://maps.googleapis.com/maps/api/place/details/json?fields=name&place_id=%s&key=%s", placeId, googleMapApiKey)
+
+	resp, err := http.Get(requestUrl)
+	if err != nil {
+		fmt.Println("Error making the request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		message := fmt.Sprintf("Error reading the response: %s", err)
+		return "", errors.New(message)
+	}
+
+	bodyString := string(body)
+
+	jsonData := gjson.Parse(bodyString)
+	name = jsonData.Get("result").Get("name").String()
+	return name, nil
 }
 
 func IdentifyInputType(input string) string {

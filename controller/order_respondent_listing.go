@@ -21,6 +21,7 @@ func RespondentClaimOrder(c *gin.Context) {
 
 	orderService := service.GetOrderService()
 	respondentRepo := repository.GetRespondentRepository()
+	sessionRepo := repository.GetRespondentSessionRepository()
 	// respondentService := service.GetRespondentService()
 
 	requestingUser, err := auth.GetCurrentUser(c)
@@ -33,6 +34,13 @@ func RespondentClaimOrder(c *gin.Context) {
 	respondent, err := respondentRepo.GetByUser(*requestingUser)
 	if err != nil {
 		message := fmt.Sprintf("Authentication error")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	session, err := sessionRepo.GetActiveByRespondent(*respondent)
+	if err != nil {
+		message := fmt.Sprintf("Error identifying your session: %s", err.Error())
 		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 		return
 	}
@@ -50,7 +58,7 @@ func RespondentClaimOrder(c *gin.Context) {
 		return
 	}
 
-	if err := orderService.AssignResponder(order, respondent); err != nil {
+	if err := orderService.AssignResponder(order, session); err != nil {
 		message := fmt.Sprintf("Task failed: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
@@ -114,6 +122,71 @@ func RespondentVerifyOrderClientDetails(c *gin.Context) {
 
 	now := time.Now()
 	fulfilment.VerifiedClientAt = &now
+
+	if err := fulfilmentService.Save(fulfilment); err != nil {
+		message := fmt.Sprintf("Task failed: %s", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": fulfilment, "status": "success"})
+}
+
+func RespondentConfirmCompleteOrder(c *gin.Context) {
+
+	orderService := service.GetOrderService()
+	respondentRepo := repository.GetRespondentRepository()
+	fulfilmentService := service.GetOrderFulfilmentService()
+	// respondentService := service.GetRespondentService()
+
+	requestingUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Authentication error")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	respondent, err := respondentRepo.GetByUser(*requestingUser)
+	if err != nil {
+		message := fmt.Sprintf("Authentication error")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	order, err := orderService.GetById(id)
+	if err != nil {
+		message := fmt.Sprintf("Could not find Order with [id:%s]", id)
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if order.FulfilmentID == nil {
+		message := fmt.Sprintf("Order [id:%s] is not assigned yet", id)
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID)
+	if err != nil {
+		message := fmt.Sprintf("Error Fetching order[id:%s] fulfilment details: %s", id, err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if fulfilment.ResponderID.String() != respondent.ID.String() {
+		message := fmt.Sprintf("You may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	now := time.Now()
+	fulfilment.ResponderConfirmedAt = &now
 
 	if err := fulfilmentService.Save(fulfilment); err != nil {
 		message := fmt.Sprintf("Task failed: %s", err.Error())

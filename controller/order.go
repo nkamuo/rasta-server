@@ -17,6 +17,9 @@ import (
 )
 
 func FindOrders(c *gin.Context) {
+
+	userService := service.GetUserService()
+
 	var orders []model.Order
 	var page pagination.Page
 	if err := c.ShouldBindQuery(&page); err != nil {
@@ -34,7 +37,24 @@ func FindOrders(c *gin.Context) {
 		Preload("Items").Preload("Items.Product").
 		Preload("Items.Origin").Preload("Items.Destination")
 
-	if !*requestingUser.IsAdmin {
+	if *requestingUser.IsAdmin {
+		if user_id := c.Query("user_id"); user_id != "" {
+			userID, err := uuid.Parse(user_id)
+			if err != nil {
+				message := fmt.Sprintf("Could not parse parameter user_id[%s] into a valid UUID: %s", user_id, err.Error())
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+				return
+			}
+			if _, err := userService.GetById(userID); err != nil {
+				message := fmt.Sprintf("Could not find User with [id:%s]: %s", userID, err.Error())
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+				return
+			} else {
+				query = query.Where("orders.user_id = ?", userID)
+			}
+
+		}
+	} else {
 		query = query.Where("orders.user_id = ?", requestingUser.ID)
 	}
 
@@ -137,6 +157,8 @@ func CreateOrder(c *gin.Context) {
 
 func FindOrder(c *gin.Context) {
 
+	respondentRepo := repository.GetRespondentRepository()
+	sessionRepo := repository.GetRespondentSessionRepository()
 	orderService := service.GetOrderService()
 	paymentService := service.GetOrderPaymentService()
 
@@ -153,13 +175,15 @@ func FindOrder(c *gin.Context) {
 		Preload("Adjustments").Preload("Items.Product").
 		Preload("Items.Origin").Preload("Items.Destination").
 		Preload("Items.FuelTypeInfo").Preload("Items.VehicleInfo")
+
 	var order model.Order
 	if err := query.First(&order).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	if requestingUser, err := auth.GetCurrentUser(c); err != nil {
+	requestingUser, err := auth.GetCurrentUser(c)
+	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": err.Error()})
 		return
 	} else {
@@ -168,6 +192,22 @@ func FindOrder(c *gin.Context) {
 			return
 		}
 	}
+
+	respondent, err := respondentRepo.GetByUser(*requestingUser)
+	if err != nil {
+		message := fmt.Sprintf("Authentication error")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	session, err := sessionRepo.GetActiveByRespondent(*respondent, "Assignments.Assignment.Product")
+	if nil != err {
+		message := fmt.Sprintf("Could not find active session for respondent[id:%s]", respondent.ID)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+	currentCoords := session.CurrentCoordinates
+	order.Fulfilment.Coordinates = currentCoords
 
 	if order.Payment != nil {
 		if err := paymentService.UpdatePaymentStatus(order.Payment); err != nil {
@@ -254,16 +294,77 @@ func UpdateOrder(c *gin.Context) {
 }
 
 func DeleteOrder(c *gin.Context) {
-	id := c.Param("id")
+	orderService := service.GetOrderService()
 
-	var order model.Order
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		message := fmt.Sprintf("Error Passing\"%s\" into a valid UUID", c.Param("id"))
+		c.JSON(http.StatusOK, gin.H{"status": "error", "message": message})
 
-	if err := model.DB.Where("id = ?", id).First(&order).Error; err != nil {
+	}
+
+	order, err := orderService.GetById(id)
+	if err != nil {
 		message := fmt.Sprintf("Could not find order with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
-	model.DB.Delete(&order)
+
+	if rUser, err := auth.GetCurrentUser(c); err != nil {
+		message := fmt.Sprintf("Authentication Problem")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+
+	} else {
+		if !*rUser.IsAdmin && rUser.ID.String() != order.UserID.String() {
+			message := fmt.Sprintf("Restricated Resource")
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		}
+	}
+
+	if err := orderService.Delete(order); err != nil {
+		message := fmt.Sprintf("An error occured: %s", err.Error())
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+	}
+
+	message := fmt.Sprintf("Deleted order \"%s\"", order.ID)
+	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success", "message": message})
+}
+
+func CompleteOrder(c *gin.Context) {
+	orderService := service.GetOrderService()
+
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		message := fmt.Sprintf("Error Passing\"%s\" into a valid UUID", c.Param("id"))
+		c.JSON(http.StatusOK, gin.H{"status": "error", "message": message})
+
+	}
+
+	order, err := orderService.GetById(id)
+	if err != nil {
+		message := fmt.Sprintf("Could not find order with [id:%s]", id)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if rUser, err := auth.GetCurrentUser(c); err != nil {
+		message := fmt.Sprintf("Authentication Problem")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+
+	} else {
+		if !*rUser.IsAdmin && rUser.ID.String() != order.UserID.String() {
+			message := fmt.Sprintf("Restricated Resource")
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		}
+	}
+
+	if err := orderService.CompleteOrder(order, false); err != nil {
+		message := fmt.Sprintf("An error occured: %s", err.Error())
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+	}
+
 	message := fmt.Sprintf("Deleted order \"%s\"", order.ID)
 	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success", "message": message})
 }

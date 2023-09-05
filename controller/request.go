@@ -20,7 +20,7 @@ func FindRequests(c *gin.Context) {
 
 	placeRepo := repository.GetPlaceRepository()
 
-	var fuelTypePlaceRates []model.Request
+	var requests []model.Request
 	var page pagination.Page
 	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
@@ -43,11 +43,11 @@ func FindRequests(c *gin.Context) {
 		query = query.Where("place_id = ?", placeID)
 	}
 
-	if err := query.Scopes(pagination.Paginate(fuelTypePlaceRates, &page, query)).Find(&fuelTypePlaceRates).Error; nil != err {
+	if err := query.Scopes(pagination.Paginate(requests, &page, query)).Find(&requests).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	page.Rows = fuelTypePlaceRates
+	page.Rows = requests
 	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 

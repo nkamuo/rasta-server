@@ -11,7 +11,7 @@ type Request struct {
 	ID               uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
 	Rate             uint64    `gorm:"" json:"rate"`
 	Quantity         uint64    `json:"quantity,omitempty"`
-	AdjustmentsTotal uint64    `json:"adjustmentTotal,omitempty"`
+	AdjustmentsTotal int64     `json:"adjustmentTotal,omitempty"`
 	Total            uint64    `json:"total,omitempty"`
 
 	//THE MAIN ORDER ENTITY
@@ -46,4 +46,19 @@ func (Request *Request) BeforeCreate(tx *gorm.DB) (err error) {
 	Request.CreatedAt = time.Now()
 	Request.UpdatedAt = time.Now()
 	return nil
+}
+
+func (request *Request) GetAmount() (amount uint64) {
+	if request.Quantity == 0 {
+		amount = request.Rate
+	} else {
+		amount = request.Rate * request.Quantity
+	}
+
+	if request.AdjustmentsTotal > 0 {
+		amount += uint64(request.AdjustmentsTotal)
+	} else if request.AdjustmentsTotal < 0 {
+		amount -= uint64(-request.AdjustmentsTotal)
+	}
+	return amount
 }

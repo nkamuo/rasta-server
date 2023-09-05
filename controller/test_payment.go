@@ -16,6 +16,7 @@ import (
 	// "github.com/nkamuo/rasta-server/service"
 	"github.com/stripe/stripe-go/v74"
 	"github.com/stripe/stripe-go/v74/paymentmethod"
+	"github.com/stripe/stripe-go/v74/payout"
 )
 
 func createPaymentMethod(c *gin.Context) {
@@ -89,6 +90,29 @@ func CreatePaymentIntent(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":   payment,
+		"status": "success",
+	})
+}
+
+func AddPaymentMethod(c *gin.Context) {
+
+	payoutParams := &stripe.PayoutParams{
+		Amount:      stripe.Int64(1000), // Amount in cents (e.g., $10.00)
+		Currency:    stripe.String("usd"),
+		Method:      stripe.String("instant"),
+		Destination: stripe.String("your_customer_account_id"), // Customer's Stripe account ID
+	}
+
+	payout, err := payout.New(payoutParams)
+	if err != nil {
+		message := fmt.Sprintf("Could not init order payment: %s", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":   payout,
 		"status": "success",
 	})
 }

@@ -48,6 +48,8 @@ func main() {
 	api := r.Group("/api")
 
 	// PUBLIC ENDPOINTS
+
+	api.GET("/test", controller.AddPaymentMethod)
 	api.POST("/register", controller.Register)
 	api.POST("/login", controller.Login)
 
@@ -68,12 +70,31 @@ func main() {
 	api.POST("/me/respondent/session/requests/:id/claim", controller.RespondentClaimOrder)
 	api.POST("/me/respondent/session/requests/:id/verify-client", controller.RespondentVerifyOrderClientDetails)
 	api.POST("/me/respondent/session/requests/:id/cancel", controller.RespondentCancelOrder)
+	api.POST("/me/respondent/session/requests/:id/confirm", controller.RespondentConfirmCompleteOrder)
 
 	api.GET("/respondent_sessions", controller.FindRespondentSessions)
 	api.GET("/respondent_sessions/:id", controller.FindRespondentSession)
 	api.POST("/respondent_sessions", controller.CreateRespondentSession)
 	api.PATCH("/respondent_sessions/:id", controller.UpdateRespondentSession)
 	api.DELETE("/respondent_sessions/:id", controller.DeleteRespondentSession)
+
+	api.GET("/company_earnings", controller.FindCompanyEarnings)
+	api.GET("/company_earnings/:id", controller.FindCompanyEarnings)
+	// api.POST("/company_earnings", controller.CreateCompanyEarning)
+	// api.PATCH("/company_earnings/:id", controller.UpdateCompanyEarning)
+	// api.DELETE("/company_earnings/:id", controller.DeleteCompanyEarning)
+
+	api.GET("/respondent_earnings", controller.FindRespondentEarnings)
+	api.GET("/respondent_earnings/:id", controller.FindRespondentEarning)
+	// api.POST("/respondent_earnings", controller.CreateRespondentEarning)
+	// api.PATCH("/respondent_earnings/:id", controller.UpdateRespondentEarning)
+	// api.DELETE("/respondent_earnings/:id", controller.DeleteRespondentEarning)
+
+	// HELLO!
+	api.GET("/respondent_session_locations_entries", controller.FindRespondentSessionLocationEntries)
+	api.GET("/respondent_session_locations_entries/:id", controller.FindRespondentSessionLocationEntry)
+	api.POST("/respondent_session_locations_entries", controller.CreateRespondentSessionLocationEntry)
+	api.DELETE("/respondent_session_locations_entries/:id", controller.DeleteRespondentSessionLocationEntry)
 
 	//PROTECTED ENDPOINTS
 	api.GET("/products", controller.FindProducts)
@@ -92,8 +113,10 @@ func main() {
 	api.GET("/orders", controller.FindOrders)
 	api.GET("/orders/:id", controller.FindOrder)
 	api.POST("/orders", controller.CreateOrder)
+	api.POST("/orders/:id/complete", controller.CompleteOrder)
 	api.PATCH("/orders/:id", controller.UpdateOrder)
 	api.DELETE("/orders/:id", controller.DeleteOrder)
+
 	//
 	api.GET("/orders/:id/payment", controller.CreatePaymentIntent)
 	//REQUESTS -> ORDER-ITEMS

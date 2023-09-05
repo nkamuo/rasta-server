@@ -23,6 +23,7 @@ func GetOrderRepository() OrderRepository {
 type OrderRepository interface {
 	FindAll(page int, limit int) (orders []model.Order, total int64, err error)
 	GetById(id uuid.UUID) (order *model.Order, err error)
+	GetByFulfilment(fulfilment model.OrderFulfilment) (order *model.Order, err error)
 	Save(order *model.Order) (err error)
 	Update(order *model.Order, fields map[string]interface{}) (err error)
 	Delete(order *model.Order) (error error)
@@ -51,6 +52,13 @@ func (repo *orderRepository) FindAll(page int, limit int) (orders []model.Order,
 
 func (repo *orderRepository) GetById(id uuid.UUID) (order *model.Order, err error) {
 	if err = model.DB. /*.Preload("Place")*/ Where("id = ?", id).First(&order).Error; err != nil {
+		return nil, err
+	}
+	return order, nil
+}
+
+func (repo *orderRepository) GetByFulfilment(fulfilment model.OrderFulfilment) (order *model.Order, err error) {
+	if err = model.DB. /*.Preload("Place")*/ Where("fulfilment_id = ?", fulfilment.ID).First(&order).Error; err != nil {
 		return nil, err
 	}
 	return order, nil

@@ -22,7 +22,7 @@ func GetOrderFulfilmentRepository() OrderFulfilmentRepository {
 
 type OrderFulfilmentRepository interface {
 	FindAll(page int, limit int) (fulfilments []model.OrderFulfilment, total int64, err error)
-	GetById(id uuid.UUID) (fulfilment *model.OrderFulfilment, err error)
+	GetById(id uuid.UUID, preload ...string) (fulfilment *model.OrderFulfilment, err error)
 	Save(fulfilment *model.OrderFulfilment) (err error)
 	Delete(fulfilment *model.OrderFulfilment) (error error)
 	DeleteById(id uuid.UUID) (fulfilment *model.OrderFulfilment, err error)
@@ -48,8 +48,14 @@ func (repo *fulfilmentRepository) FindAll(page int, limit int) (fulfilments []mo
 	return
 }
 
-func (repo *fulfilmentRepository) GetById(id uuid.UUID) (fulfilment *model.OrderFulfilment, err error) {
-	if err = model.DB. /*.Preload("Place")*/ Where("id = ?", id).First(&fulfilment).Error; err != nil {
+func (repo *fulfilmentRepository) GetById(id uuid.UUID, preload ...string) (fulfilment *model.OrderFulfilment, err error) {
+	query := model.DB. /*.Preload("Place")*/ Where("id = ?", id)
+
+	for _, entry := range preload {
+		query = query.Preload(entry)
+	}
+
+	if err = query.First(&fulfilment).Error; err != nil {
 		return nil, err
 	}
 	return fulfilment, nil

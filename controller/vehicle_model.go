@@ -52,12 +52,13 @@ func CreateVehicleModel(c *gin.Context) {
 	}
 
 	vehicleModel := model.VehicleModel{
-		Label:       input.Label,
-		Title:       input.Title,
-		Category:    input.Category,
-		Description: input.Description,
-		IconImage:   input.IconImage,
-		CoverImage:  input.CoverImage,
+		ManufacturerName: input.ManufacturerName,
+		Label:            input.Label,
+		Title:            input.Title,
+		Category:         input.Category,
+		Description:      input.Description,
+		IconImage:        input.IconImage,
+		CoverImage:       input.CoverImage,
 	}
 	if err := vehicleModelService.Save(&vehicleModel); nil != err {
 		message := fmt.Sprintf("An error occurred while saving entry: %s", err.Error())
@@ -110,6 +111,10 @@ func UpdateVehicleModel(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find vehicleModel with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	}
+
+	if nil != input.ManufacturerName {
+		vehicleModel.ManufacturerName = *input.ManufacturerName
 	}
 
 	if nil != input.Label {

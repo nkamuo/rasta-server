@@ -2,7 +2,9 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/model"
@@ -26,8 +28,10 @@ type OrderService interface {
 	// GetByEmail(email string) (order *model.Order, err error)
 	// GetByPhone(phone string) (order *model.Order, err error)
 
+	CompleteOrder(order *model.Order, isAuto bool) (err error)
 	Process(order *model.Order) (err error)
-	AssignResponder(order *model.Order, responder *model.Respondent) (err error)
+	UpdateResponderLocationEntry(order *model.Order, locationEntry model.RespondentSessionLocationEntry) (err error)
+	AssignResponder(order *model.Order, session *model.RespondentSession) (err error)
 	Save(order *model.Order) (err error)
 	Delete(order *model.Order) (error error)
 }
@@ -44,10 +48,17 @@ func (service *orderServiceImpl) Save(order *model.Order) (err error) {
 	return service.repo.Save(order)
 }
 
-func (service *orderServiceImpl) AssignResponder(order *model.Order, responder *model.Respondent) (err error) {
+func (service *orderServiceImpl) AssignResponder(order *model.Order, session *model.RespondentSession) (err error) {
+	respondentService := GetRespondentService()
+	fulfilmentService := GetOrderFulfilmentService()
+
 	var fulfilment *model.OrderFulfilment
 
-	fulfilmentService := GetOrderFulfilmentService()
+	respondent, err := respondentService.GetById(*session.RespondentID)
+	if err != nil {
+		message := fmt.Sprintf("Error loading respondent: %s", err.Error())
+		return errors.New(message)
+	}
 
 	if order.FulfilmentID != nil {
 		if fulfilment, err = fulfilmentService.GetById(*order.FulfilmentID); err != nil {
@@ -58,7 +69,7 @@ func (service *orderServiceImpl) AssignResponder(order *model.Order, responder *
 		return errors.New("Cannot overidde order responder assignment")
 	}
 
-	if fulfilment != nil && fulfilment.ResponderID.String() != responder.ID.String() {
+	if fulfilment != nil && fulfilment.ResponderID.String() != respondent.ID.String() {
 		if err := fulfilmentService.Delete(fulfilment); err != nil {
 			return err
 		}
@@ -68,7 +79,8 @@ func (service *orderServiceImpl) AssignResponder(order *model.Order, responder *
 	if fulfilment == nil {
 		fulfilment = &model.OrderFulfilment{}
 	}
-	fulfilment.ResponderID = &responder.ID
+	fulfilment.SessionID = &session.ID
+	fulfilment.ResponderID = &respondent.ID
 	order.Status = model.ORDER_STATUS_RESPONDENT_ASSIGNED
 
 	if err := fulfilmentService.Save(fulfilment); err != nil {
@@ -111,8 +123,58 @@ func (service *orderServiceImpl) Process(order *model.Order) (err error) {
 	return nil
 }
 
+func (service *orderServiceImpl) UpdateResponderLocationEntry(order *model.Order, locationEntry model.RespondentSessionLocationEntry) (err error) {
+
+	// fulfilmentService := GetOrderFulfilmentService()
+	// if order.FulfilmentID == nil {
+	// 	return
+	// }
+
+	// fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// fulfilment.Coordinates = &locationEntry.Coordinates
+
+	// return fulfilmentService.Save(fulfilment)
+	return nil
+}
+
 func (service *orderServiceImpl) Delete(order *model.Order) (err error) {
 	err = service.repo.Delete(order)
+
+	return err
+}
+
+func (service *orderServiceImpl) CompleteOrder(order *model.Order, isAuto bool) (err error) {
+
+	fulfilmentService := GetOrderFulfilmentService()
+	earningService := GetGeneralEarningService()
+	orderService := GetOrderService()
+
+	if order == nil {
+		return errors.New("Order is nil or not fulfilled")
+	}
+	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID)
+	if err != nil {
+		return err
+	}
+	now := time.Now()
+
+	if isAuto {
+		fulfilment.AutoConfirmedAt = &now
+	} else {
+		fulfilment.ClientConfirmedAt = &now
+	}
+
+	if err := orderService.Save(order); err != nil {
+		return err
+	}
+
+	if err := earningService.ProcessEarnings(order); err != nil {
+		return err
+	}
 
 	return err
 }
