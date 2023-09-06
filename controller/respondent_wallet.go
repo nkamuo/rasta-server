@@ -99,6 +99,7 @@ func FindRespondentWallet(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
+	respondentWallet.CalculateResultantBalance()
 	c.JSON(http.StatusOK, gin.H{"data": respondentWallet})
 }
 

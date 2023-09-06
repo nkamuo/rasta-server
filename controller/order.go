@@ -193,21 +193,26 @@ func FindOrder(c *gin.Context) {
 		}
 	}
 
-	respondent, err := respondentRepo.GetByUser(*requestingUser)
-	if err != nil {
-		message := fmt.Sprintf("Authentication error")
-		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
-		return
-	}
+	if order.Fulfilment != nil {
 
-	session, err := sessionRepo.GetActiveByRespondent(*respondent, "Assignments.Assignment.Product")
-	if nil != err {
-		message := fmt.Sprintf("Could not find active session for respondent[id:%s]", respondent.ID)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-		return
+		respondent, err := respondentRepo.GetById(*order.Fulfilment.ResponderID)
+		if err != nil {
+			message := fmt.Sprintf("Authentication error")
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+			return
+		}
+
+		session, err := sessionRepo.GetActiveByRespondent(*respondent, "Assignments.Assignment.Product")
+		if nil != err {
+			message := fmt.Sprintf("Could not find active session for respondent[id:%s]", respondent.ID)
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		currentCoords := session.CurrentCoordinates
+		if currentCoords != nil {
+			order.Fulfilment.Coordinates = currentCoords
+		}
 	}
-	currentCoords := session.CurrentCoordinates
-	order.Fulfilment.Coordinates = currentCoords
 
 	if order.Payment != nil {
 		if err := paymentService.UpdatePaymentStatus(order.Payment); err != nil {

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
+	"gorm.io/gorm"
 )
 
 var orderService OrderService
@@ -65,8 +66,13 @@ func (service *orderServiceImpl) AssignResponder(order *model.Order, session *mo
 			if err.Error() != "record not found" {
 				return err
 			}
+		} else {
+			if (fulfilment.SessionID != nil && *fulfilment.SessionID == session.ID) || (fulfilment.ResponderID != nil && *fulfilment.ResponderID == respondent.ID) {
+
+			} else {
+				return errors.New("Cannot overidde order responder assignment")
+			}
 		}
-		return errors.New("Cannot overidde order responder assignment")
 	}
 
 	if fulfilment != nil && fulfilment.ResponderID.String() != respondent.ID.String() {
@@ -83,15 +89,16 @@ func (service *orderServiceImpl) AssignResponder(order *model.Order, session *mo
 	fulfilment.ResponderID = &respondent.ID
 	order.Status = model.ORDER_STATUS_RESPONDENT_ASSIGNED
 
-	if err := fulfilmentService.Save(fulfilment); err != nil {
-		return err
-	}
-
-	order.FulfilmentID = &fulfilment.ID
-
-	if err := service.Save(order); err != nil {
-		return err
-	}
+	err = model.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(fulfilment).Error; err != nil {
+			return err
+		}
+		order.FulfilmentID = &fulfilment.ID
+		if err := tx.Save(order).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 	return err
 }
 

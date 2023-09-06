@@ -78,8 +78,6 @@ func main() {
 	api.PATCH("/respondent_sessions/:id", controller.UpdateRespondentSession)
 	api.DELETE("/respondent_sessions/:id", controller.DeleteRespondentSession)
 
-	api.GET("/company_earnings", controller.FindCompanyEarnings)
-	api.GET("/company_earnings/:id", controller.FindCompanyEarnings)
 	// api.POST("/company_earnings", controller.CreateCompanyEarning)
 	// api.PATCH("/company_earnings/:id", controller.UpdateCompanyEarning)
 	// api.DELETE("/company_earnings/:id", controller.DeleteCompanyEarning)
@@ -116,6 +114,9 @@ func main() {
 	api.POST("/orders/:id/complete", controller.CompleteOrder)
 	api.PATCH("/orders/:id", controller.UpdateOrder)
 	api.DELETE("/orders/:id", controller.DeleteOrder)
+	api.POST("/orders/:id/verify-responder", controller.ClientVerifyOrderRespondentDetails)
+	api.POST("/orders/:id/cancel", controller.ClientCancelOrder)
+	api.POST("/orders/:id/confirm", controller.ClientConfirmCompleteOrder)
 
 	//
 	api.GET("/orders/:id/payment", controller.CreatePaymentIntent)
@@ -127,6 +128,10 @@ func main() {
 	api.POST("/respondents", controller.CreateRespondent)
 	api.PATCH("/respondents/:id", controller.UpdateRespondent)
 	api.DELETE("/respondents/:id", controller.DeleteRespondent)
+	// RESPONDENT EARNINGS
+	api.GET("/respondents/:id/earnings", controller.FindRespondentEarnings)
+	api.GET("/respondents/:id/earnings/:earning_id", controller.FindRespondentEarning)
+	//RESPONDENT - WALLET
 	api.GET("/respondents/:id/wallet", controller.FindRespondentWallet)
 	api.POST("/respondents/:id/wallet/withdrawals", controller.CreateRespondentWithdrawal)
 	api.GET("/respondents/:id/wallet/withdrawals", controller.FindRespondentWithdrawals)
@@ -149,6 +154,12 @@ func main() {
 	api.POST("/companies", controller.CreateCompany)
 	api.PATCH("/companies/:id", controller.UpdateCompany)
 	api.DELETE("/companies/:id", controller.DeleteCompany)
+
+	api.GET("/companies/:id/earnings", controller.FindCompanyEarnings)
+	api.GET("/companies/:id/earnings/:earning_id", controller.FindCompanyEarning)
+	// api.GET("/company_earnings/:id", controller.FindCompanyEarnings)
+
+	//COMPANY - WALLET
 	api.GET("/companies/:id/wallet", controller.FindCompanyWallet)
 	api.POST("/companies/:id/wallet/withdrawals", controller.CreateCompanyWithdrawal)
 	api.GET("/companies/:id/wallet/withdrawals", controller.FindCompanyWithdrawals)

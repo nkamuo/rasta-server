@@ -34,7 +34,7 @@ type respondentServiceImpl struct {
 }
 
 func (service *respondentServiceImpl) GetById(id uuid.UUID, preload ...string) (respondent *model.Respondent, err error) {
-	return service.repo.GetById(id)
+	return service.repo.GetById(id, preload...)
 }
 
 func (service *respondentServiceImpl) Save(respondent *model.Respondent) (err error) {

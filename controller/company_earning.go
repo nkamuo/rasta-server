@@ -104,7 +104,7 @@ func FindCompanyEarnings(c *gin.Context) {
 
 func FindCompanyEarning(c *gin.Context) {
 	var companyService = service.GetCompanyService()
-	earningService := service.GetCompanyEarningService()
+	var earningService = service.GetCompanyEarningService()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
