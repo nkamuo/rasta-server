@@ -22,7 +22,7 @@ func GetRespondentService() RespondentService {
 }
 
 type RespondentService interface {
-	GetById(id uuid.UUID) (respondent *model.Respondent, err error)
+	GetById(id uuid.UUID, preload ...string) (respondent *model.Respondent, err error)
 	Save(respondent *model.Respondent) (err error)
 	AssignToCompany(respondent *model.Respondent, company *model.Company) (err error)
 	RemoveFromCompany(respondent *model.Respondent, company *model.Company) (err error)
@@ -33,12 +33,19 @@ type respondentServiceImpl struct {
 	repo repository.RespondentRepository
 }
 
-func (service *respondentServiceImpl) GetById(id uuid.UUID) (respondent *model.Respondent, err error) {
+func (service *respondentServiceImpl) GetById(id uuid.UUID, preload ...string) (respondent *model.Respondent, err error) {
 	return service.repo.GetById(id)
 }
 
 func (service *respondentServiceImpl) Save(respondent *model.Respondent) (err error) {
-	return service.repo.Save(respondent)
+	respondentWalletService := GetRespondentWalletService()
+	if err := service.repo.Save(respondent); err != nil {
+		return err
+	}
+	if err := respondentWalletService.CreateNewFor(respondent); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (service *respondentServiceImpl) AssignToCompany(respondent *model.Respondent, company *model.Company) (err error) {

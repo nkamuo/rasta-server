@@ -23,7 +23,7 @@ func GetCompanyWalletRepository() CompanyWalletRepository {
 type CompanyWalletRepository interface {
 	FindAll(page int, limit int) (companyWallets []model.CompanyWallet, total int64, err error)
 	GetById(id uuid.UUID) (companyWallet *model.CompanyWallet, err error)
-	GetByRequest(request model.Request) (companyWallet *model.CompanyWallet, err error)
+	GetByCompany(company model.Company) (companyWallet *model.CompanyWallet, err error)
 	Save(companyWallet *model.CompanyWallet) (err error)
 	Delete(companyWallet *model.CompanyWallet) (error error)
 	DeleteById(id uuid.UUID) (companyWallet *model.CompanyWallet, err error)
@@ -56,8 +56,8 @@ func (repo *companyWalletRepository) GetById(id uuid.UUID) (companyWallet *model
 	return companyWallet, nil
 }
 
-func (repo *companyWalletRepository) GetByRequest(request model.Request) (companyWallet *model.CompanyWallet, err error) {
-	if err = model.DB.Where("request_id = ?", request.ID).First(&companyWallet).Error; err != nil {
+func (repo *companyWalletRepository) GetByCompany(company model.Company) (companyWallet *model.CompanyWallet, err error) {
+	if err = model.DB.Where("company_id = ?", company.ID).First(&companyWallet).Error; err != nil {
 		return nil, err
 	}
 	return companyWallet, nil

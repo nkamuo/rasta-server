@@ -22,7 +22,7 @@ func GetCompanyRepository() CompanyRepository {
 
 type CompanyRepository interface {
 	FindAll(page int, limit int) (companys []model.Company, total int64, err error)
-	GetById(id uuid.UUID) (company *model.Company, err error)
+	GetById(id uuid.UUID, preload ...string) (company *model.Company, err error)
 	GetByEmail(email string) (company *model.Company, err error)
 	GetByPhone(phone string) (company *model.Company, err error)
 	GetByUser(user model.User) (company *model.Company, err error)
@@ -52,8 +52,14 @@ func (repo *companyRepository) FindAll(page int, limit int) (companys []model.Co
 	return
 }
 
-func (repo *companyRepository) GetById(id uuid.UUID) (company *model.Company, err error) {
-	if err = model.DB. /*.Joins("OperatorUser")*/ First(&company, "id = ?", id).Error; err != nil {
+func (repo *companyRepository) GetById(id uuid.UUID, preload ...string) (company *model.Company, err error) {
+	query := model.DB
+
+	for _, pEntry := range preload {
+		query = query.Preload(pEntry)
+	}
+
+	if err = query.First(&company, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return company, nil

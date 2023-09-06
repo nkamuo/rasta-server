@@ -21,7 +21,7 @@ func GetCompanyService() CompanyService {
 }
 
 type CompanyService interface {
-	GetById(id uuid.UUID) (company *model.Company, err error)
+	GetById(id uuid.UUID, preload ...string) (company *model.Company, err error)
 	Save(company *model.Company) (err error)
 	Delete(company *model.Company) (error error)
 }
@@ -30,12 +30,16 @@ type companyServiceImpl struct {
 	repo repository.CompanyRepository
 }
 
-func (service *companyServiceImpl) GetById(id uuid.UUID) (company *model.Company, err error) {
+func (service *companyServiceImpl) GetById(id uuid.UUID, preload ...string) (company *model.Company, err error) {
 	return service.repo.GetById(id)
 }
 
 func (service *companyServiceImpl) Save(company *model.Company) (err error) {
-	return service.repo.Save(company)
+	walletService := GetCompanyWalletService()
+	if err := service.repo.Save(company); err != nil {
+		return err
+	}
+	return walletService.CreateNewFor(company)
 }
 
 func (service *companyServiceImpl) Delete(company *model.Company) (err error) {

@@ -23,7 +23,7 @@ func GetRespondentWalletRepository() RespondentWalletRepository {
 type RespondentWalletRepository interface {
 	FindAll(page int, limit int) (respondentWallets []model.RespondentWallet, total int64, err error)
 	GetById(id uuid.UUID) (respondentWallet *model.RespondentWallet, err error)
-	GetByRequest(request model.Request) (respondentWallet *model.RespondentWallet, err error)
+	GetByRespondent(respondent model.Respondent) (respondentWallet *model.RespondentWallet, err error)
 	Save(respondentWallet *model.RespondentWallet) (err error)
 	Delete(respondentWallet *model.RespondentWallet) (error error)
 	DeleteById(id uuid.UUID) (respondentWallet *model.RespondentWallet, err error)
@@ -56,8 +56,8 @@ func (repo *respondentWalletRepository) GetById(id uuid.UUID) (respondentWallet 
 	return respondentWallet, nil
 }
 
-func (repo *respondentWalletRepository) GetByRequest(request model.Request) (respondentWallet *model.RespondentWallet, err error) {
-	if err = model.DB.Where("request_id = ?", request.ID).First(&respondentWallet).Error; err != nil {
+func (repo *respondentWalletRepository) GetByRespondent(respondent model.Respondent) (respondentWallet *model.RespondentWallet, err error) {
+	if err = model.DB.Where("respondent_id = ?", respondent.ID).First(&respondentWallet).Error; err != nil {
 		return nil, err
 	}
 	return respondentWallet, nil

@@ -5,30 +5,32 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/nkamuo/rasta-server/data/pagination"
+	// "github.com/nkamuo/rasta-server/repository"
+	"github.com/nkamuo/rasta-server/repository"
+	"github.com/nkamuo/rasta-server/utils/auth"
 
 	// "github.com/nkamuo/rasta-server/dto"
-	"github.com/nkamuo/rasta-server/model"
+
 	"github.com/nkamuo/rasta-server/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-func FindCompanyWallets(c *gin.Context) {
-	var companyWallets []model.CompanyWallet
-	var page pagination.Page
-	if err := c.ShouldBindQuery(&page); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
+// func FindCompanyWallets(c *gin.Context) {
+// 	var companyWallets []model.CompanyWallet
+// 	var page pagination.Page
+// 	if err := c.ShouldBindQuery(&page); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+// 		return
+// 	}
 
-	if err := model.DB.Scopes(pagination.Paginate(companyWallets, &page, model.DB)).Find(&companyWallets).Error; nil != err {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
-	page.Rows = companyWallets
-	c.JSON(http.StatusOK, gin.H{"data": page})
-}
+// 	if err := model.DB.Scopes(pagination.Paginate(companyWallets, &page, model.DB)).Find(&companyWallets).Error; nil != err {
+// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+// 		return
+// 	}
+// 	page.Rows = companyWallets
+// 	c.JSON(http.StatusOK, gin.H{"data": page})
+// }
 
 // func CreateCompanyWallet(c *gin.Context) {
 
@@ -57,7 +59,8 @@ func FindCompanyWallets(c *gin.Context) {
 // }
 
 func FindCompanyWallet(c *gin.Context) {
-	companyWalletService := service.GetCompanyWalletService()
+	companyService := service.GetCompanyService()
+	companyWalletRepository := repository.GetCompanyWalletRepository()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -65,9 +68,35 @@ func FindCompanyWallet(c *gin.Context) {
 		return
 	}
 
-	companyWallet, err := companyWalletService.GetById(id)
+	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
-		message := fmt.Sprintf("Could not find companyWallet with [id:%s]", id)
+		message := fmt.Sprintf("Authentication erro: %s", err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	company, err := companyService.GetById(id, "OperatorUser")
+	if err != nil {
+		var message string
+		if err.Error() == "record not found" {
+			message = fmt.Sprintf("Could not find company with [id:%s]", id)
+			c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		} else {
+			message = fmt.Sprintf("An error occured: %s", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		}
+		return
+	}
+
+	if !*rUser.IsAdmin && company.OperatorUser.ID.String() != rUser.ID.String() {
+		message := fmt.Sprintf("Permision Denied: you may not access this resource")
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	companyWallet, err := companyWalletRepository.GetByCompany(*company)
+	if err != nil {
+		message := fmt.Sprintf("Could not find Wallet for company \"%s\"", company.Title)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
@@ -122,17 +151,17 @@ func FindCompanyWallet(c *gin.Context) {
 // 	c.JSON(http.StatusOK, gin.H{"data": companyWallet, "status": "success", "message": message})
 // }
 
-func DeleteCompanyWallet(c *gin.Context) {
-	id := c.Param("id")
+// func DeleteCompanyWallet(c *gin.Context) {
+// 	id := c.Param("id")
 
-	var companyWallet model.CompanyWallet
+// 	var companyWallet model.CompanyWallet
 
-	if err := model.DB.Where("id = ?", id).First(&companyWallet).Error; err != nil {
-		message := fmt.Sprintf("Could not find companyWallet with [id:%s]", id)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-		return
-	}
-	model.DB.Delete(&companyWallet)
-	message := fmt.Sprintf("Deleted companyWallet \"%s\"", companyWallet.ID)
-	c.JSON(http.StatusOK, gin.H{"data": companyWallet, "status": "success", "message": message})
-}
+// 	if err := model.DB.Where("id = ?", id).First(&companyWallet).Error; err != nil {
+// 		message := fmt.Sprintf("Could not find companyWallet with [id:%s]", id)
+// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+// 		return
+// 	}
+// 	model.DB.Delete(&companyWallet)
+// 	message := fmt.Sprintf("Deleted companyWallet \"%s\"", companyWallet.ID)
+// 	c.JSON(http.StatusOK, gin.H{"data": companyWallet, "status": "success", "message": message})
+// }

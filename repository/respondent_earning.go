@@ -24,6 +24,7 @@ type RespondentEarningRepository interface {
 	FindAll(page int, limit int) (respondentEarnings []model.RespondentEarning, total int64, err error)
 	GetById(id uuid.UUID) (respondentEarning *model.RespondentEarning, err error)
 	GetByRequest(request model.Request) (respondentEarning *model.RespondentEarning, err error)
+	FindByRespondent(respondent model.Respondent) (withdrawals *[]model.RespondentEarning, err error)
 	Save(respondentEarning *model.RespondentEarning) (err error)
 	Delete(respondentEarning *model.RespondentEarning) (error error)
 	DeleteById(id uuid.UUID) (respondentEarning *model.RespondentEarning, err error)
@@ -47,6 +48,13 @@ func (repo *respondentEarningRepository) FindAll(page int, limit int) (responden
 		return
 	}
 	return
+}
+
+func (repo *respondentEarningRepository) FindByRespondent(respondent model.Respondent) (withdrawals *[]model.RespondentEarning, err error) {
+	if err = model.DB.Where("respondent_id = ?", respondent.ID).Find(&withdrawals).Error; err != nil {
+		return nil, err
+	}
+	return withdrawals, nil
 }
 
 func (repo *respondentEarningRepository) GetById(id uuid.UUID) (respondentEarning *model.RespondentEarning, err error) {

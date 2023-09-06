@@ -5,26 +5,72 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/data/financial"
 	"github.com/nkamuo/rasta-server/data/pagination"
+	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
+	"github.com/nkamuo/rasta-server/utils/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func FindRespondentEarnings(c *gin.Context) {
-	var respondentEarnings []model.RespondentEarning
-	var page pagination.Page
+	var respondentService = service.GetRespondentService()
+	var earnings []model.RespondentEarning
+	var page dto.FinancialPageRequest
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Authentication erro: %s", err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	respondent, err := respondentService.GetById(id, "User")
+	if err != nil {
+		var message string
+		if err.Error() == "record not found" {
+			message = fmt.Sprintf("Could not find respondent with [id:%s]", id)
+			c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		} else {
+			message = fmt.Sprintf("An error occured: %s", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		}
+		return
+	}
+	query := model.DB
+
+	if *rUser.IsAdmin {
+
+	} else {
+		if respondent.User.ID.String() == rUser.ID.String() {
+			query = query.Where("respondent_id = ?", respondent.ID)
+		} else {
+			message := fmt.Sprintf("Permision Denied: you may not access this resource")
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+			return
+		}
+	}
+
 	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	if err := model.DB.Scopes(pagination.Paginate(respondentEarnings, &page, model.DB)).Find(&respondentEarnings).Error; nil != err {
+	query = query.Scopes(financial.FilterRequest(nil, &page, query))
+	query = query.Scopes(pagination.Paginate(earnings, &page.Page, query))
+	if err := query.Find(&earnings).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	page.Rows = respondentEarnings
+	page.Rows = earnings
 	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 
@@ -55,7 +101,8 @@ func FindRespondentEarnings(c *gin.Context) {
 // }
 
 func FindRespondentEarning(c *gin.Context) {
-	respondentEarningService := service.GetRespondentEarningService()
+	var respondentService = service.GetRespondentService()
+	earningService := service.GetRespondentEarningService()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -63,13 +110,43 @@ func FindRespondentEarning(c *gin.Context) {
 		return
 	}
 
-	respondentEarning, err := respondentEarningService.GetById(id)
+	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
-		message := fmt.Sprintf("Could not find respondentEarning with [id:%s]", id)
+		message := fmt.Sprintf("Authentication erro: %s", err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	earning, err := earningService.GetById(id)
+	if err != nil {
+		message := fmt.Sprintf("Could not find earning with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": respondentEarning})
+
+	respondent, err := respondentService.GetById(*earning.RespondentID, "User")
+	if err != nil {
+		var message string
+		if err.Error() == "record not found" {
+			message = fmt.Sprintf("Could not find responder with [id:%s]", id)
+			c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		} else {
+			message = fmt.Sprintf("An error occured: %s", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		}
+		return
+	}
+	if *rUser.IsAdmin {
+
+	} else {
+		if respondent.User.ID.String() != rUser.ID.String() {
+			message := fmt.Sprintf("Permision Denied: you may not access this resource")
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": earning})
 }
 
 // func UpdateRespondentEarning(c *gin.Context) {

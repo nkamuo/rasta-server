@@ -24,6 +24,7 @@ type CompanyEarningRepository interface {
 	FindAll(page int, limit int) (companyEarnings []model.CompanyEarning, total int64, err error)
 	GetById(id uuid.UUID) (companyEarning *model.CompanyEarning, err error)
 	GetByRequest(request model.Request) (companyEarning *model.CompanyEarning, err error)
+	FindByCompany(company model.Company) (withdrawals *[]model.CompanyEarning, err error)
 	Save(companyEarning *model.CompanyEarning) (err error)
 	Delete(companyEarning *model.CompanyEarning) (error error)
 	DeleteById(id uuid.UUID) (companyEarning *model.CompanyEarning, err error)
@@ -54,6 +55,13 @@ func (repo *companyEarningRepository) GetById(id uuid.UUID) (companyEarning *mod
 		return nil, err
 	}
 	return companyEarning, nil
+}
+
+func (repo *companyEarningRepository) FindByCompany(company model.Company) (withdrawals *[]model.CompanyEarning, err error) {
+	if err = model.DB.Where("company_id = ?", company.ID).Find(&withdrawals).Error; err != nil {
+		return nil, err
+	}
+	return withdrawals, nil
 }
 
 func (repo *companyEarningRepository) GetByRequest(request model.Request) (companyEarning *model.CompanyEarning, err error) {

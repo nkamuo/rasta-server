@@ -5,28 +5,31 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/nkamuo/rasta-server/data/pagination"
-	"github.com/nkamuo/rasta-server/model"
+	// "github.com/nkamuo/rasta-server/data/pagination"
+
+	// "github.com/nkamuo/rasta-server/repository"
+	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
+	"github.com/nkamuo/rasta-server/utils/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
-func FindRespondentWallets(c *gin.Context) {
-	var respondentWallets []model.RespondentWallet
-	var page pagination.Page
-	if err := c.ShouldBindQuery(&page); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
+// func FindRespondentWallets(c *gin.Context) {
+// 	var respondentWallets []model.RespondentWallet
+// 	var page pagination.Page
+// 	if err := c.ShouldBindQuery(&page); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+// 		return
+// 	}
 
-	if err := model.DB.Scopes(pagination.Paginate(respondentWallets, &page, model.DB)).Find(&respondentWallets).Error; nil != err {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
-	page.Rows = respondentWallets
-	c.JSON(http.StatusOK, gin.H{"data": page})
-}
+// 	if err := model.DB.Scopes(pagination.Paginate(respondentWallets, &page, model.DB)).Find(&respondentWallets).Error; nil != err {
+// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+// 		return
+// 	}
+// 	page.Rows = respondentWallets
+// 	c.JSON(http.StatusOK, gin.H{"data": page})
+// }
 
 // func CreateRespondentWallet(c *gin.Context) {
 
@@ -55,7 +58,8 @@ func FindRespondentWallets(c *gin.Context) {
 // }
 
 func FindRespondentWallet(c *gin.Context) {
-	respondentWalletService := service.GetRespondentWalletService()
+	respondentService := service.GetRespondentService()
+	respondentWalletRepository := repository.GetRespondentWalletRepository()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -63,9 +67,35 @@ func FindRespondentWallet(c *gin.Context) {
 		return
 	}
 
-	respondentWallet, err := respondentWalletService.GetById(id)
+	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
-		message := fmt.Sprintf("Could not find respondentWallet with [id:%s]", id)
+		message := fmt.Sprintf("Authentication erro: %s", err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	respondent, err := respondentService.GetById(id, "User")
+	if err != nil {
+		var message string
+		if err.Error() == "record not found" {
+			message = fmt.Sprintf("Could not find respondent with [id:%s]", id)
+			c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		} else {
+			message = fmt.Sprintf("An error occured: %s", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		}
+		return
+	}
+
+	if !*rUser.IsAdmin && respondent.User.ID.String() != rUser.ID.String() {
+		message := fmt.Sprintf("Permision Denied: you may not access this resource")
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	respondentWallet, err := respondentWalletRepository.GetByRespondent(*respondent)
+	if err != nil {
+		message := fmt.Sprintf("Could not find Wallet for respondent \"%s\"", respondent.User.FullName())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
@@ -120,17 +150,17 @@ func FindRespondentWallet(c *gin.Context) {
 // 	c.JSON(http.StatusOK, gin.H{"data": respondentWallet, "status": "success", "message": message})
 // }
 
-func DeleteRespondentWallet(c *gin.Context) {
-	id := c.Param("id")
+// func DeleteRespondentWallet(c *gin.Context) {
+// 	id := c.Param("id")
 
-	var respondentWallet model.RespondentWallet
+// 	var respondentWallet model.RespondentWallet
 
-	if err := model.DB.Where("id = ?", id).First(&respondentWallet).Error; err != nil {
-		message := fmt.Sprintf("Could not find respondentWallet with [id:%s]", id)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-		return
-	}
-	model.DB.Delete(&respondentWallet)
-	message := fmt.Sprintf("Deleted respondentWallet \"%s\"", respondentWallet.ID)
-	c.JSON(http.StatusOK, gin.H{"data": respondentWallet, "status": "success", "message": message})
-}
+// 	if err := model.DB.Where("id = ?", id).First(&respondentWallet).Error; err != nil {
+// 		message := fmt.Sprintf("Could not find respondentWallet with [id:%s]", id)
+// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+// 		return
+// 	}
+// 	model.DB.Delete(&respondentWallet)
+// 	message := fmt.Sprintf("Deleted respondentWallet \"%s\"", respondentWallet.ID)
+// 	c.JSON(http.StatusOK, gin.H{"data": respondentWallet, "status": "success", "message": message})
+// }

@@ -26,3 +26,11 @@ type OrderEarningStatus = string
 const ORDER_EARNING_STATUS_PENDING = "pending"
 const ORDER_EARNING_STATUS_COMPLETED = "completed"
 const ORDER_EARNING_STATUS_CANCELLED = "cancelled"
+
+func (earning OrderEarning) IsCommited() bool {
+	return earning.Status == ORDER_EARNING_STATUS_COMPLETED
+}
+
+func (earning OrderEarning) IsPending() bool {
+	return earning.Status == ORDER_EARNING_STATUS_PENDING
+}

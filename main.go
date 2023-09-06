@@ -127,6 +127,10 @@ func main() {
 	api.POST("/respondents", controller.CreateRespondent)
 	api.PATCH("/respondents/:id", controller.UpdateRespondent)
 	api.DELETE("/respondents/:id", controller.DeleteRespondent)
+	api.GET("/respondents/:id/wallet", controller.FindRespondentWallet)
+	api.POST("/respondents/:id/wallet/withdrawals", controller.CreateRespondentWithdrawal)
+	api.GET("/respondents/:id/wallet/withdrawals", controller.FindRespondentWithdrawals)
+	api.GET("/respondents/:id/wallet/withdrawals/:withdrawal_id", controller.FindRespondentWithdrawal)
 
 	//RESPONDENT REVIEWS
 	api.GET("/respondent_service_reviews", controller.FindRespondentServiceReviews)
@@ -145,6 +149,10 @@ func main() {
 	api.POST("/companies", controller.CreateCompany)
 	api.PATCH("/companies/:id", controller.UpdateCompany)
 	api.DELETE("/companies/:id", controller.DeleteCompany)
+	api.GET("/companies/:id/wallet", controller.FindCompanyWallet)
+	api.POST("/companies/:id/wallet/withdrawals", controller.CreateCompanyWithdrawal)
+	api.GET("/companies/:id/wallet/withdrawals", controller.FindCompanyWithdrawals)
+	api.GET("/companies/:id/wallet/withdrawals/:withdrawal_id", controller.FindCompanyWithdrawal)
 
 	api.GET("/vehicles", controller.FindVehicles)
 	api.GET("/vehicles/:id", controller.FindVehicle)

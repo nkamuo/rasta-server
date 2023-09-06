@@ -36,7 +36,14 @@ func ConnectDatabase(config *initializers.Config) {
 		&ProductRespondentAssignment{},
 		&RespondentSession{},
 		&RespondentSessionAssignedProduct{},
-
+		//
+		&CompanyWallet{},
+		&RespondentWallet{},
+		&RespondentEarning{},
+		&CompanyEarning{},
+		&CompanyWithdrawal{},
+		&RespondentWithdrawal{},
+		//
 		&OrderFulfilment{},
 		&Order{},
 		&Request{},
