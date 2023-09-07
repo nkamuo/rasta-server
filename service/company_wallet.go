@@ -73,7 +73,7 @@ func (service *companyWalletServiceImpl) DeleteById(id uuid.UUID) (companyWallet
 	return companyWallet, err
 }
 
-func (repo *companyWalletServiceImpl) Refresh(wallet *model.CompanyWallet) (err error) {
+func (service *companyWalletServiceImpl) Refresh(wallet *model.CompanyWallet) (err error) {
 
 	companyService := GetCompanyService()
 	earningRepo := repository.GetCompanyEarningRepository()
@@ -122,5 +122,6 @@ func (repo *companyWalletServiceImpl) Refresh(wallet *model.CompanyWallet) (err 
 	wallet.PendingDebitTotal = pendingDebit
 	wallet.PendingCreditTotal = pendingCredit
 
-	return nil
+	err = service.Save(wallet)
+	return err
 }

@@ -10,7 +10,7 @@ import (
 type RespondentEarning struct {
 	OrderEarning
 	//THE RESPONDENT EXECUTING THIS TASK
-	RespondentID *uuid.UUID  `gorm:"not null;unique" json:"respondentId,omitempty"`
+	RespondentID *uuid.UUID  `gorm:"not null" json:"respondentId,omitempty"`
 	Respondent   *Respondent `gorm:"foreignKey:RespondentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"respondent,omitempty"`
 }
 

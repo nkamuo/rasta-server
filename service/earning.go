@@ -54,6 +54,10 @@ func (service *generalEarningServiceImpl) DeleteById(id uuid.UUID) (generalEarni
 
 func (service *generalEarningServiceImpl) ProcessEarnings(order *model.Order) (err error) {
 
+	companyWalletRepo := repository.GetCompanyWalletRepository()
+	respondentWalletRepo := repository.GetRespondentWalletRepository()
+	companyWalletService := GetCompanyWalletService()
+	respondentWalletService := GetRespondentWalletService()
 	companyEarningRepository := repository.GetCompanyEarningRepository()
 	respondentEarningRepository := repository.GetRespondentEarningRepository()
 	responderService := GetRespondentService()
@@ -68,6 +72,9 @@ func (service *generalEarningServiceImpl) ProcessEarnings(order *model.Order) (e
 	if err != nil {
 		return errors.New(fmt.Sprintf("Could not load fulfilment Plan: %s", err.Error()))
 	}
+
+	var companyWallet *model.CompanyWallet
+	var respondentWallet *model.RespondentWallet
 
 	var companyEarnings = make([]model.CompanyEarning, 1)
 	var respondentEarnings = make([]model.RespondentEarning, 1)
@@ -106,6 +113,11 @@ func (service *generalEarningServiceImpl) ProcessEarnings(order *model.Order) (e
 				return errors.New(message)
 			}
 			companyEarnings = append(companyEarnings, *earning)
+			if companyWallet == nil {
+				if companyWallet, err = companyWalletRepo.GetByCompany(*responder.Company); err != nil {
+					return nil
+				}
+			}
 		}
 	} else {
 		for _, request := range *fullOrder.Items {
@@ -124,6 +136,23 @@ func (service *generalEarningServiceImpl) ProcessEarnings(order *model.Order) (e
 				return errors.New(message)
 			}
 			respondentEarnings = append(respondentEarnings, *earning)
+			if respondentWallet == nil {
+				if respondentWallet, err = respondentWalletRepo.GetByRespondent(*responder); err != nil {
+					return nil
+				}
+			}
+		}
+	}
+
+	if companyWallet != nil {
+		if err := companyWalletService.Refresh(companyWallet); err != nil {
+			return nil
+		}
+	}
+
+	if respondentWallet != nil {
+		if err := respondentWalletService.Refresh(respondentWallet); err != nil {
+			return nil
 		}
 	}
 

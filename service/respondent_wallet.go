@@ -117,7 +117,9 @@ func (service *respondentWalletServiceImpl) Refresh(wallet *model.RespondentWall
 	wallet.PendingDebitTotal = pendingDebit
 	wallet.PendingCreditTotal = pendingCredit
 
-	return nil
+	err = service.Save(wallet)
+
+	return err
 }
 
 func (service *respondentWalletServiceImpl) DeleteById(id uuid.UUID) (respondentWallet *model.RespondentWallet, err error) {

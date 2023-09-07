@@ -65,8 +65,8 @@ func FindRespondentEarnings(c *gin.Context) {
 	}
 
 	query = query.Scopes(financial.FilterRequest(nil, &page, query))
-	query = query.Scopes(pagination.Paginate(earnings, &page.Page, query))
-	if err := query.Find(&earnings).Error; nil != err {
+	// query =
+	if err := query.Scopes(pagination.Paginate(earnings, &page.Page, query)).Find(&earnings).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
