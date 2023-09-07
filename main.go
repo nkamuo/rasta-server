@@ -38,7 +38,7 @@ func main() {
 	model.ConnectDatabase(&config)
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:3000"}
+	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:3000", "http://localhost:51074"}
 	corsConfig.AddAllowHeaders("Authorization")
 	// config.AllowOrigins = []string{"http://google.com", "http://facebook.com"}
 	// config.AllowAllOrigins = true

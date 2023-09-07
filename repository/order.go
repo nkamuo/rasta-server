@@ -22,7 +22,7 @@ func GetOrderRepository() OrderRepository {
 
 type OrderRepository interface {
 	FindAll(page int, limit int) (orders []model.Order, total int64, err error)
-	GetById(id uuid.UUID) (order *model.Order, err error)
+	GetById(id uuid.UUID, preload ...string) (order *model.Order, err error)
 	GetByFulfilment(fulfilment model.OrderFulfilment) (order *model.Order, err error)
 	Save(order *model.Order) (err error)
 	Update(order *model.Order, fields map[string]interface{}) (err error)
@@ -50,8 +50,14 @@ func (repo *orderRepository) FindAll(page int, limit int) (orders []model.Order,
 	return
 }
 
-func (repo *orderRepository) GetById(id uuid.UUID) (order *model.Order, err error) {
-	if err = model.DB. /*.Preload("Place")*/ Where("id = ?", id).First(&order).Error; err != nil {
+func (repo *orderRepository) GetById(id uuid.UUID, preload ...string) (order *model.Order, err error) {
+	query := model.DB
+
+	for _, pLoad := range preload {
+		query = query.Preload(pLoad)
+	}
+
+	if err = query.Where("id = ?", id).First(&order).Error; err != nil {
 		return nil, err
 	}
 	return order, nil

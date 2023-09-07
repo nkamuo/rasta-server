@@ -56,14 +56,15 @@ func (service *generalEarningServiceImpl) ProcessEarnings(order *model.Order) (e
 
 	companyEarningRepository := repository.GetCompanyEarningRepository()
 	respondentEarningRepository := repository.GetRespondentEarningRepository()
-
+	responderService := GetRespondentService()
 	fulfilmentService := GetOrderFulfilmentService()
+	orderRepository := repository.GetOrderRepository()
 
 	if order.FulfilmentID == nil {
 		return errors.New(fmt.Sprint("Order fulfilment not started yet"))
 	}
 
-	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID, "Responder.Company")
+	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID, "Responder.Company", "Session.Respondent.Company")
 	if err != nil {
 		return errors.New(fmt.Sprintf("Could not load fulfilment Plan: %s", err.Error()))
 	}
@@ -71,23 +72,33 @@ func (service *generalEarningServiceImpl) ProcessEarnings(order *model.Order) (e
 	var companyEarnings = make([]model.CompanyEarning, 1)
 	var respondentEarnings = make([]model.RespondentEarning, 1)
 
-	responder := fulfilment.Responder
+	if fulfilment.ResponderID == nil {
+		return errors.New("Order is not assigned to responder yet")
+	}
 
-	if responder == nil {
-		return errors.New("Order is not assigned yet")
+	responder, err := responderService.GetById(*fulfilment.ResponderID)
+	if err != nil {
+		return err
 	}
 
 	if !fulfilment.IsComplete() {
 		return errors.New("Order is not completed yet")
 	}
 
-	if responder.Company != nil {
-		for _, request := range *order.Items {
+	fullOrder, err := orderRepository.GetById(order.ID, "Items.Product")
+	if err != nil {
+		return err
+	}
+
+	if !responder.Independent() {
+		for _, request := range *fullOrder.Items {
 			earning, err := companyEarningRepository.GetByRequest(request)
 			if err != nil {
 				if err.Error() != "record not found" {
 					return err
 				}
+			} else {
+				continue //EARNING ALREADY CREATED
 			}
 			earning, err = buildCompanyEarning(*fulfilment, request, *responder.Company)
 			if err != nil {
@@ -97,12 +108,14 @@ func (service *generalEarningServiceImpl) ProcessEarnings(order *model.Order) (e
 			companyEarnings = append(companyEarnings, *earning)
 		}
 	} else {
-		for _, request := range *order.Items {
+		for _, request := range *fullOrder.Items {
 			earning, err := respondentEarningRepository.GetByRequest(request)
 			if err != nil {
 				if err.Error() != "record not found" {
 					return err
 				}
+			} else {
+				continue //EARNING ALREADY CREATED
 			}
 
 			earning, err = buildRespondentEarning(*fulfilment, request)

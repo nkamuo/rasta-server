@@ -41,3 +41,7 @@ func (Respondent *Respondent) BeforeCreate(tx *gorm.DB) (err error) {
 	Respondent.UpdatedAt = time.Now()
 	return nil
 }
+
+func (Respondent *Respondent) Independent() bool {
+	return Respondent.CompanyID == nil
+}

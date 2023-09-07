@@ -34,7 +34,7 @@ type fulfilmentServiceImpl struct {
 }
 
 func (service *fulfilmentServiceImpl) GetById(id uuid.UUID, preload ...string) (fulfilment *model.OrderFulfilment, err error) {
-	return service.repo.GetById(id)
+	return service.repo.GetById(id, preload...)
 }
 
 func (service *fulfilmentServiceImpl) Save(fulfilment *model.OrderFulfilment) (err error) {

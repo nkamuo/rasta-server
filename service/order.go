@@ -158,7 +158,7 @@ func (service *orderServiceImpl) CompleteOrder(order *model.Order, isAuto bool) 
 
 	fulfilmentService := GetOrderFulfilmentService()
 	earningService := GetGeneralEarningService()
-	orderService := GetOrderService()
+	// orderService := GetOrderService()
 
 	if order == nil {
 		return errors.New("Order is nil or not fulfilled")
@@ -167,16 +167,21 @@ func (service *orderServiceImpl) CompleteOrder(order *model.Order, isAuto bool) 
 	if err != nil {
 		return err
 	}
-	now := time.Now()
 
-	if isAuto {
-		fulfilment.AutoConfirmedAt = &now
+	if fulfilment.IsComplete() {
+		// return errors.New("Order is already complete")
 	} else {
-		fulfilment.ClientConfirmedAt = &now
-	}
 
-	if err := orderService.Save(order); err != nil {
-		return err
+		now := time.Now()
+		if isAuto {
+			fulfilment.AutoConfirmedAt = &now
+		} else {
+			fulfilment.ClientConfirmedAt = &now
+		}
+
+		if err := fulfilmentService.Save(fulfilment); err != nil {
+			return err
+		}
 	}
 
 	if err := earningService.ProcessEarnings(order); err != nil {

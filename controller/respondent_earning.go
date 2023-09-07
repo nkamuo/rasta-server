@@ -45,7 +45,7 @@ func FindRespondentEarnings(c *gin.Context) {
 		}
 		return
 	}
-	query := model.DB
+	query := model.DB.Preload("Request.Product.Place").Preload("Request.Order.User")
 
 	if *rUser.IsAdmin {
 

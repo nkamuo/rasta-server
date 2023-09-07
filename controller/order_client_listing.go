@@ -46,8 +46,8 @@ func ClientVerifyOrderRespondentDetails(c *gin.Context) {
 	}
 
 	if order.FulfilmentID == nil {
-		message := fmt.Sprintf("Order [id:%s] is not assigned yet", id)
-		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		message := fmt.Sprintf("Order [id:%s] is not assigned to a responder yet", id)
+		c.JSON(http.StatusExpectationFailed, gin.H{"status": "error", "message": message})
 		return
 	}
 	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID, "Order.User")
