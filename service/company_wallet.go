@@ -104,7 +104,8 @@ func (service *companyWalletServiceImpl) Refresh(wallet *model.CompanyWallet) (e
 			if withdrawal.IsCommited() {
 				commitedDebit += withdrawal.Amount
 			} else if withdrawal.IsPending() {
-				pendingDebit += withdrawal.Amount
+				// pendingDebit += withdrawal.Amount
+				commitedDebit += withdrawal.Amount
 			}
 		}
 	} else {

@@ -88,6 +88,7 @@ func (service *respondentWithdrawalServiceImpl) Init(wallet model.RespondentWall
 		Withdrawal: model.Withdrawal{
 			Amount:      amount,
 			Description: description,
+			Status:      model.ORDER_WITHDRAWAL_STATUS_PENDING,
 		},
 		WalletID: &wallet.ID,
 	}

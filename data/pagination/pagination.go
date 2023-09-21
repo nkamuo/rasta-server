@@ -38,7 +38,7 @@ func (p *Page) GetPage() int {
 
 func (p *Page) GetSort() string {
 	if p.Sort == "" {
-		p.Sort = "Id desc"
+		p.Sort = "created_at desc"
 	}
 	return p.Sort
 }

@@ -8,22 +8,21 @@ import (
 )
 
 type RespondentServiceReview struct {
-	ID     uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
-	Rating uint8     `gorm:"" json:"rating"`
+	ID uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
 	//
-	RespondentID *uuid.UUID `gorm:"not null" json:"respondentId,omitempty"`
-	Respondent   *FuelType  `gorm:"foreignKey:RespondentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"respondent,omitempty"`
+	Rating      uint8   `gorm:"" json:"rating"`
+	Description *string `gorm:"" json:"description,omitempty"`
 	//
-	RequestID *uuid.UUID `gorm:"not null" json:"requestId,omitempty"`
-	Request   *Request   `gorm:"foreignKey:RequestID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"request,omitempty"`
+	RespondentID *uuid.UUID  `gorm:"not null" json:"respondentId,omitempty"`
+	Respondent   *Respondent `gorm:"foreignKey:RespondentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"respondent,omitempty"`
 	//
-	AuthorID *uuid.UUID `gorm:"not null" json:"authorId,omitempty"`
-	Author   *User      `gorm:"foreignKey:AuthorID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"author,omitempty"`
+	OrderID *uuid.UUID `gorm:"not null" json:"orderId,omitempty"`
+	Order   *Order     `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
+
 	//
-	Description *string   `gorm:"" json:"description,omitempty"`
-	Published   *bool     `gorm:"default:false;not null" json:"published"`
-	CreatedAt   time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
-	UpdatedAt   time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
+	Published *bool     `gorm:"default:false;not null" json:"published"`
+	CreatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
+	UpdatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }
 
 func (review *RespondentServiceReview) BeforeCreate(tx *gorm.DB) (err error) {

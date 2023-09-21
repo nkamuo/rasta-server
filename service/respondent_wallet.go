@@ -16,7 +16,10 @@ var respondentWalletRepoMutext *sync.Mutex = &sync.Mutex{}
 func GetRespondentWalletService() RespondentWalletService {
 	respondentWalletRepoMutext.Lock()
 	if respondentWalletService == nil {
-		respondentWalletService = &respondentWalletServiceImpl{repo: repository.GetRespondentWalletRepository()}
+		respondentWalletService = &respondentWalletServiceImpl{
+			repo:          repository.GetRespondentWalletRepository(),
+			walletMutexes: map[string]*sync.RWMutex{},
+		}
 	}
 	respondentWalletRepoMutext.Unlock()
 	return respondentWalletService
@@ -26,14 +29,17 @@ type RespondentWalletService interface {
 	GetById(id uuid.UUID) (respondentWallet *model.RespondentWallet, err error)
 	// GetByEmail(email string) (respondentWallet *model.RespondentWallet, err error)
 	// GetByPhone(phone string) (respondentWallet *model.RespondentWallet, err error)
+
 	CreateNewFor(respondent *model.Respondent) (err error)
 	Refresh(wallet *model.RespondentWallet) (err error)
+	GetMutex(wallet *model.RespondentWallet) (mutext *sync.RWMutex)
 	Save(respondentWallet *model.RespondentWallet) (err error)
 	Delete(respondentWallet *model.RespondentWallet) (error error)
 }
 
 type respondentWalletServiceImpl struct {
-	repo repository.RespondentWalletRepository
+	repo          repository.RespondentWalletRepository
+	walletMutexes map[string]*sync.RWMutex // = map[string]sync.RWMutex{}
 }
 
 func (service *respondentWalletServiceImpl) GetById(id uuid.UUID) (respondentWallet *model.RespondentWallet, err error) {
@@ -48,6 +54,21 @@ func (service *respondentWalletServiceImpl) Delete(respondentWallet *model.Respo
 	err = service.repo.Delete(respondentWallet)
 
 	return err
+}
+
+func (service *respondentWalletServiceImpl) GetMutex(wallet *model.RespondentWallet) (mutext *sync.RWMutex) {
+	walletId := wallet.ID.String()
+
+	if walletId == "" {
+		panic("CANNOT GET MUTEX FOR  WALLET WITHOUT A VALID ID")
+	}
+
+	mutex, ok := service.walletMutexes[walletId]
+	if ok == false {
+		mutex = &sync.RWMutex{}
+		service.walletMutexes[walletId] = mutex
+	}
+	return mutex
 }
 
 func (service *respondentWalletServiceImpl) CreateNewFor(respondent *model.Respondent) (err error) {
@@ -100,6 +121,7 @@ func (service *respondentWalletServiceImpl) Refresh(wallet *model.RespondentWall
 				commitedDebit += withdrawal.Amount
 			} else if withdrawal.IsPending() {
 				pendingDebit += withdrawal.Amount
+				// commitedDebit += withdrawal.Amount
 			}
 		}
 	} else {
@@ -111,7 +133,7 @@ func (service *respondentWalletServiceImpl) Refresh(wallet *model.RespondentWall
 		return errors.New(message)
 	}
 
-	balance = committedCredit - commitedDebit
+	balance = committedCredit - commitedDebit - pendingDebit
 
 	wallet.Balance = balance
 	wallet.PendingDebitTotal = pendingDebit

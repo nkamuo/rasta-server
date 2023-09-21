@@ -20,6 +20,7 @@ import (
 
 func FindRespondentWithdrawals(c *gin.Context) {
 	var respondentService = service.GetRespondentService()
+	var walletRepository = repository.GetRespondentWalletRepository()
 	var withdrawals []model.RespondentWithdrawal
 	var page dto.FinancialPageRequest
 
@@ -48,16 +49,23 @@ func FindRespondentWithdrawals(c *gin.Context) {
 		}
 		return
 	}
+
+	wallet, err := walletRepository.GetByRespondent(*respondent)
+	if err != nil {
+		message := fmt.Sprintf("An error occured: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
 	query := model.DB
 
 	if *rUser.IsAdmin {
 
 	} else {
 		if respondent.User.ID.String() == rUser.ID.String() {
-			query = query.Where("respondent_id = ?", respondent.ID)
+			query = query.Where("wallet_id = ?", wallet.ID)
 		} else {
 			message := fmt.Sprintf("Permision Denied: you may not access this resource")
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 			return
 		}
 	}

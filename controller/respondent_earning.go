@@ -71,7 +71,7 @@ func FindRespondentEarnings(c *gin.Context) {
 		return
 	}
 	page.Rows = earnings
-	c.JSON(http.StatusOK, gin.H{"data": page})
+	c.JSON(http.StatusOK, gin.H{"data": page, "status": "success"})
 }
 
 // func CreateRespondentEarning(c *gin.Context) {
@@ -146,7 +146,57 @@ func FindRespondentEarning(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": earning})
+	c.JSON(http.StatusOK, gin.H{"data": earning, "status": "success"})
+}
+
+func CommitRespondentEarning(c *gin.Context) {
+	// var respondentService = service.GetRespondentService()
+	earningService := service.GetRespondentEarningService()
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Authentication erro: %s", err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	earning, err := earningService.GetById(id)
+	if err != nil {
+		message := fmt.Sprintf("Could not find earning with [id:%s]", id)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	// respondent, err := respondentService.GetById(*earning.RespondentID, "User")
+	// if err != nil {
+	// 	var message string
+	// 	if err.Error() == "record not found" {
+	// 		message = fmt.Sprintf("Could not find responder with [id:%s]", id)
+	// 		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+	// 	} else {
+	// 		message = fmt.Sprintf("An error occured: %s", err.Error())
+	// 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+	// 	}
+	// 	return
+	// }
+	if !*rUser.IsAdmin {
+		message := fmt.Sprintf("Permision Denied: you may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if err := earningService.Commit(earning); err != nil {
+		message := fmt.Sprintf("An error occured: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": earning, "status": "success"})
 }
 
 // func UpdateRespondentEarning(c *gin.Context) {
@@ -196,18 +246,3 @@ func FindRespondentEarning(c *gin.Context) {
 // 	message := fmt.Sprintf("Updated model \"%s\"", respondentEarning.ID)
 // 	c.JSON(http.StatusOK, gin.H{"data": respondentEarning, "status": "success", "message": message})
 // }
-
-func DeleteRespondentEarning(c *gin.Context) {
-	id := c.Param("id")
-
-	var respondentEarning model.RespondentEarning
-
-	if err := model.DB.Where("id = ?", id).First(&respondentEarning).Error; err != nil {
-		message := fmt.Sprintf("Could not find respondentEarning with [id:%s]", id)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-		return
-	}
-	model.DB.Delete(&respondentEarning)
-	message := fmt.Sprintf("Deleted respondentEarning \"%s\"", respondentEarning.ID)
-	c.JSON(http.StatusOK, gin.H{"data": respondentEarning, "status": "success", "message": message})
-}

@@ -365,7 +365,7 @@ func CompleteOrder(c *gin.Context) {
 		}
 	}
 
-	if err := orderService.CompleteOrder(order, false); err != nil {
+	if err := orderService.CompleteOrder(order, false, nil); err != nil {
 		message := fmt.Sprintf("An error occured: %s", err.Error())
 		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 	}

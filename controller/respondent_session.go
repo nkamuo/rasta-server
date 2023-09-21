@@ -31,7 +31,7 @@ func FindRespondentSessions(c *gin.Context) {
 		return
 	}
 
-	query := model.DB.Preload("Respondent").Preload("Assignments").Preload("Assignments.Assignment.Product") //.Preload("Place")
+	query := model.DB.Preload("Respondent.User").Preload("Assignments").Preload("Assignments.Assignment.Product") //.Preload("Place")
 
 	if place_id := c.Query("place_id"); place_id != "" {
 		placeID, err := uuid.Parse(place_id)
@@ -61,6 +61,10 @@ func FindRespondentSessions(c *gin.Context) {
 			return
 		}
 		query = query.Where("respondent_id = ?", respondentID)
+	}
+
+	if status := c.Query("status"); status != "" {
+		query = query.Where("status = ?", status)
 	}
 
 	if err := query.Scopes(pagination.Paginate(sessions, &page, query)).Find(&sessions).Error; nil != err {
@@ -138,27 +142,6 @@ func CreateRespondentSession(c *gin.Context) {
 
 	// }
 
-	crntSession, err := sessionRepo.GetActiveByRespondent(*respondant)
-	if err != nil {
-		if err.Error() != "record not found" {
-			message := fmt.Sprintf(
-				"There was an error searching active session for \"%v\"",
-				user.FullName(),
-			)
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-			return
-		}
-	} else {
-		if err := sessionService.Close(crntSession); err != nil {
-			message := fmt.Sprintf(
-				"There was an error closing active session for \"%v\"",
-				user.FullName(),
-			)
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-			return
-		}
-	}
-
 	var assignedProducts []model.RespondentSessionAssignedProduct
 
 	for _, aInput := range input.Assignments {
@@ -185,10 +168,50 @@ func CreateRespondentSession(c *gin.Context) {
 		Altitude:  input.StartingCoordinates.Altitude,
 		Accuracy:  input.StartingCoordinates.Accuracy,
 	}
-
 	now := time.Now()
+
+	session, err := sessionRepo.GetActiveByRespondent(*respondant)
+	if err != nil {
+		if err.Error() != "record not found" {
+			message := fmt.Sprintf(
+				"There was an error searching active session for \"%v\"",
+				user.FullName(),
+			)
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+	} else {
+
+		session.Assignments = assignedProducts
+		session.CurrentCoordinates = &startingCoords
+
+		if err := sessionService.Save(session); err != nil {
+			message := fmt.Sprintf("An error occured: %s", err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "success", "data": session})
+		return
+
+		// message := fmt.Sprintf(
+		// 	"There is already an active session for \"%v\"",
+		// 	user.FullName(),
+		// )
+		// c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		// return
+		// if err := sessionService.Close(crntSession); err != nil {
+		// 	message := fmt.Sprintf(
+		// 		"There was an error closing active session for \"%v\"",
+		// 		user.FullName(),
+		// 	)
+		// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		// 	return
+		// }
+	}
+
 	// Create session
-	session := model.RespondentSession{
+	session = &model.RespondentSession{
 		RespondentID:        &respondant.ID,
 		StartingCoordinates: startingCoords,
 		Assignments:         assignedProducts,
@@ -212,7 +235,7 @@ func CreateRespondentSession(c *gin.Context) {
 
 	// fmt.Printf("Input USer ID: %s\n user.ID: %s\n session.UserId: %s\n", input.UserId, user.ID, session.UserID)
 
-	if err := sessionService.Save(&session); nil != err {
+	if err := sessionService.Save(session); nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}

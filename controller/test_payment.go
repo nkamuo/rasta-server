@@ -9,11 +9,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	// "github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
 
 	// "github.com/google/uuid"
 	// "github.com/nkamuo/rasta-server/service"
+	// "github.com/stripe/stripe-go/payout"
 	"github.com/stripe/stripe-go/v74"
 	"github.com/stripe/stripe-go/v74/paymentmethod"
 	"github.com/stripe/stripe-go/v74/payout"
@@ -94,16 +97,50 @@ func CreatePaymentIntent(c *gin.Context) {
 	})
 }
 
+// func CreateRespondentPayoutAccount(c *gin.Context) {
+
+// 	var input dto.StripeExternalAccountInput;
+
+// 	if err := c.ShouldBindJSON(&input); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	params := &stripe.AccountExternalAccountParams{
+// 		// Object:  stripe.String("bank_account"),
+// 		Country: stripe.String(input.Country),
+// 		Currency: stripe.String(input.Currency),
+// 		RoutingNumber: stripe.String(input.RoutingNumber),
+// 		AccountNumber: stripe.String(input.AccountNumber),
+// 		AccountHolderName: stripe.String(input.AccountHolderName),
+// 		AccountHolderType: stripe.String(input.AccountHolderType),
+
+// 	}
+
+// 	payout, err := account.NewExternalAccount(params)
+// 	if err != nil {
+// 		message := fmt.Sprintf("Could not payout: %s", err.Error())
+// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+// 		return
+
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"data":   payout,
+// 		"status": "success",
+// 	})
+// }
+
 func AddPaymentMethod(c *gin.Context) {
 
-	payoutParams := &stripe.PayoutParams{
+	payoutParams := stripe.PayoutParams{
 		Amount:      stripe.Int64(1000), // Amount in cents (e.g., $10.00)
 		Currency:    stripe.String("usd"),
 		Method:      stripe.String("instant"),
 		Destination: stripe.String("your_customer_account_id"), // Customer's Stripe account ID
 	}
 
-	payout, err := payout.New(payoutParams)
+	Payout, err := payout.New(&payoutParams)
 	if err != nil {
 		message := fmt.Sprintf("Could not init order payment: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
@@ -112,7 +149,7 @@ func AddPaymentMethod(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":   payout,
+		"data":   Payout,
 		"status": "success",
 	})
 }

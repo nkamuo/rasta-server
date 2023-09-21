@@ -36,11 +36,16 @@ func (wallet *Wallet) InitEarning(earning OrderEarning) (err error) {
 	return nil
 }
 
-func (wallet *Wallet) InitWithdrawal(earning Withdrawal) (err error) {
-	if earning.Status != ORDER_WITHDRAWAL_STATUS_PENDING {
+func (wallet *Wallet) InitWithdrawal(withdrawal Withdrawal) (err error) {
+	if withdrawal.Status != ORDER_WITHDRAWAL_STATUS_PENDING {
 		return errors.New("Cannot init non-pending withdrawal")
 	}
-	wallet.PendingDebitTotal += earning.Amount
+	if withdrawal.Amount > wallet.Balance {
+		message := "Target amount is greater than account balance"
+		return errors.New(message)
+	}
+	wallet.Balance += withdrawal.Amount
+	// wallet.PendingDebitTotal += withdrawal.Amount
 	return nil
 }
 

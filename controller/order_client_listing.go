@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
@@ -80,6 +81,12 @@ func ClientConfirmCompleteOrder(c *gin.Context) {
 		return
 	}
 
+	var input dto.ClientOrderConfirmationRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
 	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		message := fmt.Sprintf("Authentication error")
@@ -119,7 +126,7 @@ func ClientConfirmCompleteOrder(c *gin.Context) {
 	// 	return
 	// }
 
-	if err := orderService.CompleteOrder(order, false); err != nil {
+	if err := orderService.CompleteOrder(order, false, &input); err != nil {
 		message := fmt.Sprintf("Task failed: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return

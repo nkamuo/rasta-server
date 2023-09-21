@@ -30,7 +30,7 @@ func FindProductRespondentAssignments(c *gin.Context) {
 		return
 	}
 
-	query := model.DB.Preload("Respondent").Preload("Product") //.Preload("Place")
+	query := model.DB.Preload("Respondent").Preload("Product.Place") //.Preload("Place")
 
 	if product_id := c.Query("product_id"); product_id != "" {
 		productID, err := uuid.Parse(product_id)

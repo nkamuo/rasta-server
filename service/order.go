@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"gorm.io/gorm"
@@ -29,7 +30,7 @@ type OrderService interface {
 	// GetByEmail(email string) (order *model.Order, err error)
 	// GetByPhone(phone string) (order *model.Order, err error)
 
-	CompleteOrder(order *model.Order, isAuto bool) (err error)
+	CompleteOrder(order *model.Order, isAuto bool, feedback *dto.ClientOrderConfirmationRequest) (err error)
 	Process(order *model.Order) (err error)
 	UpdateResponderLocationEntry(order *model.Order, locationEntry model.RespondentSessionLocationEntry) (err error)
 	AssignResponder(order *model.Order, session *model.RespondentSession) (err error)
@@ -154,7 +155,7 @@ func (service *orderServiceImpl) Delete(order *model.Order) (err error) {
 	return err
 }
 
-func (service *orderServiceImpl) CompleteOrder(order *model.Order, isAuto bool) (err error) {
+func (service *orderServiceImpl) CompleteOrder(order *model.Order, isAuto bool, feedback *dto.ClientOrderConfirmationRequest) (err error) {
 
 	fulfilmentService := GetOrderFulfilmentService()
 	earningService := GetGeneralEarningService()
@@ -179,9 +180,29 @@ func (service *orderServiceImpl) CompleteOrder(order *model.Order, isAuto bool) 
 			fulfilment.ClientConfirmedAt = &now
 		}
 
-		if err := fulfilmentService.Save(fulfilment); err != nil {
+		err := model.DB.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Save(fulfilment).Error; err != nil {
+				return err
+			}
+			if feedback != nil {
+				review := &model.RespondentServiceReview{
+					RespondentID: fulfilment.ResponderID,
+					OrderID:      &order.ID,
+					Rating:       feedback.Rating,
+					Description:  feedback.Description,
+				}
+				if err := tx.Save(review).Error; err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+
+		if err != nil {
 			return err
 		}
+
 	}
 
 	if err := earningService.ProcessEarnings(order); err != nil {
