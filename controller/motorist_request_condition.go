@@ -3,12 +3,12 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
-	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 
 	"github.com/gin-gonic/gin"
@@ -16,31 +16,31 @@ import (
 
 func FindMotoristRequestSituations(c *gin.Context) {
 
-	SituationRepo := repository.GetMotoristRequestSituationRepository()
-	// var motoristRequestSituations []model.MotoristRequestSituation
+	// SituationRepo := repository.GetMotoristRequestSituationRepository()
+	var motoristRequestSituations []model.MotoristRequestSituation
 	var page pagination.Page
 	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	// query := model.DB.Model(&model.MotoristRequestSituation{})
+	query := model.DB.Model(&model.MotoristRequestSituation{})
 
-	// if page.Search != "" {
-	// 	nameSearchQuery := strings.Join([]string{"%", page.Search, "%"}, "")
-	// 	query = query.Where("label LIKE ? OR title LIKE ?", nameSearchQuery, nameSearchQuery)
-	// }
-	// query = query.Scopes(pagination.Paginate(motoristRequestSituations, &page, query))
-	// if err := query.Find(&motoristRequestSituations).Error; nil != err {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-	// 	return
-	// }
-	if Situations, total, err := SituationRepo.FindAllDefault(); err != nil {
+	if page.Search != "" {
+		nameSearchQuery := strings.Join([]string{"%", page.Search, "%"}, "")
+		query = query.Where("label LIKE ? OR title LIKE ?", nameSearchQuery, nameSearchQuery)
+	}
+	query = query.Scopes(pagination.Paginate(motoristRequestSituations, &page, query))
+	if err := query.Find(&motoristRequestSituations).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
-	} else {
-		page.Rows = Situations
-		page.TotalRows = total
 	}
+	// if Situations, total, err := SituationRepo.FindAll(); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+	// 	return
+	// } else {
+	page.Rows = motoristRequestSituations
+	// page.TotalRows = total
+	// }
 	c.JSON(http.StatusOK, gin.H{"data": page})
 }
 

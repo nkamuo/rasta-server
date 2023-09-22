@@ -24,6 +24,7 @@ type MotoristRequestSituationRepository interface {
 	FindAll(page int, limit int) (motoristRequestSituations []model.MotoristRequestSituation, total int64, err error)
 	FindAllDefault() (motoristRequestSituations []model.MotoristRequestSituation, total int64, err error)
 	GetById(id uuid.UUID) (motoristRequestSituation *model.MotoristRequestSituation, err error)
+	GetByCode(code string) (motoristRequestSituation *model.MotoristRequestSituation, err error)
 	Save(motoristRequestSituation *model.MotoristRequestSituation) (err error)
 	Delete(motoristRequestSituation *model.MotoristRequestSituation) (error error)
 	DeleteById(id uuid.UUID) (motoristRequestSituation *model.MotoristRequestSituation, err error)
@@ -56,6 +57,13 @@ func (repo *motoristRequestSituationRepository) FindAllDefault() (motoristReques
 
 func (repo *motoristRequestSituationRepository) GetById(id uuid.UUID) (motoristRequestSituation *model.MotoristRequestSituation, err error) {
 	if err = model.DB. /*.Preload("Place")*/ Where("id = ?", id).First(&motoristRequestSituation).Error; err != nil {
+		return nil, err
+	}
+	return motoristRequestSituation, nil
+}
+
+func (repo *motoristRequestSituationRepository) GetByCode(code string) (motoristRequestSituation *model.MotoristRequestSituation, err error) {
+	if err = model.DB. /*.Preload("Place")*/ Where("code = ?", code).First(&motoristRequestSituation).Error; err != nil {
 		return nil, err
 	}
 	return motoristRequestSituation, nil

@@ -50,6 +50,9 @@ type Order struct {
 	PaymentID *uuid.UUID    `gorm:"" json:"paymentId,omitempty"`
 	Payment   *OrderPayment ` json:"payment,omitempty"` //gorm:"foreignKey:PaymentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"
 
+	// SITUATIONS
+	Situations *[]*MotoristRequestSituation `gorm:"many2many:order_motorist_situations;" json:"situations,omitempty"`
+
 	//TIMESTAMPS
 	CheckoutCompletedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"checkoutCompletedAt,omitempty"`
 	CreatedAt           time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`

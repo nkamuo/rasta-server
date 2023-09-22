@@ -71,6 +71,7 @@ func CreateOrder(c *gin.Context) {
 	userService := service.GetUserService()
 	orderService := service.GetOrderService()
 	paymentMethodService := service.GetPaymentMethodService()
+	situationService := service.GetMotoristRequestSituationService()
 
 	var input dto.OrderCreationInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -133,9 +134,21 @@ func CreateOrder(c *gin.Context) {
 		}
 	}
 
+	var Situations []*model.MotoristRequestSituation
+	for _, iSituationID := range input.Situations {
+		situation, err := situationService.GetById(iSituationID)
+		if err != nil {
+			message := fmt.Sprintf("Error resolving situatuin with [%s]: %s", iSituationID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+		Situations = append(Situations, situation)
+	}
+
 	order := model.Order{
-		UserID: &user.ID,
-		Items:  &Requests,
+		UserID:     &user.ID,
+		Items:      &Requests,
+		Situations: &Situations,
 	}
 
 	if nil != paymentMethod {
@@ -151,6 +164,17 @@ func CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
+
+	// for _, iSituationID := range input.Situations {
+	// 	situation, err := situationService.GetById(iSituationID)
+	// 	if err != nil {
+	// 		message := fmt.Sprintf("Error resolving situatuin with [%s]: %s", iSituationID, err.Error())
+	// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	// 		return
+	// 	}
+	// 	model.DB.Model(&order).Association("Situations").Append(situation)
+	// 	// Situations = append(Situations, situation)
+	// }
 
 	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success"})
 }

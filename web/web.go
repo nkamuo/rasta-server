@@ -32,6 +32,23 @@ func BuildWebServer() (engin *gin.Engine, err error) {
 	api.PATCH("/motorist_request_situations/:id", controller.UpdateMotoristRequestSituation)
 	api.DELETE("/motorist_request_situations/:id", controller.DeleteMotoristRequestSituation)
 
+	//POSITION, LOCATION AND PLACES
+
+	api.GET("/places", controller.FindPlaces)
+	api.GET("/places/:id", controller.FindPlace)
+	api.GET("/places/find-by-location", controller.FindPlaceByLocation)
+	api.POST("/places", controller.CreatePlace)
+	api.PATCH("/places/:id", controller.UpdatePlace)
+	api.DELETE("/places/:id", controller.DeletePlace)
+
+	//LOCATION
+	api.GET("/locations", controller.FindLocations)
+	api.GET("/locations/:id", controller.FindLocation)
+	api.GET("/locations/distance", controller.ResolveDistanceMatrix)
+	api.GET("/locations/resolve", controller.ResolveLocation)
+	api.GET("/locations/resolve_by_ip", controller.ResolveLocationByIPAddress)
+	api.DELETE("/locations/:id", controller.DeleteLocation)
+
 	// AUTHENTICATION MIDDLEWARE
 	api.Use(middleware.JwtAuthMiddleware())
 	//AUTHENICATED ENDPOINTS
@@ -151,21 +168,6 @@ func BuildWebServer() (engin *gin.Engine, err error) {
 	api.POST("/vehicle_models", controller.CreateVehicleModel)
 	api.PATCH("/vehicle_models/:id", controller.UpdateVehicleModel)
 	api.DELETE("/vehicle_models/:id", controller.DeleteVehicleModel)
-
-	api.GET("/places", controller.FindPlaces)
-	api.GET("/places/:id", controller.FindPlace)
-	api.GET("/places/find-by-location", controller.FindPlaceByLocation)
-	api.POST("/places", controller.CreatePlace)
-	api.PATCH("/places/:id", controller.UpdatePlace)
-	api.DELETE("/places/:id", controller.DeletePlace)
-
-	//LOCATION
-	api.GET("/locations", controller.FindLocations)
-	api.GET("/locations/:id", controller.FindLocation)
-	api.GET("/locations/distance", controller.ResolveDistanceMatrix)
-	api.GET("/locations/resolve", controller.ResolveLocation)
-	api.GET("/locations/resolve_by_ip", controller.ResolveLocationByIPAddress)
-	api.DELETE("/locations/:id", controller.DeleteLocation)
 
 	api.GET("/product_respondent_assignments", controller.FindProductRespondentAssignments)
 	api.GET("/product_respondent_assignments/:id", controller.FindProductRespondentAssignment)

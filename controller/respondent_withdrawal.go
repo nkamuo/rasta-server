@@ -172,6 +172,12 @@ func FindRespondentWithdrawal(c *gin.Context) {
 		return
 	}
 
+	withdrawalId, err := uuid.Parse(c.Param("withdrawal_id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
 	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		message := fmt.Sprintf("Authentication erro: %s", err.Error())
@@ -179,9 +185,9 @@ func FindRespondentWithdrawal(c *gin.Context) {
 		return
 	}
 
-	withdrawal, err := withdrawalService.GetById(id)
+	withdrawal, err := withdrawalService.GetById(withdrawalId)
 	if err != nil {
-		message := fmt.Sprintf("Could not find withdrawal with [id:%s]", id)
+		message := fmt.Sprintf("Could not find withdrawal with [id:%s]", withdrawalId)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}

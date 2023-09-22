@@ -301,7 +301,7 @@ func FindOrderForRespondent(c *gin.Context) {
 
 	query := model.DB.Where("id = ?", id).
 		Preload("Fulfilment.Responder.User").
-		Preload("User").
+		Preload("User").Preload("Situations").
 		Preload("Payment").Preload("Items").
 		Preload("Adjustments").Preload("Items.Product").
 		Preload("Items.Origin").Preload("Items.Destination").
@@ -384,7 +384,7 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 
 	query := model.DB.
 		Preload("Order").
-		Preload("Order.Items").Preload("Order.Items.Product").
+		Preload("Order.Items").Preload("Order.Items.Product").Preload("Order.Situations").
 		Preload("Order.User").Preload("Order.Items.Origin").Preload("Order.Items.Destination").
 		Preload("FuelTypeInfo").Preload("VehicleInfo")
 	// Preload("Origin").Preload("Destination")

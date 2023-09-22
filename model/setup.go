@@ -69,4 +69,6 @@ func ConnectDatabase(config *initializers.Config) {
 	}
 
 	DB = database
+	MigrateMotoristSituations(database)
+
 }
