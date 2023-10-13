@@ -26,7 +26,7 @@ func GetUserService() UserService {
 }
 
 type UserService interface {
-	GetById(id uuid.UUID) (user *model.User, err error)
+	GetById(id uuid.UUID, preload ...string) (user *model.User, err error)
 	// GetByEmail(email string) (user *model.User, err error)
 	// GetByPhone(phone string) (user *model.User, err error)
 	Save(user *model.User) (err error)
@@ -39,8 +39,8 @@ type userServiceImpl struct {
 	repo repository.UserRepository
 }
 
-func (service *userServiceImpl) GetById(id uuid.UUID) (user *model.User, err error) {
-	return service.repo.GetById(id)
+func (service *userServiceImpl) GetById(id uuid.UUID, preload ...string) (user *model.User, err error) {
+	return service.repo.GetById(id, preload...)
 }
 
 func (service *userServiceImpl) Save(user *model.User) (err error) {

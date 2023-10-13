@@ -22,7 +22,7 @@ func GetUserRepository() UserRepository {
 
 type UserRepository interface {
 	FindAll(page int, limit int) (users []model.User, total int64, err error)
-	GetById(id uuid.UUID) (user *model.User, err error)
+	GetById(id uuid.UUID, preload ...string) (user *model.User, err error)
 	GetByEmail(email string) (user *model.User, err error)
 	GetByPhone(phone string) (user *model.User, err error)
 	GetByReferralCode(phone string) (user *model.User, err error)
@@ -54,8 +54,14 @@ func (repo *userRepository) FindAll(page int, limit int) (users []model.User, to
 	return
 }
 
-func (repo *userRepository) GetById(id uuid.UUID) (user *model.User, err error) {
-	if err = repo.db.Where("id = ?", id).First(&user).Error; err != nil {
+func (repo *userRepository) GetById(id uuid.UUID, preload ...string) (user *model.User, err error) {
+	query := repo.db.Where("id = ?", id)
+
+	for _, pItem := range preload {
+		query = query.Preload(pItem)
+	}
+
+	if err = query.First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
@@ -102,7 +108,15 @@ func (repo *userRepository) SavePassword(password *model.UserPassword) (err erro
 }
 
 func (repo *userRepository) Delete(user *model.User) (err error) {
-	return repo.db.Delete(&user).Error
+	return repo.db.Transaction(func(tx *gorm.DB) error {
+		if user.Password != nil {
+			if err := tx.Delete(user.Password).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Delete(user).Error
+
+	})
 }
 
 func (repo *userRepository) DeleteById(id uuid.UUID) (user *model.User, err error) {

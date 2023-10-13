@@ -24,9 +24,18 @@ type Config struct {
 
 	CLIENT_ORDER_SERVICE_FEE    uint64 `mapstructure:"ORDER_SERVICE_FEE"`
 	RESPONDER_ORDER_SERVICE_FEE uint64 `mapstructure:"RESPONDER_ORDER_SERVICE_FEE"`
+
+	SERVER_ADDRESS string `mapstructure:"SERVER_ADDRESS"`
+	SERVER_PORT    string `mapstructure:"SERVER_PORT"`
 }
 
+var loaded bool
+
 func LoadConfig(path string) (config Config, err error) {
+
+	if loaded {
+		return *CONFIG, nil
+	}
 	viper.AddConfigPath(path)
 	viper.SetConfigType("env")
 	viper.SetConfigName(".env")
@@ -42,6 +51,8 @@ func LoadConfig(path string) (config Config, err error) {
 	CONFIG = &config
 
 	stripe.Key = config.STRIPE_SECRET_KEY
+
+	loaded = true
 
 	return config, err
 }

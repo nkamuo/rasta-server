@@ -1,13 +1,16 @@
 package web
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/nkamuo/rasta-server/controller"
 	"github.com/nkamuo/rasta-server/middleware"
 )
 
-func BuildWebServer() (engin *gin.Engine, err error) {
+func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:3000", "http://localhost:51074"}
@@ -16,7 +19,36 @@ func BuildWebServer() (engin *gin.Engine, err error) {
 	// config.AllowAllOrigins = true
 
 	r := gin.Default()
+
 	r.Use(cors.New(corsConfig))
+
+	////////////////////////////////
+	//// FILE SYSTEM
+	////////////////////////
+
+	// r.Static("/assets", "../static")
+	// r.StaticFS("/assets", http.Dir("\\workspace\\fiverr\\huqtpremier\\rasta-server\\static"))
+	// r.StaticFile("/", "../assets/index.html")
+	if config.PublicPrefix != "" || config.AssetDir != "" {
+		// r.StaticFS(config.PublicPrefix, http.Dir(config.AssetDir))
+		// r.NoRoute(gin.WrapH(http.FileServer(http.Dir(config.AssetDir))))
+		fmt.Printf("PUBLIC: %s; ASSET_DIR: %s; DIRECTORY-LISTING: %v;\n",
+			config.PublicPrefix,
+			config.AssetDir,
+			config.AllowDirectoryListing,
+		)
+		// r.Use(static.Serve(config.PublicPrefix, static.LocalFile(config.AssetDir, config.AllowDirectoryListing)))
+		r.StaticFS(config.PublicPrefix, http.Dir(config.AssetDir))
+	}
+
+	if config.IndexFile != "" {
+		r.StaticFile("/index.html", config.IndexFile)
+	}
+	// r.StaticFile("/favicon.ico", "./resources/favicon.ico")
+
+	/////////////////////////////////
+	///////// API
+	/////////////////////////////////
 
 	api := r.Group("/api")
 
@@ -208,4 +240,13 @@ func BuildWebServer() (engin *gin.Engine, err error) {
 	// product_respondent_assignment
 
 	return r, nil
+}
+
+type WebServerConfig struct {
+	Addr                  string
+	Port                  string
+	IndexFile             string
+	AssetDir              string
+	PublicPrefix          string
+	AllowDirectoryListing bool
 }
