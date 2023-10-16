@@ -64,7 +64,7 @@ func FindRespondentSessions(c *gin.Context) {
 	}
 
 	if status := c.Query("status"); status != "" {
-		query = query.Where("status = ?", status)
+		query = query.Where("active = ?", true)
 	}
 
 	if err := query.Scopes(pagination.Paginate(sessions, &page, query)).Find(&sessions).Error; nil != err {

@@ -8,7 +8,7 @@ import (
 
 type Page struct {
 	Search     string      `json:"search,omitempty;" form:"search"`
-	Limit      int         `json:"limit,omitempty;" form:"limit"`
+	Limit      *int        `json:"limit,omitempty;" form:"limit"`
 	Page       int         `json:"page,omitempty;" form:"page"`
 	Sort       string      `json:"sort,omitempty;" form:"sort"`
 	TotalRows  int64       `json:"total_rows"`
@@ -21,12 +21,20 @@ func (p *Page) GetOffset() int {
 }
 
 func (p *Page) GetLimit() int {
-	if p.Limit == 0 {
-		p.Limit = 10
-	} else if p.Limit > 100 {
-		p.Limit = 100
+	// if nil == pLimit{
+	// 	pLimit = 10;
+	// }
+	// if p.Limit == 0 {
+	// 	p.Limit = 10
+	// }
+	Limit := 10
+	pLimit := p.Limit
+	if nil == pLimit {
+		pLimit = &Limit
+	} else if *pLimit > 100 {
+		*pLimit = 100
 	}
-	return p.Limit
+	return *pLimit
 }
 
 func (p *Page) GetPage() int {
@@ -50,11 +58,17 @@ func Paginate(value interface{}, pagination *Page, db *gorm.DB) func(db *gorm.DB
 
 	pagination.TotalRows = totalRows
 
-	if int64(pagination.GetLimit()) > totalRows {
+	limit := pagination.GetLimit()
+
+	if int64(limit) > totalRows {
 		totalPages = 1
 	} else {
-		itemsPage := float64(float32(totalRows) / float32(pagination.GetLimit()))
-		totalPages = int(math.Ceil(itemsPage))
+		if limit == 0 {
+			totalPages = 0
+		} else {
+			itemsPage := float64(float32(totalRows) / float32(pagination.GetLimit()))
+			totalPages = int(math.Ceil(itemsPage))
+		}
 	}
 	pagination.TotalPages = totalPages
 

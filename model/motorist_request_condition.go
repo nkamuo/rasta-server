@@ -13,7 +13,7 @@ type MotoristRequestSituation struct {
 	Title     string `gorm:"" json:"title,omitempty"`
 	SubTitlte string `gorm:"" json:"subtitle,omitempty"`
 	//
-	Code string `gorm:"" json:"code,omitempty"`
+	Code string `gorm:"unique" json:"code,omitempty"`
 	//
 	Description string `gorm:"" json:"description,omitempty"`
 	Note        string `gorm:"" json:"note,omitempty"`

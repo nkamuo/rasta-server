@@ -58,7 +58,11 @@ func FindOrders(c *gin.Context) {
 		query = query.Where("orders.user_id = ?", requestingUser.ID)
 	}
 
-	if err := query.Scopes(pagination.Paginate(orders, &page, model.DB)).Find(&orders).Error; nil != err {
+	if status := c.Query("status"); status != "" {
+		query = query.Where("orders.status = ?", status)
+	}
+
+	if err := query.Scopes(pagination.Paginate(orders, &page, query)).Find(&orders).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}

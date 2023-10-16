@@ -22,8 +22,14 @@ func FindUsers(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
+	query := model.DB
 
-	if err := model.DB.Scopes(pagination.Paginate(users, &page, model.DB)).Find(&users).Error; nil != err {
+	if search := c.Query("search"); search != "" {
+		like := fmt.Sprintf("%%%s%%", search)
+		query = query.Where("users.first_name LIKE ? OR users.last_name LIKE ?", like, like)
+	}
+
+	if err := query.Scopes(pagination.Paginate(users, &page, query)).Find(&users).Error; nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
