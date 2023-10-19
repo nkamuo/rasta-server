@@ -137,6 +137,7 @@ func FindPlaceByLocation(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find place with for location[address:%s]", location.Address)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": place})
 }
@@ -160,6 +161,7 @@ func UpdatePlace(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find place with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
 
 	if nil != input.Coordinates {
@@ -217,6 +219,7 @@ func DeletePlace(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find place with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
 
 	if err := placeService.Delete(place); nil != err {

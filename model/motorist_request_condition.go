@@ -10,10 +10,10 @@ import (
 type MotoristRequestSituation struct {
 	ID uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
 	//
-	Title     string `gorm:"" json:"title,omitempty"`
-	SubTitlte string `gorm:"" json:"subtitle,omitempty"`
+	Title     string `gorm:"not null;type:varchar(128);" json:"title,omitempty"`
+	SubTitlte string `gorm:"type:varchar(255);" json:"subtitle,omitempty"`
 	//
-	Code string `gorm:"unique" json:"code,omitempty"`
+	Code string `gorm:"unique;type:varchar(64);" json:"code,omitempty"`
 	//
 	Description string `gorm:"" json:"description,omitempty"`
 	Note        string `gorm:"" json:"note,omitempty"`
@@ -88,6 +88,8 @@ func GetDefaultMotoristRequestSituations() (situations []MotoristRequestSituatio
 
 func MigrateMotoristSituations(db *gorm.DB) (err error) {
 	// situationRepo := repository.GetMotoristRequestSituationRepository()
+
+	db.Model(&MotoristRequestSituation{})
 
 	situations := GetDefaultMotoristRequestSituations()
 	for _, situation := range situations {

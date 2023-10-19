@@ -234,6 +234,7 @@ func DeleteLocation(c *gin.Context) {
 	if nil != err {
 		message := fmt.Sprintf("Could not find location with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
 
 	if err := locationService.Delete(location); nil != err {
