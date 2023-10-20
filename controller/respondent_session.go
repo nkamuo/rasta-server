@@ -267,7 +267,7 @@ func FindRespondentSession(c *gin.Context) {
 		return
 	}
 
-	if respondant.ID.String() != session.ID.String() {
+	if respondant.ID.String() != (*session.RespondentID).String() {
 		message := fmt.Sprintf("Could not find your session with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
@@ -301,7 +301,7 @@ func CloseRespondentSession(c *gin.Context) {
 		return
 	}
 
-	if respondant.ID.String() != session.ID.String() {
+	if respondant.ID.String() != (*session.RespondentID).String() {
 		message := fmt.Sprintf("Could not find your session with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
