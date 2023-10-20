@@ -100,7 +100,7 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.POST("/respondent_sessions", controller.CreateRespondentSession)
 	api.PATCH("/respondent_sessions/:id", controller.UpdateRespondentSession)
 	api.DELETE("/respondent_sessions/:id", controller.DeleteRespondentSession)
-	api.GET("/respondent_sessions/:id/close", controller.CloseRespondentSession)
+	api.POST("/respondent_sessions/:id/close", controller.CloseRespondentSession)
 
 	// api.POST("/company_earnings", controller.CreateCompanyEarning)
 	// api.PATCH("/company_earnings/:id", controller.UpdateCompanyEarning)
