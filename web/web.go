@@ -87,6 +87,7 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.GET("/me", controller.GetCurrentUser)
 	api.GET("/me/respondent", controller.GetCurrentRespondent)
 	api.GET("/me/respondent/session", controller.FindCurrentRespondentSession)
+	// api.GET("/me/respondent/session/close", controller.CloseRespondentSession)
 	api.GET("/me/respondent/session/requests", controller.FindAvailableOrdersForRespondent)
 	api.GET("/me/respondent/session/requests/:id", controller.FindOrderForRespondent)
 	api.POST("/me/respondent/session/requests/:id/claim", controller.RespondentClaimOrder)
@@ -99,6 +100,7 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.POST("/respondent_sessions", controller.CreateRespondentSession)
 	api.PATCH("/respondent_sessions/:id", controller.UpdateRespondentSession)
 	api.DELETE("/respondent_sessions/:id", controller.DeleteRespondentSession)
+	api.GET("/respondent_sessions/:id/close", controller.CloseRespondentSession)
 
 	// api.POST("/company_earnings", controller.CreateCompanyEarning)
 	// api.PATCH("/company_earnings/:id", controller.UpdateCompanyEarning)

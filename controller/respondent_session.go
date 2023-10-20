@@ -242,8 +242,18 @@ func CreateRespondentSession(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": session})
 }
 
+// ////////
+// // FIND SESSION
+// //
+// /////////////
 func FindRespondentSession(c *gin.Context) {
 	sessionService := service.GetRespondentSessionService()
+
+	respondant, err := auth.GetCurrentRespondent(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -256,11 +266,28 @@ func FindRespondentSession(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
+
+	if respondant.ID.String() != session.ID.String() {
+		message := fmt.Sprintf("Could not find your session with [id:%s]", id)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": session})
 }
 
+// ////////
+// // CLOSE SESSION
+// //
+// /////////////
 func CloseRespondentSession(c *gin.Context) {
 	sessionService := service.GetRespondentSessionService()
+
+	respondant, err := auth.GetCurrentRespondent(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -270,6 +297,12 @@ func CloseRespondentSession(c *gin.Context) {
 	session, err := sessionService.GetById(id)
 	if nil != err {
 		message := fmt.Sprintf("Could not find session with [id:%s]", id)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if respondant.ID.String() != session.ID.String() {
+		message := fmt.Sprintf("Could not find your session with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
@@ -284,16 +317,9 @@ func CloseRespondentSession(c *gin.Context) {
 }
 
 func FindCurrentRespondentSession(c *gin.Context) {
-	respondentRepo := repository.GetRespondentRepository()
 	sessionRepo := repository.GetRespondentSessionRepository()
 
-	requestingUser, err := auth.GetCurrentUser(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
-
-	respondant, err := respondentRepo.GetByUser(*requestingUser)
+	respondant, err := auth.GetCurrentRespondent(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
