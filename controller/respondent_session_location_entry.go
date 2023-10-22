@@ -94,14 +94,14 @@ func CreateRespondentSessionLocationEntry(c *gin.Context) {
 
 	respondent, err := respondentRepo.GetByUser(*rUser)
 	if nil != err {
-		message := fmt.Sprintf("Could not resolve the specified Product with : %s", err.Error())
+		message := fmt.Sprintf("Could not resolve the matching responder account: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
 		return
 	}
 
 	session, err := sessionRepo.GetActiveByRespondent(*respondent)
 	if nil != err {
-		message := fmt.Sprintf("Could not resolve Place: %s", err.Error())
+		message := fmt.Sprintf("Could not resolve active session for this responder: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
 		return
 	}
