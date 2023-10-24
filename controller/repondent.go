@@ -98,7 +98,7 @@ func AddRespondentToCompany(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusBadRequest, gin.H{"status": "success", "message": "Respondent assinged to company successfully"})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Respondent assinged to company successfully"})
 }
 
 func RemoveRespondentFromCompany(c *gin.Context) {
@@ -220,7 +220,7 @@ func FindRespondent(c *gin.Context) {
 	}
 	// respondent, err := respondentService.GetById(id)
 	var respondent model.Respondent
-	err = model.DB.Where("id = ?", id).Preload("User").Preload("Place").First(&respondent).Error
+	err = model.DB.Where("id = ?", id).Preload("User").Preload("Place").Preload("Company").First(&respondent).Error
 	if nil != err {
 		message := fmt.Sprintf("Could not find respondent with [id:%s]: %s", id, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
