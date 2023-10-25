@@ -51,18 +51,19 @@ type Order struct {
 	Payment   *OrderPayment ` json:"payment,omitempty"` //gorm:"foreignKey:PaymentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"
 
 	// SITUATIONS
-	Situations *[]*MotoristRequestSituation `gorm:"many2many:order_motorist_situations;" json:"situations,omitempty"`
+	Situations *[]MotoristRequestSituation `gorm:"many2many:order_motorist_situations;" json:"situations,omitempty"`
 
 	//TIMESTAMPS
-	CheckoutCompletedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"checkoutCompletedAt,omitempty"`
-	CreatedAt           time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
-	UpdatedAt           time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
+	CheckoutCompletedAt *time.Time `gorm:";" json:"checkoutCompletedAt,omitempty"`
+	CreatedAt           *time.Time `gorm:"not null;" json:"createdAt,omitempty"`
+	UpdatedAt           *time.Time `gorm:"ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }
 
 func (order *Order) BeforeCreate(tx *gorm.DB) (err error) {
+	now := time.Now()
 	order.ID = uuid.New()
-	order.CreatedAt = time.Now()
-	order.UpdatedAt = time.Now()
+	order.CreatedAt = &now
+	// order.UpdatedAt = &now
 	//
 	itemTotal := order.CalculateItemTotal()
 	adjustmentTotal := order.CalculateAdjustmentTotal()

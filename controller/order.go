@@ -12,6 +12,7 @@ import (
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -138,7 +139,7 @@ func CreateOrder(c *gin.Context) {
 		}
 	}
 
-	var Situations []*model.MotoristRequestSituation
+	var Situations []model.MotoristRequestSituation
 	for _, iSituationID := range input.Situations {
 		situation, err := situationService.GetById(iSituationID)
 		if err != nil {
@@ -146,7 +147,7 @@ func CreateOrder(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
-		Situations = append(Situations, situation)
+		Situations = append(Situations, *situation)
 	}
 
 	order := model.Order{
@@ -164,8 +165,28 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
-	if err := orderService.Save(&order); nil != err {
-		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
+	err = model.DB.Transaction(func(tx *gorm.DB) error {
+
+		var Sit []model.MotoristRequestSituation
+		var Sits []model.MotoristRequestSituation
+
+		for _, sit := range Situations {
+			Sits = append(Sits, model.MotoristRequestSituation{ID: sit.ID})
+		}
+		order.Situations = &Sit // Temporalily remove the Situations to prevent GORM from trying to insert them before the order
+		if err = tx.Save(&order).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Model(&order).Association("Situations").Replace(Sits); err != nil {
+			return err
+		}
+		order.Situations = &Situations
+		return nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
