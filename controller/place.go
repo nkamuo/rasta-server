@@ -17,6 +17,7 @@ import (
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
+	"github.com/nkamuo/rasta-server/utils/token"
 
 	"github.com/gin-gonic/gin"
 	// "github.com/gin-gonic/gin"
@@ -30,16 +31,21 @@ func FindPlaces(c *gin.Context) {
 		return
 	}
 
-	rUser, err := auth.GetCurrentUser(c)
-	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
-
 	query := model.DB.Model(&model.Place{})
 
-	if *rUser.IsAdmin {
-
+	isAdmin := false
+	if _token := token.ExtractToken(c); _token != "" {
+		rUser, err := auth.GetCurrentUser(c)
+		if err != nil {
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+		if *rUser.IsAdmin {
+			isAdmin = true
+		}
+	} else {
+	}
+	if isAdmin {
 	} else {
 		query = query.Where("active = true") //ONLY SHOW ACTIVE LOCATIONS To NON-ADMINS
 	}

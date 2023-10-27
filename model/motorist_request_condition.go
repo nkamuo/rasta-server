@@ -89,22 +89,24 @@ func GetDefaultMotoristRequestSituations() (situations []MotoristRequestSituatio
 func MigrateMotoristSituations(db *gorm.DB) (err error) {
 	// situationRepo := repository.GetMotoristRequestSituationRepository()
 
-	db.Model(&MotoristRequestSituation{})
-
 	situations := GetDefaultMotoristRequestSituations()
-	for _, situation := range situations {
-		if _, err := getByCode(db, situation.Code); err != nil {
-			if err.Error() == "record not found" {
-				if err := db.Save(&situation).Error; err != nil {
+	err = db.Transaction(func(tx *gorm.DB) error {
+		for _, situation := range situations {
+			// tx.Model(&situation)
+			if _, err := getByCode(tx, situation.Code); err != nil {
+				if err.Error() == "record not found" {
+					if err := tx.Save(&situation).Error; err != nil {
+						return err
+					}
+
+				} else {
 					return err
 				}
-
-			} else {
-				return err
 			}
 		}
-	}
-	return nil
+		return nil
+	})
+	return err
 }
 
 func getByCode(db *gorm.DB, code string) (motoristRequestSituation *MotoristRequestSituation, err error) {

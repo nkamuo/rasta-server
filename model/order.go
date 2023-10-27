@@ -51,7 +51,7 @@ type Order struct {
 	Payment   *OrderPayment ` json:"payment,omitempty"` //gorm:"foreignKey:PaymentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"
 
 	// SITUATIONS
-	Situations *[]MotoristRequestSituation `gorm:"many2many:order_motorist_situations;" json:"situations,omitempty"`
+	Situations *[]MotoristRequestSituation `gorm:"many2many:order_motorist_situations;ForeignKey:ID;References:ID;joinForeignKey:order_id;joinReferences:motorist_request_situation_id;" json:"situations,omitempty"`
 
 	//TIMESTAMPS
 	CheckoutCompletedAt *time.Time `gorm:";" json:"checkoutCompletedAt,omitempty"`

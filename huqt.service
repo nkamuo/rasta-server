@@ -1,0 +1,13 @@
+[Unit]
+Description=<description about this service>
+
+[Service]
+User=root
+WorkingDirectory=/home/huqt/source
+ExecStart=/home/huqt/source/rasta-server serve --htdocs ../htdocs --public-prefix /admin -l
+# optional items below
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

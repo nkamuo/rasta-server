@@ -81,9 +81,23 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.GET("/locations/resolve_by_ip", controller.ResolveLocationByIPAddress)
 	api.DELETE("/locations/:id", controller.DeleteLocation)
 
+	// VEHICLE MODELS
+
+	api.GET("/vehicle_models", controller.FindVehicleModels)
+	api.GET("/vehicle_models/:id", controller.FindVehicleModel)
+	api.POST("/vehicle_models", controller.CreateVehicleModel)
+	api.PATCH("/vehicle_models/:id", controller.UpdateVehicleModel)
+	api.DELETE("/vehicle_models/:id", controller.DeleteVehicleModel)
+
+	////////////////////////////////////////////
 	// AUTHENTICATION MIDDLEWARE
+	///////////////////////
 	api.Use(middleware.JwtAuthMiddleware())
+
+	///////////////////////////////////////////
 	//AUTHENICATED ENDPOINTS
+	/////////////////////
+
 	api.GET("/me", controller.GetCurrentUser)
 	api.GET("/me/respondent", controller.GetCurrentRespondent)
 	api.GET("/me/respondent/session", controller.FindCurrentRespondentSession)
@@ -196,12 +210,6 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.POST("/vehicles", controller.CreateVehicle)
 	api.PATCH("/vehicles/:id", controller.UpdateVehicle)
 	api.DELETE("/vehicles/:id", controller.DeleteVehicle)
-
-	api.GET("/vehicle_models", controller.FindVehicleModels)
-	api.GET("/vehicle_models/:id", controller.FindVehicleModel)
-	api.POST("/vehicle_models", controller.CreateVehicleModel)
-	api.PATCH("/vehicle_models/:id", controller.UpdateVehicleModel)
-	api.DELETE("/vehicle_models/:id", controller.DeleteVehicleModel)
 
 	api.GET("/product_respondent_assignments", controller.FindProductRespondentAssignments)
 	api.GET("/product_respondent_assignments/:id", controller.FindProductRespondentAssignment)

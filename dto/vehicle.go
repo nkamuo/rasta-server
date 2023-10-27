@@ -5,12 +5,18 @@ import (
 )
 
 type VehicleCreationInput struct {
-	ModelID            uuid.UUID `json:"modelId" binding:"required"`
-	OwnerID            uuid.UUID `json:"ownerId" binding:"required"`
-	Color              *string   `json:"color" binding:"required"`
-	Published          bool      `json:"published" binding:""`
-	Description        string    `json:"description" binding:""`
-	LicensePlateNumber *string   `json:"licensePlateNumber" binding:"required"`
+	OwnerID   *uuid.UUID `json:"ownerId" binding:""`
+	CompanyID *uuid.UUID `json:"companyId" binding:""`
+	//
+	ModelID *uuid.UUID `json:"modelId" binding:""`
+	//
+	MakeName  *string `json:"makeName,omitempty"`
+	ModelName *string `json:"modelName,omitempty"`
+	//
+	Color              *string `json:"color" binding:"required"`
+	Published          bool    `json:"published" binding:""`
+	Description        string  `json:"description" binding:""`
+	LicensePlateNumber *string `json:"licensePlateNumber" binding:"required"`
 }
 
 type VehicleUpdateInput struct {

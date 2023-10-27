@@ -21,6 +21,8 @@ func Register(c *gin.Context) {
 
 	userRepo := repository.GetUserRepository()
 	userSerice := service.GetUserService()
+	placeService := service.GetPlaceService()
+	respondentService := service.GetRespondentService()
 
 	var referrer *model.User
 
@@ -32,13 +34,32 @@ func Register(c *gin.Context) {
 	}
 
 	if input.ReferrerCode != nil {
-
 		if _referrer, err := userRepo.GetByReferralCode(*input.ReferrerCode); nil != err {
 			message := fmt.Sprintf("Could not resolve referrer from referralCode[%s]: %s", *input.ReferrerCode, err.Error())
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		} else {
 			referrer = _referrer
+		}
+	}
+
+	var respondent *model.Respondent
+	if input.IsRespondent {
+		if nil == input.RespondentPlaceId {
+			message := fmt.Sprintf("Can't create a respondent account without specifying a base place of operation")
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		} else {
+			place, err := placeService.GetById(*input.RespondentPlaceId)
+			if err != nil {
+				message := fmt.Sprintf("Could not resolve place with [id:%s]", *input.RespondentPlaceId)
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+				return
+			}
+
+			respondent = &model.Respondent{
+				PlaceID: &place.ID,
+			}
 		}
 	}
 
@@ -57,10 +78,19 @@ func Register(c *gin.Context) {
 
 	userSerice.HashUserPassword(&user, input.Password)
 	err := userSerice.Save(&user)
-
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
+	}
+
+	if respondent != nil {
+		respondent.UserID = &user.ID
+		err := respondentService.Save(respondent)
+		if err != nil {
+			message := fmt.Sprintf("Error creating responder profile: %s", err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "registration success"})

@@ -107,10 +107,18 @@ func (repo *userRepository) SavePassword(password *model.UserPassword) (err erro
 	return repo.db.Save(&password).Error
 }
 
+func (repo *userRepository) DeletePassword(password *model.UserPassword) (err error) {
+	return repo.db.Delete(&password).Error
+}
+
 func (repo *userRepository) Delete(user *model.User) (err error) {
+	rUser, err := repo.GetById(user.ID, "Password")
+	if err != nil {
+		return err
+	}
 	return repo.db.Transaction(func(tx *gorm.DB) error {
-		if user.Password != nil {
-			if err := tx.Delete(user.Password).Error; err != nil {
+		if rUser.Password != nil {
+			if err := tx.Delete(rUser.Password).Error; err != nil {
 				return err
 			}
 		}

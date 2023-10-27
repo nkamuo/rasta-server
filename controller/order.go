@@ -178,7 +178,7 @@ func CreateOrder(c *gin.Context) {
 			return err
 		}
 
-		if err := tx.Model(&order).Association("Situations").Replace(Sits); err != nil {
+		if err := tx.Model(&order).Association("Situations").Append(Sits); err != nil {
 			return err
 		}
 		order.Situations = &Situations

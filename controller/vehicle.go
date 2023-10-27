@@ -10,6 +10,7 @@ import (
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
+	"github.com/nkamuo/rasta-server/utils/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +25,23 @@ func FindVehicles(c *gin.Context) {
 		return
 	}
 
+	rUser, err := auth.GetCurrentUser(c)
+	if nil != err {
+		message := fmt.Sprintf("Authentication Error: %s", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
 	query := model.DB.Model(&model.Vehicle{}).Preload("Model").Preload("Owner")
+
+	if *rUser.IsAdmin {
+		if ownerID := c.Query("owner_id"); ownerID != "" {
+			query = query.Where("owner_id = ?", ownerID)
+		}
+	} else {
+		query = query.Where("owner_id = ?", rUser.ID)
+	}
+
 	query = query.Scopes(pagination.Paginate(vehicles, &page, query))
 
 	if err := query.Find(&vehicles).Error; nil != err {
@@ -38,37 +55,84 @@ func FindVehicles(c *gin.Context) {
 func CreateVehicle(c *gin.Context) {
 
 	userService := service.GetUserService()
+	companyService := service.GetCompanyService()
 	vehicleService := service.GetVehicleService()
 	modelService := service.GetVehicleModelService()
 
 	var input dto.VehicleCreationInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	vehicleModel, err := modelService.GetById(input.ModelID)
-	if nil != err {
-		message := fmt.Sprintf("Could not resolve the specified Model with [id:%s]: %s", input.ModelID, err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	owner, err := userService.GetById(input.OwnerID)
-	if nil != err {
-		message := fmt.Sprintf("Could not resolve the specified User with [id:%s]: %s", input.OwnerID, err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
-		return
+	var makeName, modelName *string
+	var vehicleModel *model.VehicleModel
+	var owner *model.User
+	var company *model.Company
+
+	if input.ModelID != nil {
+		vehicleModel, err = modelService.GetById(*input.ModelID)
+		if nil != err {
+			message := fmt.Sprintf("Could not resolve the specified Model with [id:%s]: %s", input.ModelID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
+			return
+		}
+	} else {
+		if input.MakeName == nil || input.ModelName == nil {
+			message := fmt.Sprintf("You must provide a valid %s or both %s and %s", "ModelID", "MakeName", "ModelName")
+			c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
+			return
+		}
+		makeName, modelName = input.MakeName, input.ModelName
+	}
+
+	if input.OwnerID != nil {
+		owner, err = userService.GetById(*input.OwnerID)
+		if nil != err {
+			message := fmt.Sprintf("Could not resolve the specified User with [id:%s]: %s", input.OwnerID, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
+			return
+		}
+	} else {
+		if input.CompanyID != nil {
+			company, err = companyService.GetById(*input.CompanyID)
+			if nil != err {
+				message := fmt.Sprintf("Could not resolve the specified Company with [id:%s]: %s", input.OwnerID, err.Error())
+				c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
+				return
+			}
+		} else {
+			owner = rUser
+		}
+
 	}
 
 	vehicle := model.Vehicle{
 		LicensePlateNumber: *input.LicensePlateNumber,
-		ModelID:            &vehicleModel.ID,
-		OwnerID:            &owner.ID,
 		Color:              *input.Color,
 		Description:        input.Description,
 		Published:          &input.Published,
 	}
+
+	if owner != nil {
+		vehicle.OwnerID = &owner.ID
+	}
+
+	if company != nil {
+		vehicle.CompanyID = &company.ID
+	}
+	if vehicleModel != nil {
+		vehicle.ModelID = &vehicleModel.ID
+	} else {
+		vehicle.MakeName, vehicle.ModelName = makeName, modelName
+	}
+
 	if err := vehicleService.Save(&vehicle); nil != err {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
 		return

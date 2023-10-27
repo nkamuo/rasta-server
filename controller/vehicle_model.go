@@ -10,6 +10,8 @@ import (
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
+	"github.com/nkamuo/rasta-server/utils/auth"
+	"github.com/nkamuo/rasta-server/utils/token"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,6 +24,23 @@ func FindVehicleModels(c *gin.Context) {
 		return
 	}
 	query := model.DB.Model(&model.VehicleModel{})
+
+	isAdmin := false
+	if _token := token.ExtractToken(c); _token != "" {
+		rUser, err := auth.GetCurrentUser(c)
+		if err != nil {
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+		if *rUser.IsAdmin {
+			isAdmin = true
+		}
+	} else {
+	}
+	if isAdmin {
+	} else {
+		query = query.Where("published = true") //ONLY SHOW ACTIVE LOCATIONS To NON-ADMINS
+	}
 
 	if page.Search != "" {
 		nameSearchQuery := strings.Join([]string{"%", page.Search, "%"}, "")
