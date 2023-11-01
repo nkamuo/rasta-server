@@ -25,6 +25,8 @@ type Config struct {
 	CLIENT_ORDER_SERVICE_FEE    uint64 `mapstructure:"ORDER_SERVICE_FEE"`
 	RESPONDER_ORDER_SERVICE_FEE uint64 `mapstructure:"RESPONDER_ORDER_SERVICE_FEE"`
 
+	RESPONDENT_ORDER_CHARGE_AMOUNT uint64 `mapstructure:"RESPONDENT_ORDER_CHARGE_AMOUNT"`
+
 	SERVER_ADDRESS string `mapstructure:"SERVER_ADDRESS"`
 	SERVER_PORT    string `mapstructure:"SERVER_PORT"`
 }

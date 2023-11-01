@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/dto"
+	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
@@ -51,7 +52,7 @@ func ClientVerifyOrderRespondentDetails(c *gin.Context) {
 		c.JSON(http.StatusExpectationFailed, gin.H{"status": "error", "message": message})
 		return
 	}
-	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID, "Order.User")
+	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID)
 	if err != nil {
 		message := fmt.Sprintf("Error Fetching order[id:%s] fulfilment details: %s", id, err.Error())
 		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
@@ -73,7 +74,7 @@ func ClientVerifyOrderRespondentDetails(c *gin.Context) {
 func ClientConfirmCompleteOrder(c *gin.Context) {
 
 	orderService := service.GetOrderService()
-	fulfilmentService := service.GetOrderFulfilmentService()
+	// fulfilmentService := service.GetOrderFulfilmentService()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -113,12 +114,12 @@ func ClientConfirmCompleteOrder(c *gin.Context) {
 		return
 	}
 
-	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID)
-	if err != nil {
-		message := fmt.Sprintf("Error Fetching order[id:%s] fulfilment details: %s", id, err.Error())
-		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
-		return
-	}
+	// fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID)
+	// if err != nil {
+	// 	message := fmt.Sprintf("Error Fetching order[id:%s] fulfilment details: %s", id, err.Error())
+	// 	c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+	// 	return
+	// }
 
 	// if err := fulfilmentService.Save(fulfilment); err != nil {
 	// 	message := fmt.Sprintf("Task failed: %s", err.Error())
@@ -132,7 +133,23 @@ func ClientConfirmCompleteOrder(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": fulfilment, "status": "success"})
+	query := model.DB.Where("id = ?", id).
+		Preload("User").
+		Preload("Fulfilment.Responder.User").
+		Preload("Fulfilment.Responder.Vehicle").
+		Preload("Payment").Preload("Items").
+		Preload("Adjustments").Preload("Items.Product").
+		Preload("Items.Origin").Preload("Items.Destination").
+		Preload("Items.FuelTypeInfo").Preload("Items.VehicleInfo")
+
+	var rOrder model.Order
+	if err := query.First(&rOrder).Error; nil != err {
+		// REFETCHINING ORDER FAILED - DO NOTHING
+	} else {
+		order = &rOrder
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success"})
 }
 
 func ClientCancelOrder(c *gin.Context) {

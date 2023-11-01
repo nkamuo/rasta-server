@@ -21,7 +21,7 @@ func GetCurrentUser(c *gin.Context) (user *model.User, err error) {
 	return user, err
 }
 
-func GetCurrentRespondent(c *gin.Context) (user *model.Respondent, err error) {
+func GetCurrentRespondent(c *gin.Context, preload ...string) (user *model.Respondent, err error) {
 	respondentRepo := repository.GetRespondentRepository()
 
 	requestingUser, err := GetCurrentUser(c)
@@ -29,7 +29,7 @@ func GetCurrentRespondent(c *gin.Context) (user *model.Respondent, err error) {
 		return nil, err
 	}
 
-	respondant, err := respondentRepo.GetByUser(*requestingUser)
+	respondant, err := respondentRepo.GetByUser(*requestingUser, preload...)
 	if err != nil {
 		return nil, err
 	}

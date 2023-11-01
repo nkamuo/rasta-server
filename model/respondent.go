@@ -17,6 +17,8 @@ type Respondent struct {
 	VehicleID *uuid.UUID `gorm:"unique" json:"vehicleId,omitempty"`
 	Vehicle   *Vehicle   `gorm:"foreignKey:VehicleID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"vehicle,omitempty"`
 
+	BillingAmount *uint64 `gorm:"" json:"billingAmount"`
+
 	// //The last location entry posted by the session
 	// CurrentLocationEntryID *uuid.UUID                      `gorm:"unique" json:"currentLocationEntryId,omitempty"`
 	// CurrentLocationEntry   *RespondentSessionLocationEntry `gorm:"foreignKey:CurrentLocationEntryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"currentLocationEntry,omitempty"`

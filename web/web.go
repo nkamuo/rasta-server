@@ -13,7 +13,7 @@ import (
 func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:3000", "http://localhost:51074"}
+	corsConfig.AllowOrigins = []string{"http://localhost:8080", "http://localhost:3000", "http://localhost:51074", "http://localhost:50523"}
 	corsConfig.AddAllowHeaders("Authorization")
 	// config.AllowOrigins = []string{"http://google.com", "http://facebook.com"}
 	// config.AllowAllOrigins = true
@@ -51,6 +51,8 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	/////////////////////////////////
 
 	api := r.Group("/api")
+	// secure := r.Group("/api")
+	// admin := r.Group("/api")
 
 	// PUBLIC ENDPOINTS
 
@@ -100,13 +102,23 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 
 	api.GET("/me", controller.GetCurrentUser)
 	api.GET("/me/respondent", controller.GetCurrentRespondent)
+	////////////////////////
+	///	 VEHILCE
+	////
+
+	api.GET("/me/respondent/vehicle", controller.FindRespondentVehicle)
+	api.POST("/me/respondent/vehicle", controller.UpdateRespondentVehicle)
+	//////////
+	// SESSION
+	////
 	api.GET("/me/respondent/session", controller.FindCurrentRespondentSession)
-	// api.GET("/me/respondent/session/close", controller.CloseRespondentSession)
+	api.GET("/me/respondent/session/close", controller.CloseRespondentSession)
 	api.GET("/me/respondent/session/requests", controller.FindAvailableOrdersForRespondent)
 	api.GET("/me/respondent/session/requests/:id", controller.FindOrderForRespondent)
 	api.POST("/me/respondent/session/requests/:id/claim", controller.RespondentClaimOrder)
 	api.POST("/me/respondent/session/requests/:id/verify-client", controller.RespondentVerifyOrderClientDetails)
 	api.POST("/me/respondent/session/requests/:id/cancel", controller.RespondentCancelOrder)
+	api.POST("/me/respondent/session/requests/:id/update-payment", controller.RespondentUpdateOrderPayment)
 	api.POST("/me/respondent/session/requests/:id/confirm", controller.RespondentConfirmCompleteOrder)
 
 	api.GET("/respondent_sessions", controller.FindRespondentSessions)
@@ -126,6 +138,12 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	// api.POST("/respondent_earnings", controller.CreateRespondentEarning)
 	// api.PATCH("/respondent_earnings/:id", controller.UpdateRespondentEarning)
 	// api.DELETE("/respondent_earnings/:id", controller.DeleteRespondentEarning)
+
+	/// RESPONDENT CHARGES
+
+	api.GET("/respondent_charges", controller.FindRespondentOrderCharges)
+	api.GET("/respondent_charges/:id", controller.FindRespondentOrderCharge)
+	// api.POST("/respondent_charges/:id/commit", controller.CommitRespondentEarning)
 
 	// HELLO!
 	api.GET("/respondent_session_locations_entries", controller.FindRespondentSessionLocationEntries)
@@ -168,8 +186,10 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.PATCH("/respondents/:id", controller.UpdateRespondent)
 	api.DELETE("/respondents/:id", controller.DeleteRespondent)
 	// RESPONDENT EARNINGS
-	api.GET("/respondents/:id/earnings", controller.FindRespondentEarnings)
+	api.GET("/respondents/:id/earnings", controller.FindRespondentEarningsByRespondent)
 	// api.GET("/respondents/:id/earnings/:earning_id", controller.FindRespondentEarning)
+	//RESPONDENT BILLS
+	api.GET("/respondents/:id/charges", controller.FindRespondentOrderChargesByRespondent)
 
 	//RESPONDENT - WALLET
 	api.GET("/respondents/:id/wallet", controller.FindRespondentWallet)

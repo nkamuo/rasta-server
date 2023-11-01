@@ -19,6 +19,7 @@ type RespondentServiceReview struct {
 	OrderID *uuid.UUID `gorm:"not null" json:"orderId,omitempty"`
 	Order   *Order     `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
 
+	ArrivedOnTime *bool `gorm:"" json:"arrivedOnTime"`
 	//
 	Published *bool     `gorm:"default:false;not null" json:"published"`
 	CreatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`

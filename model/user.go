@@ -15,7 +15,7 @@ type User struct {
 	Phone     string        `gorm:"type:varchar(64);uniqueIndex:idx_notes_phone,LENGTH(255);not null" json:"phone,omitempty"`
 	FirstName string        `gorm:"varchar(100)" json:"firstName,omitempty"`
 	LastName  string        `gorm:"varchar(100)" json:"lastName,omitempty"`
-	Password  *UserPassword `json:"password,omit"`
+	Password  *UserPassword `json:"password,omit,omitempty"`
 	IsAdmin   *bool         `gorm:"default:false;not null" json:"isAdmin"`
 	Published bool          `gorm:"default:false;not null" json:"published"`
 	//

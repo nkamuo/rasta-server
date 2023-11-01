@@ -38,3 +38,11 @@ func (session *RespondentSession) BeforeCreate(tx *gorm.DB) (err error) {
 
 	return nil
 }
+
+func (session *RespondentSession) LastKnownCoordinates() (coordinates *LocationCoordinates) {
+	coordinates = session.CurrentCoordinates
+	if nil == coordinates {
+		coordinates = &session.StartingCoordinates
+	}
+	return coordinates
+}

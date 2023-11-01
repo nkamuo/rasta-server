@@ -32,7 +32,11 @@ type OrderFulfilment struct {
 	ResponderConfirmedAt *time.Time `gorm:"" json:"ResponderConfirmedAt,"`
 	ClientConfirmedAt    *time.Time `gorm:"" json:"clientConfirmedAt,"`
 	AutoConfirmedAt      *time.Time `gorm:"" json:"autoConfirmedAt,"` //THIS IS AUTOMATICALLY SET IF THE CLIENT DOES NOT CONFIRM ON TIME
+	//
 
+	InitialExpectedTimeOfAt *time.Time `gorm:"" json:"initialExpectedTimeOfAt,"` //THIS IS SET ONCE THE CLIENT ACCEPTS THE REQUST
+	ExpectedTimeOfAt        *time.Time `gorm:"" json:"expectedTimeOfAt,"`        // COMPUTED PER RESPONDENT REQUEST UPDATE REQUEST
+	//
 	CreatedAt time.Time `gorm:"not null;" json:"createdAt,omitempty"`
 	UpdatedAt time.Time `gorm:"not null;ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }

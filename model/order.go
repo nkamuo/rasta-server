@@ -51,12 +51,21 @@ type Order struct {
 	Payment   *OrderPayment ` json:"payment,omitempty"` //gorm:"foreignKey:PaymentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"
 
 	// SITUATIONS
-	Situations *[]MotoristRequestSituation `gorm:"many2many:order_motorist_situations;ForeignKey:ID;References:ID;joinForeignKey:order_id;joinReferences:motorist_request_situation_id;" json:"situations,omitempty"`
-
+	// Situations                    *[]*MotoristRequestSituation     `gorm:""` //`gorm:"many2many:order_motorist_situations;ForeignKey:ID;References:ID;joinForeignKey:order_id;joinReferences:motorist_request_situation_id;" json:"situations,omitempty"`
+	OrderMotoristRequestSituations []*OrderMotoristRequestSituation `gorm:""`
 	//TIMESTAMPS
 	CheckoutCompletedAt *time.Time `gorm:";" json:"checkoutCompletedAt,omitempty"`
 	CreatedAt           *time.Time `gorm:"not null;" json:"createdAt,omitempty"`
 	UpdatedAt           *time.Time `gorm:"ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
+}
+
+type OrderMotoristRequestSituation struct {
+	OrderID *uuid.UUID `gorm:"primaryKey" json:"orderId,omitempty"`
+	Order   *Order     `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
+	//
+
+	SituationID *uuid.UUID                `gorm:"primaryKey" json:"situationId,omitempty"`
+	Situation   *MotoristRequestSituation `gorm:"foreignKey:SituationID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"situation,omitempty"`
 }
 
 func (order *Order) BeforeCreate(tx *gorm.DB) (err error) {
@@ -125,6 +134,25 @@ func (order *Order) AddAdjustment(adjustment OrderAdjustment) (err error) {
 	adjustment.OrderID = &order.ID
 	order.Adjustments = append(order.Adjustments, adjustment)
 	return nil
+}
+
+func (order *Order) GetPrimaryLocation() (location *Location, err error) {
+
+	if len(*order.Items) < 1 {
+		return nil, errors.New("Order must have at least one Item")
+	}
+	item := (*order.Items)[0]
+
+	if item.Origin != nil {
+		return item.Origin, nil
+	}
+
+	if item.Destination != nil {
+		return item.Destination, nil
+	}
+
+	return nil, errors.New("Order Item must have destination")
+
 }
 
 const SERVICE_FEE_ADJUSTMENT_CODE = "SERVICE_FEE"

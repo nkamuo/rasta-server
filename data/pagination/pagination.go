@@ -7,6 +7,7 @@ import (
 )
 
 type Page struct {
+	Status     string      `json:"status,omitempty;" form:"status"`
 	Search     string      `json:"search,omitempty;" form:"search"`
 	Limit      *int        `json:"limit,omitempty;" form:"limit"`
 	Page       int         `json:"page,omitempty;" form:"page"`

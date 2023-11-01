@@ -34,8 +34,16 @@ func (situation *MotoristRequestSituation) BeforeCreate(tx *gorm.DB) (err error)
 var defaultConfitions = []MotoristRequestSituation{
 	{
 		// ID:          uuid.New(),
+		Code:        "needs_to_ride_with_driver_on_the_front_seet",
+		Title:       "Needs to ride with driver",
+		SubTitlte:   "Needs to ride with driver on the front seat.",
+		Description: "In the case of towing request, the motorist needs to sit on the driver with the passenger's seat",
+		Note:        "The motorist is in a dark or low-light place",
+	},
+	{
+		// ID:          uuid.New(),
 		Code:        "in_a_dark_place",
-		Title:       "In a Dark place",
+		Title:       "In a Low light area",
 		SubTitlte:   "In a Dark or low-light place",
 		Description: "You are in a dark place",
 		Note:        "The motorist is in a dark or low-light place",
@@ -59,7 +67,7 @@ var defaultConfitions = []MotoristRequestSituation{
 	{
 		// ID:          uuid.New(),
 		Code:        "on_private_business_parking_lot",
-		Title:       "On a parking loat",
+		Title:       "On a parking lot",
 		SubTitlte:   "On a private business parking lot",
 		Description: "Your current location is int the street",
 		Note:        "Currently in a parking lot",
@@ -67,7 +75,7 @@ var defaultConfitions = []MotoristRequestSituation{
 	{
 		// ID:          uuid.New(),
 		Code:        "vehicle_blocking_or_near_traffic_lane",
-		Title:       "Vehicle Blocking",
+		Title:       "Blocking Traffic",
 		SubTitlte:   "Vehicle Blocking or near Traffic Lane",
 		Description: "Vehicle Blocking or near Traffic Lane",
 		Note:        "Vehicle Blocking or near Traffic Lane",
@@ -75,7 +83,7 @@ var defaultConfitions = []MotoristRequestSituation{
 	{
 		// ID:          uuid.New(),
 		Code:        "vehicle_have_been_involved_in_an_accident",
-		Title:       "Invlolved in an accident",
+		Title:       "Involved in an accident",
 		SubTitlte:   "Vehicle have been invlolved in an accident",
 		Description: "Vehicle have been invlolved in an accident",
 		Note:        "Vehicle have been invlolved in an accident",
@@ -93,13 +101,23 @@ func MigrateMotoristSituations(db *gorm.DB) (err error) {
 	err = db.Transaction(func(tx *gorm.DB) error {
 		for _, situation := range situations {
 			// tx.Model(&situation)
-			if _, err := getByCode(tx, situation.Code); err != nil {
+			if Situation, err := getByCode(tx, situation.Code); err != nil {
 				if err.Error() == "record not found" {
 					if err := tx.Save(&situation).Error; err != nil {
 						return err
 					}
 
 				} else {
+					return err
+				}
+			} else {
+				Situation.Code = situation.Code
+				Situation.Title = situation.Title
+				Situation.SubTitlte = situation.SubTitlte
+				Situation.Note = situation.Note
+				Situation.Description = situation.Description
+
+				if err := tx.Save(Situation).Error; err != nil {
 					return err
 				}
 			}

@@ -119,10 +119,10 @@ func CreateRespondentServiceReview(c *gin.Context) {
 	}
 
 	// respondentServiceReview.RequestID = &input.RequestID
-	// respondentServiceReview.AuthorID = input.AuthorID
 	respondentServiceReview.OrderID = &order.ID
 	respondentServiceReview.Description = input.Description
 	respondentServiceReview.Published = input.Published
+	respondentServiceReview.ArrivedOnTime = input.ArrivedOnTime
 	respondentServiceReview.Rating = input.Rating
 
 	// Description: input.Description,

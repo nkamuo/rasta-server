@@ -22,7 +22,7 @@ func GetRespondentSessionRepository() RespondentSessionRepository {
 
 type RespondentSessionRepository interface {
 	FindAll(page int, limit int) (sessions []model.RespondentSession, total int64, err error)
-	GetById(id uuid.UUID) (session *model.RespondentSession, err error)
+	GetById(id uuid.UUID, prefetch ...string) (session *model.RespondentSession, err error)
 	GetActiveByRespondent(respondent model.Respondent, prefetch ...string) (session *model.RespondentSession, err error)
 	Save(session *model.RespondentSession) (err error)
 	Delete(session *model.RespondentSession) (error error)
@@ -49,7 +49,13 @@ func (repo *sessionRepository) FindAll(page int, limit int) (sessions []model.Re
 	return
 }
 
-func (repo *sessionRepository) GetById(id uuid.UUID) (session *model.RespondentSession, err error) {
+func (repo *sessionRepository) GetById(id uuid.UUID, prefetch ...string) (session *model.RespondentSession, err error) {
+	query := model.DB //.Preload("Assignments.Assignment.Product").
+
+	for _, pFetch := range prefetch {
+		query = query.Preload(pFetch)
+	}
+
 	if err = model.DB. /*.Joins("OperatorUser")*/ First(&session, "id = ?", id).Error; err != nil {
 		return nil, err
 	}

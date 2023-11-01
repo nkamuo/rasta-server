@@ -1,11 +1,10 @@
 package dto
 
 import (
-	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/utils/geo"
 )
 
 type RespondentOrderEntryIOutput struct {
-	Order   model.Order               `json:"order"`
+	Order   OrderOutput               `json:"order"`
 	Routing geo.DistanceMatrixElement `json:"routing"`
 }

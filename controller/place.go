@@ -50,6 +50,12 @@ func FindPlaces(c *gin.Context) {
 		query = query.Where("active = true") //ONLY SHOW ACTIVE LOCATIONS To NON-ADMINS
 	}
 
+	if page.Status != "" {
+		if page.Status == "active" {
+			query = query.Where("active = true")
+		}
+	}
+
 	if page.Search != "" {
 		nameSearchQuery := strings.Join([]string{"%", page.Search, "%"}, "")
 		query = query.Where("name LIKE ?", nameSearchQuery)

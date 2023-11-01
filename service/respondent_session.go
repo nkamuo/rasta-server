@@ -65,7 +65,7 @@ func (service *sessionServiceImpl) UpdateLocationEntry(session *model.Respondent
 
 	var fulfilments []model.OrderFulfilment
 
-	query := model.DB.Where("session_id = ?", session.ID).Preload("Order.Items")
+	query := model.DB.Where("session_id = ?", session.ID) //.Preload("Order.Items")
 
 	if err := query.Find(&fulfilments).Error; err != nil {
 		return err
@@ -75,7 +75,7 @@ func (service *sessionServiceImpl) UpdateLocationEntry(session *model.Respondent
 		if order, err := orderRepo.GetByFulfilment(fulfilment); err != nil {
 
 		} else {
-			/*err := */ orderService.UpdateResponderLocationEntry(order, locationEntry)
+			/*err := */ go orderService.UpdateResponderLocationEntry(order, locationEntry)
 		}
 	}
 

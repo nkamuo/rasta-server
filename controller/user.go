@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/data/pagination"
@@ -79,6 +80,52 @@ func FindUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 	c.JSON(http.StatusOK, gin.H{"data": user})
+}
+
+func UpdateUserAvatar(c *gin.Context) {
+	userService := service.GetUserService()
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+	user, err := userService.GetById(id)
+	if nil != err {
+		message := fmt.Sprintf("Could not find user with [id:%s]", id)
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	}
+
+	// var err error;
+
+	// single file
+	file, err := c.FormFile("file")
+
+	if nil != err {
+		message := fmt.Sprintf("An error occurred: %s", err.Error())
+		c.JSON(http.StatusOK, gin.H{"message": message, "status": "success"})
+		return
+	}
+
+	// log.Println(file.Filename)
+	ext := filepath.Ext(file.Filename)
+	dst := fmt.Sprintf("users/%s/avatar.%s", user.ID, ext)
+
+	// Upload the file to specific dst.
+	err = c.SaveUploadedFile(file, dst)
+
+	if err != nil {
+		message := fmt.Sprintf("An error occurred: %s", err.Error())
+		c.JSON(http.StatusOK, gin.H{"message": message, "status": "success"})
+		return
+	}
+
+	// if err != nil
+	{
+		// message := fmt.Sprintf("'%s' uploaded!", file.Filename)
+		c.JSON(http.StatusOK, gin.H{"data": user, "status": "success"})
+	}
+	// c.JSON(http.StatusOK, gin.H{"data": user, "status": "success"})
 }
 
 func UpdateUser(c *gin.Context) {

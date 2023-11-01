@@ -16,6 +16,49 @@ import (
 )
 
 func FindRespondentEarnings(c *gin.Context) {
+	// var respondentService = service.GetRespondentService()
+	var earnings []model.RespondentEarning
+	var page dto.FinancialPageRequest
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Authentication erro: %s", err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	query := model.DB.Preload("Request.Product.Place").Preload("Request.Order.User").Preload("Respondent.User")
+
+	if *rUser.IsAdmin {
+		if respondent_id := c.Query("respondent_id"); respondent_id != "" {
+			query = query.Where("respondent_id = ?", respondent_id)
+		}
+	} else {
+		// if respondent.User.ID.String() == rUser.ID.String() {
+		// 	// query = query.Where("respondent_id = ?", respondent.ID)
+		// } else {
+		message := fmt.Sprintf("Permision Denied: you may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+		// }
+	}
+
+	if err := c.ShouldBindQuery(&page); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	query = query.Scopes(financial.FilterRequest(nil, &page, query))
+	// query =
+	if err := query.Scopes(pagination.Paginate(earnings, &page.Page, query)).Find(&earnings).Error; nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	page.Rows = earnings
+	c.JSON(http.StatusOK, gin.H{"data": page, "status": "success"})
+}
+
+func FindRespondentEarningsByRespondent(c *gin.Context) {
 	var respondentService = service.GetRespondentService()
 	var earnings []model.RespondentEarning
 	var page dto.FinancialPageRequest
@@ -45,16 +88,18 @@ func FindRespondentEarnings(c *gin.Context) {
 		}
 		return
 	}
-	query := model.DB.Preload("Request.Product.Place").Preload("Request.Order.User")
+	query := model.DB.Preload("Request.Product.Place").Preload("Request.Order.User").Where("respondent_id = ?", respondent.ID)
 
 	if *rUser.IsAdmin {
-
+		// if respondent_id := c.Query("respondent_id"); respondent_id != "" {
+		// 	query = query.Where("respondent_id = ?", respondent_id)
+		// }
 	} else {
 		if respondent.User.ID.String() == rUser.ID.String() {
 			query = query.Where("respondent_id = ?", respondent.ID)
 		} else {
 			message := fmt.Sprintf("Permision Denied: you may not access this resource")
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 			return
 		}
 	}
@@ -141,7 +186,7 @@ func FindRespondentEarning(c *gin.Context) {
 	} else {
 		if respondent.User.ID.String() != rUser.ID.String() {
 			message := fmt.Sprintf("Permision Denied: you may not access this resource")
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 			return
 		}
 	}

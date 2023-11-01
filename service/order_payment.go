@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/google/uuid"
@@ -110,7 +109,7 @@ func (service *paymentServiceImpl) InitOrderPayment(order *model.Order) (payment
 	}
 
 	pi, err := paymentintent.New(params)
-	log.Printf("pi.New: %v", pi.ClientSecret)
+	// log.Printf("pi.New: %v", pi.ClientSecret)
 
 	if err != nil {
 		return nil, err

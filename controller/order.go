@@ -139,7 +139,7 @@ func CreateOrder(c *gin.Context) {
 		}
 	}
 
-	var Situations []model.MotoristRequestSituation
+	var Situations []*model.MotoristRequestSituation
 	for _, iSituationID := range input.Situations {
 		situation, err := situationService.GetById(iSituationID)
 		if err != nil {
@@ -147,13 +147,13 @@ func CreateOrder(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
-		Situations = append(Situations, *situation)
+		Situations = append(Situations, situation)
 	}
 
 	order := model.Order{
-		UserID:     &user.ID,
-		Items:      &Requests,
-		Situations: &Situations,
+		UserID: &user.ID,
+		Items:  &Requests,
+		// Situations: &Situations,
 	}
 
 	if nil != paymentMethod {
@@ -167,21 +167,28 @@ func CreateOrder(c *gin.Context) {
 
 	err = model.DB.Transaction(func(tx *gorm.DB) error {
 
-		var Sit []model.MotoristRequestSituation
-		var Sits []model.MotoristRequestSituation
+		// var Sit []*model.MotoristRequestSituation
+		var Sits []*model.OrderMotoristRequestSituation
 
 		for _, sit := range Situations {
-			Sits = append(Sits, model.MotoristRequestSituation{ID: sit.ID})
+			Sits = append(Sits, &model.OrderMotoristRequestSituation{SituationID: &sit.ID})
 		}
-		order.Situations = &Sit // Temporalily remove the Situations to prevent GORM from trying to insert them before the order
+		// order.Situations = &Sit // Temporalily remove the Situations to prevent GORM from trying to insert them before the order
+
+		order.OrderMotoristRequestSituations = Sits
 		if err = tx.Save(&order).Error; err != nil {
 			return err
 		}
+		// order.Situations = &Situations
 
-		if err := tx.Model(&order).Association("Situations").Append(Sits); err != nil {
-			return err
-		}
-		order.Situations = &Situations
+		// if err = tx.Save(&order).Error; err != nil {
+		// 	return err
+		// }
+
+		// if err := tx.Model(&order).Association("Situations").Unscoped().Append(Sits); err != nil {
+		// 	return err
+		// }
+		// order.Situations = &Situations
 		return nil
 	})
 
@@ -208,7 +215,7 @@ func FindOrder(c *gin.Context) {
 
 	respondentRepo := repository.GetRespondentRepository()
 	sessionRepo := repository.GetRespondentSessionRepository()
-	orderService := service.GetOrderService()
+	// orderService := service.GetOrderService()
 	paymentService := service.GetOrderPaymentService()
 
 	id, err := uuid.Parse(c.Param("id"))
@@ -220,6 +227,8 @@ func FindOrder(c *gin.Context) {
 	query := model.DB.Where("id = ?", id).
 		Preload("User").
 		Preload("Fulfilment.Responder.User").
+		Preload("Fulfilment.Responder.Company").
+		Preload("Fulfilment.Responder.Vehicle").
 		Preload("Payment").Preload("Items").
 		Preload("Adjustments").Preload("Items.Product").
 		Preload("Items.Origin").Preload("Items.Destination").
@@ -242,7 +251,7 @@ func FindOrder(c *gin.Context) {
 		}
 	}
 
-	if order.Fulfilment != nil {
+	if order.Fulfilment != nil && order.Fulfilment.Coordinates == nil {
 
 		respondent, err := respondentRepo.GetById(*order.Fulfilment.ResponderID)
 		if err != nil {
@@ -251,7 +260,7 @@ func FindOrder(c *gin.Context) {
 			return
 		}
 
-		session, err := sessionRepo.GetActiveByRespondent(*respondent, "Assignments.Assignment.Product")
+		session, err := sessionRepo.GetById(*order.Fulfilment.SessionID, "Assignments.Assignment.Product")
 		if nil != err {
 			message := fmt.Sprintf("Could not find active session for respondent[id:%s]", respondent.ID)
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
@@ -270,15 +279,15 @@ func FindOrder(c *gin.Context) {
 		}
 	} else {
 
-		if rOrder, err := orderService.GetById(order.ID); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-			return
-		} else {
-			if _, err := paymentService.InitOrderPayment(rOrder); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-				return
-			}
-		}
+		// if rOrder, err := orderService.GetById(order.ID); err != nil {
+		// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		// 	return
+		// } else {
+		// 	if _, err := paymentService.InitOrderPayment(rOrder); err != nil {
+		// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		// 		return
+		// 	}
+		// }
 
 	}
 
@@ -419,7 +428,23 @@ func CompleteOrder(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 	}
 
-	message := fmt.Sprintf("Deleted order \"%s\"", order.ID)
+	query := model.DB.Where("id = ?", id).
+		Preload("User").
+		Preload("Fulfilment.Responder.User").
+		Preload("Fulfilment.Responder.Vehicle").
+		Preload("Payment").Preload("Items").
+		Preload("Adjustments").Preload("Items.Product").
+		Preload("Items.Origin").Preload("Items.Destination").
+		Preload("Items.FuelTypeInfo").Preload("Items.VehicleInfo")
+
+	var rOrder model.Order
+	if err := query.First(&rOrder).Error; nil != err {
+		// REFETCHINING ORDER FAILED - DO NOTHING
+	} else {
+		order = &rOrder
+	}
+
+	message := fmt.Sprintf("Order completed order \"%s\"", order.ID)
 	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success", "message": message})
 }
 

@@ -50,7 +50,9 @@ func FindCompanyEarnings(c *gin.Context) {
 	query := model.DB
 
 	if *rUser.IsAdmin {
-
+		if company_id := c.Query("company_id"); company_id != "" {
+			query = query.Where("company_id = ?", company_id)
+		}
 	} else {
 		if company.OperatorUser.ID.String() == rUser.ID.String() {
 			query = query.Where("company_id = ?", company.ID)

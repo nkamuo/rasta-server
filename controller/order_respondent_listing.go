@@ -31,10 +31,16 @@ func RespondentClaimOrder(c *gin.Context) {
 		return
 	}
 
-	respondent, err := respondentRepo.GetByUser(*requestingUser)
+	respondent, err := respondentRepo.GetByUser(*requestingUser, "Vehicle")
 	if err != nil {
 		message := fmt.Sprintf("Authentication error")
 		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if respondent.Vehicle == nil {
+		message := fmt.Sprintf("You need to select a vehicle before you can accept requests")
+		c.JSON(http.StatusConflict, gin.H{"status": "error", "message": message})
 		return
 	}
 
@@ -266,6 +272,103 @@ func RespondentCancelOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": fulfilment, "status": "success"})
 }
 
+func RespondentUpdateOrderPayment(c *gin.Context) {
+
+	orderRepo := repository.GetOrderRepository()
+	// orderService := service.GetOrderService()
+	orderPaymentService := service.GetOrderPaymentService()
+	// orderRepo := repository.GetOrderRepository();
+	respondentRepo := repository.GetRespondentRepository()
+	fulfilmentService := service.GetOrderFulfilmentService()
+	// respondentService := service.GetRespondentService()
+
+	var input dto.RespondentOrderCompletionInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	requestingUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Authentication error")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	respondent, err := respondentRepo.GetByUser(*requestingUser)
+	if err != nil {
+		message := fmt.Sprintf("Authentication error")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	order, err := orderRepo.GetById(id)
+	if err != nil {
+		message := fmt.Sprintf("Could not find Order with [id:%s]", id)
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	rOrder, err := orderRepo.GetById(id, "Payment")
+	if err != nil {
+		message := fmt.Sprintf("Could not find Order with [id:%s]", id)
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if order.FulfilmentID == nil {
+		message := fmt.Sprintf("Order [id:%s] is not assigned yet", id)
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID)
+	if err != nil {
+		message := fmt.Sprintf("Error Fetching order[id:%s] fulfilment details: %s", id, err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if fulfilment.ResponderID.String() != respondent.ID.String() {
+		message := fmt.Sprintf("You may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	var payment = rOrder.Payment
+
+	if nil == payment {
+		payment, err = orderPaymentService.InitOrderPayment(order)
+		if err != nil {
+			message := fmt.Sprintf("An error Occured: %s", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+			return
+		}
+	}
+
+	if input.ClientPaidCash {
+		payment.Status = "paid_on_delivery"
+	} else {
+		if payment.Status == "paid_on_delivery" {
+			payment.Status = "processing"
+		}
+	}
+
+	if orderPaymentService.Save(payment); err != nil {
+		message := fmt.Sprintf("An error Occured: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": fulfilment, "status": "success"})
+}
+
 func FindOrderForRespondent(c *gin.Context) {
 
 	respondentRepo := repository.GetRespondentRepository()
@@ -301,7 +404,7 @@ func FindOrderForRespondent(c *gin.Context) {
 
 	query := model.DB.Where("id = ?", id).
 		Preload("Fulfilment.Responder.User").
-		Preload("User").Preload("Situations").
+		Preload("User").Preload("OrderMotoristRequestSituations").
 		Preload("Payment").Preload("Items").
 		Preload("Adjustments").Preload("Items.Product").
 		Preload("Items.Origin").Preload("Items.Destination").
@@ -329,7 +432,7 @@ func FindOrderForRespondent(c *gin.Context) {
 	location, err := getOrderPrimaryLocation(order)
 
 	var entry = dto.RespondentOrderEntryIOutput{
-		Order: order,
+		Order: dto.CreateOrderOutput(order),
 	}
 
 	if err != nil {
@@ -383,8 +486,8 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 	}
 
 	query := model.DB.
-		Preload("Order").
-		Preload("Order.Items").Preload("Order.Items.Product").Preload("Order.Situations").
+		Preload("Order.Fulfilment.Responder").
+		Preload("Order.Items").Preload("Order.Items.Product").Preload("Order.OrderMotoristRequestSituations").
 		Preload("Order.User").Preload("Order.Items.Origin").Preload("Order.Items.Destination").
 		Preload("FuelTypeInfo").Preload("VehicleInfo")
 	// Preload("Origin").Preload("Destination")
@@ -433,7 +536,7 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 		location, err := getOrderPrimaryLocation(*order)
 
 		var entry = dto.RespondentOrderEntryIOutput{
-			Order: *order,
+			Order: dto.CreateOrderOutput(*order),
 		}
 
 		if err != nil {
