@@ -63,10 +63,10 @@ func (service *orderServiceImpl) AssignResponder(order *model.Order, session *mo
 		return errors.New(message)
 	}
 
-	if !respondent.Active {
-		message := fmt.Sprintf("Your Responder profile is currently not supported; Please reachout to the admin for more information")
-		return errors.New(message)
-	}
+	// if !respondent.Active {
+	// 	message := fmt.Sprintf("Your Responder profile is currently not supported; Please reachout to the admin for more information")
+	// 	return errors.New(message)
+	// }
 
 	if respondent.Company != nil {
 		if !*respondent.Company.Active {
