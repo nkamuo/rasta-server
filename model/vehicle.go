@@ -13,7 +13,7 @@ type Vehicle struct {
 	Color              string    `gorm:"varchar(64);" json:"color,omitempty"`
 	// USER OWNER
 	OwnerID *uuid.UUID `gorm:"" json:"ownerId,omitempty"`
-	Owner   *User      `gorm:"" json:"owner"`
+	Owner   *User      `gorm:"foreignKey:OwnerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user,omitempty"`
 
 	// COMPANY OWNER
 	CompanyID *uuid.UUID `gorm:"" json:"companyId,omitempty"`

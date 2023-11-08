@@ -137,3 +137,23 @@ func GetCurrentUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": user})
 
 }
+
+func DeleteCurrentUser(c *gin.Context) {
+
+	userService := service.GetUserService()
+	user, err := utils.GetCurrentUser(c)
+
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	if err = userService.Delete(user); nil != err {
+		message := fmt.Sprintf("Error deleting user: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "data": user, "message": message})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": user, "message": "user deleted successfully"})
+
+}

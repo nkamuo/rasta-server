@@ -237,7 +237,7 @@ func GetCurrentRespondent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	respondent, err := respondentRepo.GetByUser(*user, "User", "Place")
+	respondent, err := respondentRepo.GetByUser(*user, "User", "Place", "Vehicle", "Company")
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return

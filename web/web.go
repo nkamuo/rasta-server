@@ -101,6 +101,7 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	/////////////////////
 
 	api.GET("/me", controller.GetCurrentUser)
+	api.DELETE("/me", controller.DeleteCurrentUser)
 	api.GET("/me/respondent", controller.GetCurrentRespondent)
 	////////////////////////
 	///	 VEHILCE
