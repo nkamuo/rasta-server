@@ -22,8 +22,11 @@ type VehicleCreationInput struct {
 type VehicleUpdateInput struct {
 	ModelID            *uuid.UUID `json:"modelId" binding:""`
 	OwnerID            *uuid.UUID `json:"ownerId" binding:""`
-	Color              *string    `json:"color" binding:""`
 	Published          *bool      `json:"published" binding:""`
 	Description        *string    `json:"description" binding:""`
 	LicensePlateNumber *string    `json:"licensePlateNumber" binding:""`
+
+	Color     *string `json:"color" binding:""`
+	MakeName  *string `json:"makeName,omitempty"`
+	ModelName *string `json:"modelName,omitempty"`
 }

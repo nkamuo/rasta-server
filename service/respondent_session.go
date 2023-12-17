@@ -22,7 +22,7 @@ func GetRespondentSessionService() RespondentSessionService {
 }
 
 type RespondentSessionService interface {
-	GetById(id uuid.UUID) (session *model.RespondentSession, err error)
+	GetById(id uuid.UUID, preload ...string) (session *model.RespondentSession, err error)
 	Close(session *model.RespondentSession) (err error)
 	UpdateLocationEntry(session *model.RespondentSession, locationEntry model.RespondentSessionLocationEntry) (err error)
 	Save(session *model.RespondentSession) (err error)
@@ -33,8 +33,8 @@ type sessionServiceImpl struct {
 	repo repository.RespondentSessionRepository
 }
 
-func (service *sessionServiceImpl) GetById(id uuid.UUID) (session *model.RespondentSession, err error) {
-	return service.repo.GetById(id)
+func (service *sessionServiceImpl) GetById(id uuid.UUID, preload ...string) (session *model.RespondentSession, err error) {
+	return service.repo.GetById(id, preload...)
 }
 
 func (service *sessionServiceImpl) Close(session *model.RespondentSession) (err error) {

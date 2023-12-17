@@ -20,6 +20,8 @@ import (
 func FindOrders(c *gin.Context) {
 
 	userService := service.GetUserService()
+	responderService := service.GetRespondentService()
+	responderSessionService := service.GetRespondentSessionService()
 
 	var orders []model.Order
 	var page pagination.Page
@@ -28,7 +30,7 @@ func FindOrders(c *gin.Context) {
 		return
 	}
 
-	requestingUser, err := auth.GetCurrentUser(c)
+	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
@@ -38,7 +40,12 @@ func FindOrders(c *gin.Context) {
 		Preload("Items").Preload("Items.Product").
 		Preload("Items.Origin").Preload("Items.Destination")
 
-	if *requestingUser.IsAdmin {
+	query = query.Joins("JOIN order_fulfilments ON orders.fulfilment_id = order_fulfilments.id")
+
+	if *rUser.IsAdmin {
+		query = query.Preload("Fulfilment.Responder.User").
+			Preload("Fulfilment.Responder.Company")
+
 		if user_id := c.Query("user_id"); user_id != "" {
 			userID, err := uuid.Parse(user_id)
 			if err != nil {
@@ -55,12 +62,41 @@ func FindOrders(c *gin.Context) {
 			}
 
 		}
-	} else {
-		query = query.Where("orders.user_id = ?", requestingUser.ID)
-	}
 
-	if status := c.Query("status"); status != "" {
-		query = query.Where("orders.status = ?", status)
+		if responder_id := c.Query("responder_id"); responder_id != "" {
+			responderID, err := uuid.Parse(responder_id)
+			if err != nil {
+				message := fmt.Sprintf("Could not parse parameter responder_id[%s] into a valid UUID: %s", responder_id, err.Error())
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+				return
+			}
+			if _, err := responderService.GetById(responderID); err != nil {
+				message := fmt.Sprintf("Could not find Responder with [id:%s]: %s", responderID, err.Error())
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+				return
+			} else {
+				query = query.Where("order_fulfilments.responder_id = ?", responderID)
+			}
+		}
+
+		if session_id := c.Query("session_id"); session_id != "" {
+			sessionID, err := uuid.Parse(session_id)
+			if err != nil {
+				message := fmt.Sprintf("Could not parse parameter session_id[%s] into a valid UUID: %s", session_id, err.Error())
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+				return
+			}
+			if _, err := responderSessionService.GetById(sessionID); err != nil {
+				message := fmt.Sprintf("Could not find Session with [id:%s]: %s", sessionID, err.Error())
+				c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+				return
+			} else {
+				query = query.Where("order_fulfilments.session_id = ?", sessionID)
+			}
+		}
+		//
+	} else {
+		query = query.Where("orders.user_id = ?", rUser.ID)
 	}
 
 	if err := query.Scopes(pagination.Paginate(orders, &page, query)).Find(&orders).Error; nil != err {
@@ -274,8 +310,8 @@ func FindOrder(c *gin.Context) {
 
 	if order.Payment != nil {
 		if err := paymentService.UpdatePaymentStatus(order.Payment); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-			return
+			// c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			// return
 		}
 	} else {
 
@@ -290,7 +326,7 @@ func FindOrder(c *gin.Context) {
 		// }
 
 	}
-
+	// TODO: Add the current error message to the response
 	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success"})
 }
 

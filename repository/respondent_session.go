@@ -50,13 +50,13 @@ func (repo *sessionRepository) FindAll(page int, limit int) (sessions []model.Re
 }
 
 func (repo *sessionRepository) GetById(id uuid.UUID, prefetch ...string) (session *model.RespondentSession, err error) {
-	query := model.DB //.Preload("Assignments.Assignment.Product").
+	query := model.DB
 
 	for _, pFetch := range prefetch {
 		query = query.Preload(pFetch)
 	}
 
-	if err = model.DB. /*.Joins("OperatorUser")*/ First(&session, "id = ?", id).Error; err != nil {
+	if err = query.First(&session, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return session, nil

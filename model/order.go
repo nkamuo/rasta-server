@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/google/uuid"
@@ -71,6 +72,7 @@ type OrderMotoristRequestSituation struct {
 func (order *Order) BeforeCreate(tx *gorm.DB) (err error) {
 	now := time.Now()
 	order.ID = uuid.New()
+	order.Code = generateOrderCode()
 	order.CreatedAt = &now
 	// order.UpdatedAt = &now
 	//
@@ -156,3 +158,15 @@ func (order *Order) GetPrimaryLocation() (location *Location, err error) {
 }
 
 const SERVICE_FEE_ADJUSTMENT_CODE = "SERVICE_FEE"
+
+func generateOrderCode() string {
+	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	rand.Seed(time.Now().UnixNano())
+	// rand.NewRand()
+
+	b := make([]byte, 16)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
+}

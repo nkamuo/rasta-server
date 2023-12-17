@@ -1,13 +1,16 @@
 package pagination
 
 import (
+	"fmt"
 	"math"
+	"reflect"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 type Page struct {
-	Status     string      `json:"status,omitempty;" form:"status"`
+	Status     []string    `json:"status,omitempty;" form:"status"`
 	Search     string      `json:"search,omitempty;" form:"search"`
 	Limit      *int        `json:"limit,omitempty;" form:"limit"`
 	Page       int         `json:"page,omitempty;" form:"page"`
@@ -55,8 +58,26 @@ func (p *Page) GetSort() string {
 func Paginate(value interface{}, pagination *Page, db *gorm.DB) func(db *gorm.DB) *gorm.DB {
 	var totalRows int64
 	var totalPages int
-	db.Model(value).Count(&totalRows)
+	query := db
 
+	if len(pagination.Status) > 0 {
+		// Get the type of the value
+		valueType := reflect.TypeOf(value)
+
+		// If the value is a slice or array, get the element type
+		if valueType.Kind() == reflect.Slice || valueType.Kind() == reflect.Array {
+			valueType = valueType.Elem()
+		}
+
+		// Use the base type name for the table name
+		namer := schema.NamingStrategy{}
+		baseTableName := namer.TableName(valueType.Name())
+		stmt := fmt.Sprintf("%s.status in ?", baseTableName)
+		query = query.Where(stmt, pagination.Status)
+
+	}
+
+	query.Model(value).Count(&totalRows)
 	pagination.TotalRows = totalRows
 
 	limit := pagination.GetLimit()
@@ -74,6 +95,12 @@ func Paginate(value interface{}, pagination *Page, db *gorm.DB) func(db *gorm.DB
 	pagination.TotalPages = totalPages
 
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Offset(pagination.GetOffset()).Limit(pagination.GetLimit()).Order(pagination.GetSort())
+		query := db.Offset(pagination.GetOffset()).Limit(pagination.GetLimit()).Order(pagination.GetSort())
+
+		// if len(pagination.Status) > 0 {
+		// 	query = query.Where("status in ?", pagination.Status)
+		// }
+
+		return query
 	}
 }

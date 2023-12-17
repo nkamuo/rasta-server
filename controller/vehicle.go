@@ -93,6 +93,11 @@ func CreateVehicle(c *gin.Context) {
 	}
 
 	if input.OwnerID != nil {
+		if !*rUser.IsAdmin {
+			message := "You are not allowed to provide {ownerId} for this request"
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+			return
+		}
 		owner, err = userService.GetById(*input.OwnerID)
 		if nil != err {
 			message := fmt.Sprintf("Could not resolve the specified User with [id:%s]: %s", input.OwnerID, err.Error())
@@ -166,6 +171,14 @@ func UpdateVehicle(c *gin.Context) {
 	vehicleService := service.GetVehicleService()
 	modelService := service.GetVehicleModelService()
 
+	rUser, err := auth.GetCurrentUser(c)
+
+	if err != nil {
+		message := fmt.Sprintf("Authentication Error: %s", err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
+		return
+	}
+
 	var input dto.VehicleUpdateInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -183,8 +196,22 @@ func UpdateVehicle(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 
+	if !*rUser.IsAdmin && (vehicle.OwnerID == nil || rUser.ID.String() != vehicle.OwnerID.String()) {
+		message := fmt.Sprintf("Unathorized: You may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
 	if nil != input.Color {
 		vehicle.Color = *input.Color
+	}
+
+	if nil != input.ModelName {
+		vehicle.ModelName = input.ModelName
+	}
+
+	if nil != input.MakeName {
+		vehicle.MakeName = input.MakeName
 	}
 
 	if nil != input.LicensePlateNumber {
@@ -192,10 +219,6 @@ func UpdateVehicle(c *gin.Context) {
 	}
 	if nil != input.Description {
 		vehicle.Description = *input.Description
-	}
-
-	if nil != input.Published {
-		vehicle.Published = input.Published
 	}
 
 	if nil != input.ModelID {
@@ -208,14 +231,27 @@ func UpdateVehicle(c *gin.Context) {
 		vehicle.ModelID = &vehicleModel.ID
 	}
 
-	if nil != input.OwnerID {
-		owner, err := userService.GetById(*input.OwnerID)
-		if nil != err {
-			message := fmt.Sprintf("Could not resolve the specified User with [id:%s]: %s", input.OwnerID, err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
-			return
+	if *rUser.IsAdmin {
+		if nil != input.OwnerID {
+			owner, err := userService.GetById(*input.OwnerID)
+			if nil != err {
+				message := fmt.Sprintf("Could not resolve the specified User with [id:%s]: %s", input.OwnerID, err.Error())
+				c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
+				return
+			}
+			vehicle.OwnerID = &owner.ID
 		}
-		vehicle.OwnerID = &owner.ID
+
+		if nil != input.Published {
+			vehicle.Published = input.Published
+		}
+
+	} else {
+		*vehicle.Published = false
+		/**
+		* This is to automatically disable each vehicle after user modification so that admins
+		* can review and manually re-enable them.
+		 */
 	}
 
 	if err := vehicleService.Save(vehicle); nil != err {

@@ -22,7 +22,7 @@ func GetVehicleRepository() VehicleRepository {
 
 type VehicleRepository interface {
 	FindAll(page int, limit int) (vehicles []model.Vehicle, total int64, err error)
-	GetById(id uuid.UUID) (vehicle *model.Vehicle, err error)
+	GetById(id uuid.UUID, preload ...string) (vehicle *model.Vehicle, err error)
 	Save(vehicle *model.Vehicle) (err error)
 	Delete(vehicle *model.Vehicle) (error error)
 	DeleteById(id uuid.UUID) (vehicle *model.Vehicle, err error)
@@ -48,8 +48,14 @@ func (repo *vehicleRepository) FindAll(page int, limit int) (vehicles []model.Ve
 	return
 }
 
-func (repo *vehicleRepository) GetById(id uuid.UUID) (vehicle *model.Vehicle, err error) {
-	if err = model.DB. /*.Preload("Place")*/ Where("id = ?", id).First(&vehicle).Error; err != nil {
+func (repo *vehicleRepository) GetById(id uuid.UUID, preload ...string) (vehicle *model.Vehicle, err error) {
+
+	query := model.DB
+	for _, pLoad := range preload {
+		query = query.Preload(pLoad)
+	}
+
+	if err = query.Where("id = ?", id).First(&vehicle).Error; err != nil {
 		return nil, err
 	}
 	return vehicle, nil

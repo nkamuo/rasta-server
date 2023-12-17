@@ -50,10 +50,11 @@ func FindPlaces(c *gin.Context) {
 		query = query.Where("active = true") //ONLY SHOW ACTIVE LOCATIONS To NON-ADMINS
 	}
 
-	if page.Status != "" {
-		if page.Status == "active" {
+	if len(page.Status) > 0 {
+		if page.Status[0] == "active" {
 			query = query.Where("active = true")
 		}
+		page.Status = []string{}
 	}
 
 	if page.Search != "" {

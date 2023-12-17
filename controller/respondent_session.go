@@ -56,7 +56,7 @@ func FindRespondentSessions(c *gin.Context) {
 			return
 		}
 		if _, err := respondentRepo.GetById(respondentID); err != nil {
-			message := fmt.Sprintf("Could not find referenced Respondent[%s]: %s", respondentID, err.Error())
+			message := fmt.Sprintf("Could not find referenced Responder[%s]: %s", respondentID, err.Error())
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 			return
 		}
@@ -249,7 +249,7 @@ func CreateRespondentSession(c *gin.Context) {
 func FindRespondentSession(c *gin.Context) {
 	sessionService := service.GetRespondentSessionService()
 
-	respondant, err := auth.GetCurrentRespondent(c)
+	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
@@ -260,17 +260,29 @@ func FindRespondentSession(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
 		return
 	}
-	session, err := sessionService.GetById(id)
+	// Preload("Respondent.User").Preload("Assignments").Preload("Assignments.Assignment.Product")
+	session, err := sessionService.GetById(id, "Respondent.User", "Assignments.Assignment.Product")
 	if nil != err {
 		message := fmt.Sprintf("Could not find session with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
 
-	if respondant.ID.String() != (*session.RespondentID).String() {
-		message := fmt.Sprintf("Could not find your session with [id:%s]", id)
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-		return
+	if *rUser.IsAdmin {
+		/// USER IS ADMIN - ADMIN CAN VIEW ANY SESSION
+	} else {
+
+		respondant, err := auth.GetCurrentRespondent(c)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+
+		if respondant.ID.String() != (*session.RespondentID).String() {
+			message := fmt.Sprintf("Could not find your session with [id:%s]", id)
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": session})

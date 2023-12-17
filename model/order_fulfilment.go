@@ -29,7 +29,7 @@ type OrderFulfilment struct {
 	VerifiedResponderAt *time.Time `gorm:"" json:"verifiedResponderAt,"`
 	VerifiedClientAt    *time.Time `gorm:"" json:"verifiedClientAt,"`
 	//
-	ResponderConfirmedAt *time.Time `gorm:"" json:"ResponderConfirmedAt,"`
+	ResponderConfirmedAt *time.Time `gorm:"" json:"responderConfirmedAt,"`
 	ClientConfirmedAt    *time.Time `gorm:"" json:"clientConfirmedAt,"`
 	AutoConfirmedAt      *time.Time `gorm:"" json:"autoConfirmedAt,"` //THIS IS AUTOMATICALLY SET IF THE CLIENT DOES NOT CONFIRM ON TIME
 	//
