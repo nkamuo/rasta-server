@@ -40,7 +40,7 @@ func FindOrders(c *gin.Context) {
 		Preload("Items").Preload("Items.Product").
 		Preload("Items.Origin").Preload("Items.Destination")
 
-	query = query.Joins("JOIN order_fulfilments ON orders.fulfilment_id = order_fulfilments.id")
+	query = query.Joins("LEFT JOIN order_fulfilments ON orders.fulfilment_id = order_fulfilments.id")
 
 	if *rUser.IsAdmin {
 		query = query.Preload("Fulfilment.Responder.User").
