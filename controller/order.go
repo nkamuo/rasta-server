@@ -44,7 +44,7 @@ func FindOrders(c *gin.Context) {
 
 	if *rUser.IsAdmin {
 		query = query.Preload("Fulfilment.Responder.User").
-			Preload("Fulfilment.Responder.Company")
+			Preload("Fulfilment.Responder.Company").Preload("Review")
 
 		if user_id := c.Query("user_id"); user_id != "" {
 			userID, err := uuid.Parse(user_id)
@@ -261,7 +261,7 @@ func FindOrder(c *gin.Context) {
 	}
 
 	query := model.DB.Where("id = ?", id).
-		Preload("User").
+		Preload("User").Preload("Review").
 		Preload("Fulfilment.Responder.User").
 		Preload("Fulfilment.Responder.Company").
 		Preload("Fulfilment.Responder.Vehicle").

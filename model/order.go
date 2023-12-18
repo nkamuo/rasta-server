@@ -54,6 +54,8 @@ type Order struct {
 	// SITUATIONS
 	// Situations                    *[]*MotoristRequestSituation     `gorm:""` //`gorm:"many2many:order_motorist_situations;ForeignKey:ID;References:ID;joinForeignKey:order_id;joinReferences:motorist_request_situation_id;" json:"situations,omitempty"`
 	OrderMotoristRequestSituations []*OrderMotoristRequestSituation `gorm:""`
+	//
+	Review *RespondentServiceReview `gorm:"" json:"review,omitempty"`
 	//TIMESTAMPS
 	CheckoutCompletedAt *time.Time `gorm:";" json:"checkoutCompletedAt,omitempty"`
 	CreatedAt           *time.Time `gorm:"not null;" json:"createdAt,omitempty"`
