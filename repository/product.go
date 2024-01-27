@@ -22,7 +22,7 @@ func GetProductRepository() ProductRepository {
 
 type ProductRepository interface {
 	FindAll(page int, limit int) (products []model.Product, total int64, err error)
-	GetById(id uuid.UUID) (product *model.Product, err error)
+	GetById(id uuid.UUID, preload ...string) (product *model.Product, err error)
 	GetByPlaceIdAndCategory(id uuid.UUID, category model.ProductCategory) (product *model.Product, err error)
 	Save(product *model.Product) (err error)
 	Delete(product *model.Product) (error error)
@@ -49,8 +49,13 @@ func (repo *productRepository) FindAll(page int, limit int) (products []model.Pr
 	return
 }
 
-func (repo *productRepository) GetById(id uuid.UUID) (product *model.Product, err error) {
-	if err = model.DB. /*.Preload("Place")*/ Where("id = ?", id).First(&product).Error; err != nil {
+func (repo *productRepository) GetById(id uuid.UUID, preload ...string) (product *model.Product, err error) {
+	query := model.DB
+	for _, pLoad := range preload {
+		query = query.Preload(pLoad)
+	}
+
+	if err = query.Where("id = ?", id).First(&product).Error; err != nil {
 		return nil, err
 	}
 	return product, nil

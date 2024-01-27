@@ -185,9 +185,20 @@ func ClientCancelOrder(c *gin.Context) {
 	}
 
 	if order.FulfilmentID == nil {
-		message := fmt.Sprintf("Order [id:%s] is not assigned yet", id)
-		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		order.Status = model.ORDER_STATUS_CANCELLED
+		if err := orderRepo.Update(order, map[string]interface{}{"status": model.ORDER_STATUS_CANCELLED}); err != nil {
+			message := fmt.Sprintf("Task failed: %s", err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": order, "status": "success"})
 		return
+		// message := fmt.Sprintf("Order [id:%s] is not assigned yet", id)
+		// c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		// return
+	} else {
+		// TODO: PROCEEDS DOWN
 	}
 
 	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID)
@@ -197,7 +208,7 @@ func ClientCancelOrder(c *gin.Context) {
 		return
 	}
 
-	if err := orderRepo.Update(order, map[string]interface{}{"fulfilment_id": nil}); err != nil {
+	if err := orderRepo.Update(order, map[string]interface{}{"status": model.ORDER_STATUS_PENDING, "fulfilment_id": nil}); err != nil {
 		message := fmt.Sprintf("Task failed: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return

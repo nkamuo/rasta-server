@@ -195,7 +195,7 @@ func FindProduct(c *gin.Context) {
 		return
 	}
 
-	product, err := productService.GetById(id)
+	product, err := productService.GetById(id, "Place")
 	if err != nil {
 		message := fmt.Sprintf("Could not find product with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})

@@ -21,7 +21,7 @@ func GetProductService() ProductService {
 }
 
 type ProductService interface {
-	GetById(id uuid.UUID) (product *model.Product, err error)
+	GetById(id uuid.UUID, preload ...string) (product *model.Product, err error)
 	// GetByEmail(email string) (product *model.Product, err error)
 	// GetByPhone(phone string) (product *model.Product, err error)
 	Save(product *model.Product) (err error)
@@ -32,8 +32,8 @@ type productServiceImpl struct {
 	repo repository.ProductRepository
 }
 
-func (service *productServiceImpl) GetById(id uuid.UUID) (product *model.Product, err error) {
-	return service.repo.GetById(id)
+func (service *productServiceImpl) GetById(id uuid.UUID, preload ...string) (product *model.Product, err error) {
+	return service.repo.GetById(id, preload...)
 }
 
 func (service *productServiceImpl) Save(product *model.Product) (err error) {
