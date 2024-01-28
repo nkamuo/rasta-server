@@ -93,15 +93,15 @@ func CreateVehicle(c *gin.Context) {
 	}
 
 	if input.OwnerID != nil {
-		if !*rUser.IsAdmin {
-			message := "You are not allowed to provide {ownerId} for this request"
-			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
-			return
-		}
 		owner, err = userService.GetById(*input.OwnerID)
 		if nil != err {
 			message := fmt.Sprintf("Could not resolve the specified User with [id:%s]: %s", input.OwnerID, err.Error())
 			c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
+			return
+		}
+		if input.OwnerID.String() != rUser.ID.String() && !*rUser.IsAdmin {
+			message := "You are not allowed to provide {ownerId} for this request"
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 			return
 		}
 	} else {

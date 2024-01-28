@@ -53,6 +53,7 @@ func (service *orderServiceImpl) Save(order *model.Order) (err error) {
 func (service *orderServiceImpl) AssignResponder(order *model.Order, session *model.RespondentSession) (err error) {
 	respondentService := GetRespondentService()
 	fulfilmentService := GetOrderFulfilmentService()
+	locationService := GetLocationService()
 	orderRepo := repository.GetOrderRepository()
 
 	var fulfilment *model.OrderFulfilment

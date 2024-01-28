@@ -29,9 +29,9 @@ type OrderFulfilment struct {
 	VerifiedResponderAt *time.Time `gorm:"" json:"verifiedResponderAt,"`
 	VerifiedClientAt    *time.Time `gorm:"" json:"verifiedClientAt,"`
 	//
-	ResponderConfirmedAt *time.Time `gorm:"" json:"responderConfirmedAt,"`
-	ClientConfirmedAt    *time.Time `gorm:"" json:"clientConfirmedAt,"`
-	AutoConfirmedAt      *time.Time `gorm:"" json:"autoConfirmedAt,"` //THIS IS AUTOMATICALLY SET IF THE CLIENT DOES NOT CONFIRM ON TIME
+	ResponderConfirmedAt *time.Time `gorm:"" json:"ResponderConfirmedAt,"` //TODO: RESET THESE TO camelCase
+	ClientConfirmedAt    *time.Time `gorm:"" json:"ClientConfirmedAt,"`
+	AutoConfirmedAt      *time.Time `gorm:"" json:"AutoConfirmedAt,"` //THIS IS AUTOMATICALLY SET IF THE CLIENT DOES NOT CONFIRM ON TIME
 	//
 
 	InitialExpectedTimeOfAt *time.Time `gorm:"" json:"initialExpectedTimeOfAt,"` //THIS IS SET ONCE THE CLIENT ACCEPTS THE REQUST

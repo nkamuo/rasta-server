@@ -39,8 +39,8 @@ func RespondentClaimOrder(c *gin.Context) {
 		return
 	}
 
-	if respondent.Vehicle == nil {
-		message := fmt.Sprintf("You need to select a vehicle before you can accept requests")
+	if respondent.Vehicle == nil || *respondent.Vehicle.Published != true {
+		message := fmt.Sprintf("You need to select a verified vehicle before you can accept requests")
 		c.JSON(http.StatusConflict, gin.H{"status": "error", "message": message})
 		return
 	}
@@ -163,14 +163,14 @@ func RespondentConfirmCompleteOrder(c *gin.Context) {
 	fulfilmentService := service.GetOrderFulfilmentService()
 	// respondentService := service.GetRespondentService()
 
-	requestingUser, err := auth.GetCurrentUser(c)
+	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		message := fmt.Sprintf("Authentication error")
 		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 		return
 	}
 
-	respondent, err := respondentRepo.GetByUser(*requestingUser)
+	respondent, err := respondentRepo.GetByUser(*rUser)
 	if err != nil {
 		message := fmt.Sprintf("Authentication error")
 		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
@@ -211,12 +211,30 @@ func RespondentConfirmCompleteOrder(c *gin.Context) {
 
 	now := time.Now()
 	fulfilment.ResponderConfirmedAt = &now
+	order.Status = model.ORDER_STATUS_COMPLETED_BY_RESPONDENT
+
+	err = model.DB.Transaction(func(tx *gorm.DB) (err error) {
+		if err = tx.Save(fulfilment).Error; err != nil {
+			return err
+		}
+		if err = tx.Save(order).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 
 	if err := fulfilmentService.Save(fulfilment); err != nil {
 		message := fmt.Sprintf("Task failed: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
+
+	// nOrder, err := getOrderById(id)
+	// if nil != err {
+	// 	message := fmt.Sprintf("Error Fetching order[id:%s] details: %s", id, err.Error())
+	// 	c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+	// 	return
+	// }
 
 	c.JSON(http.StatusOK, gin.H{"data": fulfilment, "status": "success"})
 }
@@ -604,4 +622,21 @@ func getOrderPrimaryLocation(order model.Order) (location *model.Location, err e
 
 	return nil, errors.New("Order Item must have destination")
 
+}
+
+func getOrderById(id uuid.UUID) (order *model.Order, err error) {
+
+	query := model.DB.Where("id = ?", id).
+		Preload("Fulfilment.Responder.User").
+		Preload("User").Preload("OrderMotoristRequestSituations.Situation").
+		Preload("Payment").Preload("Items").
+		Preload("Adjustments").Preload("Items.Product").
+		Preload("Items.Origin").Preload("Items.Destination").
+		Preload("Items.FuelTypeInfo").Preload("Items.VehicleInfo")
+
+	if err = query.First(order).Error; err != nil {
+		return nil, err
+	}
+
+	return order, nil
 }

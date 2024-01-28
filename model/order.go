@@ -22,6 +22,8 @@ const (
 	ORDER_STATUS_RESPONDENT_REJECTED  OrderStatus = "responder_rejected"
 	ORDER_STATUS_CANCELLED            OrderStatus = "cancelled"
 	ORDER_STATUS_COMPLETED            OrderStatus = "completed"
+	//
+	ORDER_STATUS_COMPLETED_BY_RESPONDENT OrderStatus = "responder_done"
 )
 
 type Order struct {
