@@ -38,6 +38,7 @@ func FindOrders(c *gin.Context) {
 
 	query := model.DB.Preload("User").
 		Preload("Items").Preload("Items.Product").
+		Preload("Payment").
 		Preload("Items.Origin").Preload("Items.Destination")
 
 	query = query.Joins("LEFT JOIN order_fulfilments ON orders.fulfilment_id = order_fulfilments.id")
@@ -120,7 +121,7 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
-	requestingUser, err := auth.GetCurrentUser(c)
+	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
@@ -130,7 +131,7 @@ func CreateOrder(c *gin.Context) {
 	var paymentMethod *model.PaymentMethod
 
 	if nil != input.UserID {
-		if *input.UserID != requestingUser.ID && !*requestingUser.IsAdmin {
+		if *input.UserID != rUser.ID && !*rUser.IsAdmin {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid request: You may not specify userId other than yours"})
 			return
 		} else {
@@ -143,7 +144,7 @@ func CreateOrder(c *gin.Context) {
 			}
 		}
 	} else {
-		user = requestingUser
+		user = rUser
 	}
 
 	if nil != input.PaymentMethodID {
@@ -167,7 +168,7 @@ func CreateOrder(c *gin.Context) {
 	var Requests []model.Request
 
 	for _, iItem := range input.Items {
-		if Request, err := buildRequest(iItem, requestingUser); err != nil {
+		if Request, err := buildRequest(iItem, rUser); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("%s", err.Error())})
 			return
 		} else {
@@ -187,10 +188,15 @@ func CreateOrder(c *gin.Context) {
 	}
 
 	order := model.Order{
-		UserID: &user.ID,
-		Items:  &Requests,
+		UserID:      &user.ID,
+		Items:       &Requests,
+		Description: input.Description,
 		// Situations: &Situations,
 	}
+
+	// if input.Description != nil {
+	// 	order.Description = input.Description
+	// }
 
 	if nil != paymentMethod {
 		order.PaymentMethodID = &paymentMethod.ID
@@ -251,7 +257,7 @@ func FindOrder(c *gin.Context) {
 
 	respondentRepo := repository.GetRespondentRepository()
 	sessionRepo := repository.GetRespondentSessionRepository()
-	// orderService := service.GetOrderService()
+	orderService := service.GetOrderService()
 	paymentService := service.GetOrderPaymentService()
 
 	id, err := uuid.Parse(c.Param("id"))
@@ -262,6 +268,7 @@ func FindOrder(c *gin.Context) {
 
 	query := model.DB.Where("id = ?", id).
 		Preload("User").Preload("Review").
+		Preload("OrderMotoristRequestSituations.Situation").
 		Preload("Fulfilment.Responder.User").
 		Preload("Fulfilment.Responder.Company").
 		Preload("Fulfilment.Responder.Vehicle").
@@ -276,12 +283,12 @@ func FindOrder(c *gin.Context) {
 		return
 	}
 
-	requestingUser, err := auth.GetCurrentUser(c)
+	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": err.Error()})
 		return
 	} else {
-		if !*requestingUser.IsAdmin && order.UserID.String() != requestingUser.ID.String() {
+		if !*rUser.IsAdmin && order.UserID.String() != rUser.ID.String() {
 			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": err.Error()})
 			return
 		}
@@ -315,19 +322,20 @@ func FindOrder(c *gin.Context) {
 		}
 	} else {
 
-		// if rOrder, err := orderService.GetById(order.ID); err != nil {
-		// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		// 	return
-		// } else {
-		// 	if _, err := paymentService.InitOrderPayment(rOrder); err != nil {
-		// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-		// 		return
-		// 	}
-		// }
+		if rOrder, err := orderService.GetById(order.ID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			return
+		} else {
+			if _, err := paymentService.InitOrderPayment(rOrder); err != nil {
+				// c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+				// return
+			}
+		}
 
 	}
+	output := dto.CreateOrderOutput(order)
 	// TODO: Add the current error message to the response
-	c.JSON(http.StatusOK, gin.H{"data": order, "status": "success"})
+	c.JSON(http.StatusOK, gin.H{"data": output, "status": "success"})
 }
 
 func UpdateOrder(c *gin.Context) {

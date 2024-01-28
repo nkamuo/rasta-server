@@ -13,6 +13,7 @@ import (
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -128,12 +129,29 @@ func RespondentVerifyOrderClientDetails(c *gin.Context) {
 
 	now := time.Now()
 	fulfilment.VerifiedClientAt = &now
+	order.Status = model.ORDER_STATUS_CLIENT_CONFIRMED
 
-	if err := fulfilmentService.Save(fulfilment); err != nil {
+	err = model.DB.Transaction(func(tx *gorm.DB) (err error) {
+		if err = tx.Save(fulfilment).Error; err != nil {
+			return err
+		}
+		if err = tx.Save(order).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
 		message := fmt.Sprintf("Task failed: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
+
+	// if err := fulfilmentService.Save(fulfilment); err != nil {
+	// 	message := fmt.Sprintf("Task failed: %s", err.Error())
+	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	// 	return
+	// }
 
 	c.JSON(http.StatusOK, gin.H{"data": fulfilment, "status": "success"})
 }
@@ -404,7 +422,7 @@ func FindOrderForRespondent(c *gin.Context) {
 
 	query := model.DB.Where("id = ?", id).
 		Preload("Fulfilment.Responder.User").
-		Preload("User").Preload("OrderMotoristRequestSituations").
+		Preload("User").Preload("OrderMotoristRequestSituations.Situation").
 		Preload("Payment").Preload("Items").
 		Preload("Adjustments").Preload("Items.Product").
 		Preload("Items.Origin").Preload("Items.Destination").
@@ -431,8 +449,10 @@ func FindOrderForRespondent(c *gin.Context) {
 
 	location, err := getOrderPrimaryLocation(order)
 
+	output := dto.CreateOrderOutput(order)
+
 	var entry = dto.RespondentOrderEntryIOutput{
-		Order: dto.CreateOrderOutput(order),
+		Order: output,
 	}
 
 	if err != nil {
@@ -487,7 +507,8 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 
 	query := model.DB.
 		Preload("Order.Fulfilment.Responder").
-		Preload("Order.Items").Preload("Order.Items.Product").Preload("Order.OrderMotoristRequestSituations").
+		Preload("Order.Items").Preload("Order.Items.Product").
+		// Preload("Order.OrderMotoristRequestSituations.Situation").
 		Preload("Order.User").Preload("Order.Items.Origin").Preload("Order.Items.Destination").
 		Preload("FuelTypeInfo").Preload("VehicleInfo")
 	// Preload("Origin").Preload("Destination")

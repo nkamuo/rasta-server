@@ -12,6 +12,7 @@ type OrderCreationInput struct {
 	PaymentMethodID *uuid.UUID     `json:"paymentMethodId" binding:""`
 	Items           []RequestInput `json:"requests" binding:""`
 	Situations      []uuid.UUID    `json:"situations" binding:"required"`
+	Description     *string        `json:"description" binding:""`
 }
 
 type OrderUpdateInput struct {
@@ -52,7 +53,7 @@ type OrderOutput struct {
 	Payment   *model.OrderPayment ` json:"payment,omitempty"` //
 
 	// SITUATIONS
-	Situations *[]*model.MotoristRequestSituation `` //`json:"situations,omitempty"`
+	Situations *[]*model.MotoristRequestSituation `json:"situations,omitempty"` //`json:"situations,omitempty"`
 	// OrderMotoristRequestSituation []*model.OrderMotoristRequestSituation ``
 	//TIMESTAMPS
 	CheckoutCompletedAt *time.Time `json:"checkoutCompletedAt,omitempty"`
@@ -62,7 +63,7 @@ type OrderOutput struct {
 
 func CreateOrderOutput(order model.Order) (output OrderOutput) {
 
-	var Situations []*model.MotoristRequestSituation
+	var Situations []*model.MotoristRequestSituation // = make([]*model.MotoristRequestSituation, 1)
 	if order.OrderMotoristRequestSituations != nil {
 		for _, sit := range order.OrderMotoristRequestSituations {
 			Situations = append(Situations, sit.Situation)

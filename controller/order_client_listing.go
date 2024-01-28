@@ -11,6 +11,7 @@ import (
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -61,8 +62,24 @@ func ClientVerifyOrderRespondentDetails(c *gin.Context) {
 
 	now := time.Now()
 	fulfilment.VerifiedResponderAt = &now
+	order.Status = model.ORDER_STATUS_RESPONDENT_CONFIRMED
 
-	if err := fulfilmentService.Save(fulfilment); err != nil {
+	// if err := fulfilmentService.Save(fulfilment); err != nil {
+	// 	message := fmt.Sprintf("Task failed: %s", err.Error())
+	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	// 	return
+	// }
+	err = model.DB.Transaction(func(tx *gorm.DB) (err error) {
+		if err = tx.Save(fulfilment).Error; err != nil {
+			return err
+		}
+		if err = tx.Save(order).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
 		message := fmt.Sprintf("Task failed: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return

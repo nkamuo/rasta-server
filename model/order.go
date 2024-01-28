@@ -14,10 +14,12 @@ type OrderStatus string
 
 const (
 	ORDER_STATUS_PENDING              OrderStatus = "pending"
-	ORDER_STATUS_RESPONDENT_ASSIGNED  OrderStatus = "respondent_assigned"
-	ORDER_STATUS_RESPONDENT_ARRIVED   OrderStatus = "respondent_arrived"
-	ORDER_STATUS_RESPONDENT_CONFIRMED OrderStatus = "respondent_confirmed"
-	ORDER_STATUS_RESPONDENT_REJECTED  OrderStatus = "respondent_rejected"
+	ORDER_STATUS_RESPONDENT_ASSIGNED  OrderStatus = "assigned"
+	ORDER_STATUS_RESPONDENT_ARRIVED   OrderStatus = "arrived"
+	ORDER_STATUS_CLIENT_CONFIRMED     OrderStatus = "client_confirmed"
+	ORDER_STATUS_CLIENT_REJECTED      OrderStatus = "client_rejected"
+	ORDER_STATUS_RESPONDENT_CONFIRMED OrderStatus = "responder_confirmed"
+	ORDER_STATUS_RESPONDENT_REJECTED  OrderStatus = "responder_rejected"
 	ORDER_STATUS_CANCELLED            OrderStatus = "cancelled"
 	ORDER_STATUS_COMPLETED            OrderStatus = "completed"
 )
@@ -54,6 +56,7 @@ type Order struct {
 	// SITUATIONS
 	// Situations                    *[]*MotoristRequestSituation     `gorm:""` //`gorm:"many2many:order_motorist_situations;ForeignKey:ID;References:ID;joinForeignKey:order_id;joinReferences:motorist_request_situation_id;" json:"situations,omitempty"`
 	OrderMotoristRequestSituations []*OrderMotoristRequestSituation `gorm:""`
+	Description                    *string                          `gorm:"" json:"description,omitempty"`
 	//
 	Review *RespondentServiceReview `gorm:"" json:"review,omitempty"`
 	//TIMESTAMPS
