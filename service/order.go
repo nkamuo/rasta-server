@@ -177,6 +177,7 @@ func (service *orderServiceImpl) Process(order *model.Order) (err error) {
 func (service *orderServiceImpl) UpdateResponderLocationEntry(order *model.Order, locationEntry model.RespondentSessionLocationEntry) (err error) {
 
 	fulfilmentService := GetOrderFulfilmentService()
+	orderRepo := repository.GetOrderRepository()
 	if order.FulfilmentID == nil {
 		return
 	}
@@ -191,7 +192,11 @@ func (service *orderServiceImpl) UpdateResponderLocationEntry(order *model.Order
 	now := time.Now()
 	curntLocation, err := model.CreateLocationFromCoordinates(coordinates.Latitude, coordinates.Longitude)
 	//
-	location, err := order.GetPrimaryLocation()
+	itemsOrder, err := orderRepo.GetById(order.ID, "Items.Origin", "Items.Destination")
+	if nil != err {
+		return err
+	}
+	location, err := itemsOrder.GetPrimaryLocation()
 	if err != nil {
 		return err
 	}

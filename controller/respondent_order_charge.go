@@ -17,6 +17,7 @@ import (
 
 func FindRespondentOrderCharges(c *gin.Context) {
 	// var respondentService = service.GetRespondentService()
+	chargeService := service.GetRespondentOrderChargeService()
 	var charges []model.RespondentOrderCharge
 	var page dto.FinancialPageRequest
 
@@ -58,6 +59,14 @@ func FindRespondentOrderCharges(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
+
+	for _, charge := range charges {
+		if err := chargeService.Update(&charge); err != nil {
+			// c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			// return
+		}
+	}
+
 	page.Rows = charges
 	c.JSON(http.StatusOK, gin.H{"data": page, "status": "success"})
 }
@@ -103,14 +112,20 @@ func FindRespondentOrderChargesByRespondent(c *gin.Context) {
 			query = query.Where("respondent_id = ?", respondent.ID).Where("respondent_id = ?", respondent.ID)
 		} else {
 			message := fmt.Sprintf("Permision Denied: you may not access this resource")
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 			return
 		}
 	}
 
-	if status := c.Query("status"); status != "" {
-		query = query.Where("status = ?", status)
-	}
+	// if status := c.Query("status"); status != "" {
+	// 	// status = to
+	// 	statuses := []string{status}
+	// 	if status == "succeeded" || status == "completed" {
+	// 		statuses = []string{"completed", "succeeded"}
+	// 	}
+	// 	query = query.Where("status IN ?", statuses)
+	// 	// query = query.Where("status = ?", status)
+	// }
 
 	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
@@ -125,6 +140,108 @@ func FindRespondentOrderChargesByRespondent(c *gin.Context) {
 	}
 	page.Rows = charges
 	c.JSON(http.StatusOK, gin.H{"data": page, "status": "success"})
+}
+
+func FindRespondentOrderChargeByRespondent(c *gin.Context) {
+	var respondentService = service.GetRespondentService()
+	var chargeService = service.GetRespondentOrderChargeService()
+	// var charge model.RespondentOrderCharge
+
+	responderID, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+	chargeID, err := uuid.Parse(c.Param("charge_id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Authentication erro: %s", err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+	respondent, err := respondentService.GetById(responderID, "User")
+	respID := respondent.User.ID.String()
+	//
+	charge, err := chargeService.GetById(chargeID)
+
+	if charge.RespondentID.String() == respID {
+	} else {
+		message := fmt.Sprintf("Resource not found: There is no such charge for the given responder")
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+
+	}
+
+	if *rUser.IsAdmin {
+	} else {
+		if respID == rUser.ID.String() {
+			// query = query.Where("respondent_id = ?", respondent.ID).Where("respondent_id = ?", respondent.ID)
+		} else {
+			message := fmt.Sprintf("Permision Denied: you may not access this resource")
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+			return
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": charge})
+}
+
+func UpdateRespondentOrderChargeByRespondent(c *gin.Context) {
+	var respondentService = service.GetRespondentService()
+	var chargeService = service.GetRespondentOrderChargeService()
+	// var charge model.RespondentOrderCharge
+
+	responderID, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+	chargeID, err := uuid.Parse(c.Param("charge_id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Authentication erro: %s", err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+	respondent, err := respondentService.GetById(responderID, "User")
+	respID := respondent.User.ID.String()
+	//
+	charge, err := chargeService.GetById(chargeID)
+
+	if charge.RespondentID.String() == respID {
+	} else {
+		message := fmt.Sprintf("Resource not found: There is no such charge for the given responder")
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+
+	}
+
+	if *rUser.IsAdmin {
+	} else {
+		if respID == rUser.ID.String() {
+			// query = query.Where("respondent_id = ?", respondent.ID).Where("respondent_id = ?", respondent.ID)
+		} else {
+			message := fmt.Sprintf("Permision Denied: you may not access this resource")
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+			return
+		}
+	}
+
+	if err := chargeService.Update(charge); err != nil {
+		message := fmt.Sprintf("Error Occured: Request failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": charge})
 }
 
 // func CreateRespondentOrderCharge(c *gin.Context) {

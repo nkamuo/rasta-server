@@ -47,6 +47,7 @@ type OrderOutput struct {
 	//Payment Method
 	PaymentMethodID *uuid.UUID           `json:"paymentMethodId,omitempty"`
 	PaymentMethod   *model.PaymentMethod `json:"paymentMethod,omitempty"`
+	ClientPaidCash  *bool                `gorm:"" json:"clientPaidCash"`
 
 	//Payment Method
 	PaymentID *uuid.UUID          `json:"paymentId,omitempty"`
@@ -97,8 +98,9 @@ func CreateOrderOutput(order model.Order) (output OrderOutput) {
 		PaymentMethod:   order.PaymentMethod,
 
 		//Payment Method
-		PaymentID: order.PaymentID,
-		Payment:   order.Payment,
+		PaymentID:      order.PaymentID,
+		Payment:        order.Payment,
+		ClientPaidCash: order.ClientPaidCash,
 
 		// SITUATIONS
 		Situations: &Situations, //`json:"situations,omitempty"`

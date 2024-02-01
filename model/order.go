@@ -54,6 +54,8 @@ type Order struct {
 	//Payment Method
 	PaymentID *uuid.UUID    `gorm:"" json:"paymentId,omitempty"`
 	Payment   *OrderPayment ` json:"payment,omitempty"` //gorm:"foreignKey:PaymentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"
+	//
+	ClientPaidCash *bool `gorm:"" json:"clientPaidCash"`
 
 	// SITUATIONS
 	// Situations                    *[]*MotoristRequestSituation     `gorm:""` //`gorm:"many2many:order_motorist_situations;ForeignKey:ID;References:ID;joinForeignKey:order_id;joinReferences:motorist_request_situation_id;" json:"situations,omitempty"`

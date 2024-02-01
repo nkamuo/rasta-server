@@ -18,9 +18,9 @@ func FilterRequest(value interface{}, filter *dto.FinancialPageRequest, db *gorm
 		if filter.To != nil {
 			db = db.Where("created_at <= ?", *filter.To)
 		}
-		if filter.Status != nil {
-			db = db.Where("status = ?", *filter.Status)
-		}
+		// if filter.Status != nil {
+		// 	db = db.Where("status = ?", *filter.Status)
+		// }
 
 		return db
 	}

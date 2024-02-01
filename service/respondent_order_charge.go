@@ -32,6 +32,8 @@ type RespondentOrderChargeService interface {
 	// GetByEmail(email string) (charge *model.RespondentOrderCharge, err error)
 	// GetByPhone(phone string) (charge *model.RespondentOrderCharge, err error)'
 	// Commit(charge *model.RespondentOrderCharge) (err error)
+	UpdateAllCharges() (err error)
+	Update(charge *model.RespondentOrderCharge) (err error)
 	Commit(charge *model.RespondentOrderCharge) (err error)
 	CreateForOrder(order *model.Order) (charge *model.RespondentOrderCharge, err error)
 	Save(charge *model.RespondentOrderCharge) (err error)
@@ -148,6 +150,44 @@ func (service *respondentChargeServiceImpl) CreateForOrder(order *model.Order) (
 	}
 
 	return charge, nil
+}
+
+func (service *respondentChargeServiceImpl) Update(charge *model.RespondentOrderCharge) (err error) {
+	if nil == charge.StripePaymentID {
+		return errors.New("No stripe Payment Intent ID is associated with this charge")
+	}
+
+	pIntent, err := paymentintent.Get(*charge.StripePaymentID, nil)
+
+	if err != nil {
+		message := fmt.Sprintf("Could not fetch payment intent[%s]: %s", *charge.StripePaymentID, err.Error())
+		return errors.New(message)
+	}
+	charge.Status = string(pIntent.Status)
+
+	if err := service.Save(charge); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *respondentChargeServiceImpl) UpdateAllCharges() (err error) {
+
+	var charges []model.RespondentOrderCharge
+
+	query := model.DB
+
+	if err = query.Find(&charges).Error; err != nil {
+		return err
+	}
+	for _, charge := range charges {
+		if err := service.Update(&charge); err != nil {
+			message := fmt.Sprintf("There was an error updating charge %s", charge.ID)
+			fmt.Println(message)
+		}
+	}
+	return nil
 }
 
 func (service *respondentChargeServiceImpl) Payout(charge *model.RespondentOrderCharge) (stripPayout *stripe.Payout, err error) {

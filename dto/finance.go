@@ -9,7 +9,7 @@ import (
 type FinancialPageRequest struct {
 	pagination.Page
 	//
-	From   *time.Time `json:"sort,omitempty;" form:"from"`
-	To     *time.Time `json:"total_rows" form:"to"`
-	Status *string    `json:"total_pages" form:"status"`
+	From   *time.Time `json:"from,omitempty;" form:"from"`
+	To     *time.Time `json:"to" form:"to"`
+	Status *string    `json:"status" form:"status"`
 }

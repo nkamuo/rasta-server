@@ -163,6 +163,12 @@ func RespondentConfirmCompleteOrder(c *gin.Context) {
 	fulfilmentService := service.GetOrderFulfilmentService()
 	// respondentService := service.GetRespondentService()
 
+	var input dto.RespondentOrderCompletionInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
 	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		message := fmt.Sprintf("Authentication error")
@@ -213,6 +219,10 @@ func RespondentConfirmCompleteOrder(c *gin.Context) {
 	fulfilment.ResponderConfirmedAt = &now
 	order.Status = model.ORDER_STATUS_COMPLETED_BY_RESPONDENT
 
+	// if(input.ClientPaidCash){
+	order.ClientPaidCash = &input.ClientPaidCash
+	// }
+
 	err = model.DB.Transaction(func(tx *gorm.DB) (err error) {
 		if err = tx.Save(fulfilment).Error; err != nil {
 			return err
@@ -241,7 +251,7 @@ func RespondentConfirmCompleteOrder(c *gin.Context) {
 
 func RespondentCancelOrder(c *gin.Context) {
 
-	orderRepo := repository.GetOrderRepository()
+	// orderRepo := repository.GetOrderRepository()
 	orderService := service.GetOrderService()
 	respondentRepo := repository.GetRespondentRepository()
 	fulfilmentService := service.GetOrderFulfilmentService()
@@ -293,7 +303,16 @@ func RespondentCancelOrder(c *gin.Context) {
 		return
 	}
 
-	if err := orderRepo.Update(order, map[string]interface{}{"fulfilment_id": nil}); err != nil {
+	err = model.DB.Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(order).
+			Updates(map[string]interface{}{
+				"fulfilment_id": nil,
+				"status":        model.ORDER_STATUS_PENDING,
+			}).Error
+		return err
+	})
+
+	if err != nil {
 		message := fmt.Sprintf("Task failed: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return

@@ -191,7 +191,9 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	// api.GET("/respondents/:id/earnings/:earning_id", controller.FindRespondentEarning)
 	//RESPONDENT BILLS
 	api.GET("/respondents/:id/charges", controller.FindRespondentOrderChargesByRespondent)
-
+	api.GET("/respondents/:id/charges/:charge_id", controller.FindRespondentOrderChargeByRespondent)
+	api.POST("/respondents/:id/charges/:charge_id/update", controller.UpdateRespondentOrderChargeByRespondent)
+	//
 	//RESPONDENT - WALLET
 	api.GET("/respondents/:id/wallet", controller.FindRespondentWallet)
 	api.POST("/respondents/:id/wallet/withdrawals", controller.CreateRespondentWithdrawal)
