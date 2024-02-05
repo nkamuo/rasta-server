@@ -20,7 +20,7 @@ import (
 func Register(c *gin.Context) {
 
 	userRepo := repository.GetUserRepository()
-	userSerice := service.GetUserService()
+	userService := service.GetUserService()
 	placeService := service.GetPlaceService()
 	respondentService := service.GetRespondentService()
 
@@ -76,8 +76,9 @@ func Register(c *gin.Context) {
 
 	// u.HashedPassword = input.Password
 
-	userSerice.HashUserPassword(&user, input.Password)
-	err := userSerice.Save(&user)
+	userService.UpdateStripeCustomer(&user, false)
+	userService.HashUserPassword(&user, input.Password)
+	err := userService.Save(&user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return

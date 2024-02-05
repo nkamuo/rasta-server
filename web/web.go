@@ -91,6 +91,13 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.PATCH("/vehicle_models/:id", controller.UpdateVehicleModel)
 	api.DELETE("/vehicle_models/:id", controller.DeleteVehicleModel)
 
+	///////////////////////////////////////////
+	/// RESPONDENT SUBSCRIPTION PRODUCT PRICES
+	//////////////////
+
+	api.GET("/subscription/respondent/product/subscription/prices", controller.FindRespondentSubscriptionPrices)
+	api.GET("/subscription/respondent/product/purchase/prices", controller.FindRespondentPurchasePrices)
+
 	////////////////////////////////////////////
 	// AUTHENTICATION MIDDLEWARE
 	///////////////////////
@@ -103,12 +110,21 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.GET("/me", controller.GetCurrentUser)
 	api.DELETE("/me", controller.DeleteCurrentUser)
 	api.GET("/me/respondent", controller.GetCurrentRespondent)
+
+	////////////////////////////////////
+	////// RESPONDER SUBSCRIPTIONS
+	////////
+	api.POST("/subscription/respondent/product/prices/subscribe", controller.CreateRespondentSubscriptionCheckoutSession)
+	//
+	api.POST("/subscription/respondent/product/prices/purchase", controller.CreateRespondentPurchaseCheckoutSession)
+
 	////////////////////////
 	///	 VEHILCE
 	////
 
 	api.GET("/me/respondent/vehicle", controller.FindRespondentVehicle)
 	api.POST("/me/respondent/vehicle", controller.UpdateRespondentVehicle)
+
 	//////////
 	// SESSION
 	////
@@ -261,11 +277,13 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.PATCH("/towing_place_rates/:id", controller.UpdateTowingPlaceRate)
 	api.DELETE("/towing_place_rates/:id", controller.DeleteTowingPlaceRate)
 
-	api.GET("/payment_methods", controller.FindPaymentMethods)
+	// api.GET("/payment_methods", controller.FindPaymentMethods)
+	api.GET("/payment_methods", controller.FindUserPaymentMethods)
 	api.GET("/payment_methods/:id", controller.FindPaymentMethod)
 	api.POST("/payment_methods", controller.CreatePaymentMethod)
 	api.PATCH("/payment_methods/:id", controller.UpdatePaymentMethod)
 	api.DELETE("/payment_methods/:id", controller.DeletePaymentMethod)
+	api.POST("/payment_methods/:id/select", controller.SelectDefaultPaymentMethod)
 
 	// USER PAYMENT METHODS
 	api.GET("/users/:id/payment_methods", controller.FindUserPaymentMethods)

@@ -29,14 +29,24 @@ type Config struct {
 
 	SERVER_ADDRESS string `mapstructure:"SERVER_ADDRESS"`
 	SERVER_PORT    string `mapstructure:"SERVER_PORT"`
+	//
+
+	STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID     string `mapstructure:"STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID"`
+	STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID string `mapstructure:"STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID"`
 }
 
 var loaded bool
 
-func LoadConfig(path string) (config Config, err error) {
+func LoadConfig(paths ...string) (config Config, err error) {
 
 	if loaded {
 		return *CONFIG, nil
+	}
+	var path string
+	if len(paths) > 0 {
+		path = paths[0]
+	} else {
+		path = "."
 	}
 	viper.AddConfigPath(path)
 	viper.SetConfigType("env")

@@ -54,7 +54,7 @@ var webserverCmd = &cobra.Command{
 func init() {
 	// Add flags in root command if required
 
-	config, err := initializers.LoadConfig(".")
+	config, err := initializers.LoadConfig()
 	if err != nil {
 		fmt.Println("CONFIG ERROR:", err)
 		return

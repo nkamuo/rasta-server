@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -9,6 +10,10 @@ import (
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
+	"github.com/nkamuo/rasta-server/utils/auth"
+	"github.com/stripe/stripe-go/v74"
+	"github.com/stripe/stripe-go/v74/customer"
+	"github.com/stripe/stripe-go/v74/paymentmethod"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,32 +37,82 @@ func FindPaymentMethods(c *gin.Context) {
 func FindUserPaymentMethods(c *gin.Context) {
 	userService := service.GetUserService()
 
-	userID, err := uuid.Parse(c.Param("id"))
-	if nil != err {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid user id provided"})
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("You may not access this resource ")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
 		return
 	}
-	if _, err := userService.GetById(userID); nil != err {
+
+	var user *model.User
+	if c.Param("id") != "" {
+		userID, err := uuid.Parse(c.Param("id"))
+		if nil != err {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid user id provided"})
+			return
+		}
+		if user, err = userService.GetById(userID); nil != err {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+
+		if user.ID.String() != rUser.ID.String() && !*rUser.IsAdmin {
+			message := fmt.Sprintf("You may not access this resource ")
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+			return
+		}
+	} else {
+		user = rUser
+	}
+
+	// HERE >>
+	var page pagination.Page
+	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	var paymentMethodes []model.PaymentMethod
-	if err = model.DB.
-		Joins("JOIN users ON users.id = payment_methods.user_id").
-		Where("users.id = ?", userID).
-		// Preload("User").
-		Find(&paymentMethodes).Error; nil != err {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+	// params := &stripe.PriceSearchParams{
+	// 	// Limit: 10, // Adjust as needed
+	// 	Product: stripe.String(config.STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID),
+	// 	Active:  stripe.Bool(true),
+	// }
+
+	// var Page *int64
+	// if page.Page != 0 {
+	// 	Page = stripe.Int64(int64(page.Page))
+	// }
+	// var Limit *int64
+	// if page.Limit != nil {
+	// 	Limit = stripe.Int64(int64(*page.Limit))
+	// }
+
+	// Query := fmt.Sprintf("active:'true' AND product: \"%s\"", "")
+	params := &stripe.PaymentMethodListParams{
+		Customer: user.StripeCustomerID,
+	}
+
+	iter := paymentmethod.List(params)
+	var paymentMethods []*stripe.PaymentMethod
+
+	for iter.Next() {
+		paymentMethods = append(paymentMethods, iter.PaymentMethod())
+	}
+
+	if iter.Err() != nil {
+		message := fmt.Sprintf("Error fetching prices: %s", iter.Err().Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": message})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": paymentMethodes})
+
+	page.Rows = paymentMethods
+
+	c.JSON(http.StatusOK, gin.H{"staus": "success", "data": page})
 }
 
 func CreatePaymentMethod(c *gin.Context) {
 
 	userService := service.GetUserService()
-	paymentMethodeService := service.GetPaymentMethodService()
 
 	var input dto.PaymentMethodCreationInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -65,30 +120,78 @@ func CreatePaymentMethod(c *gin.Context) {
 		return
 	}
 
-	user, err := userService.GetById(input.UserID)
-	if nil != err {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("You may not access this resource ")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
 		return
 	}
 
-	if err := model.ValidatePaymentMethodCategory(input.Category); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error(), "status": "error"})
+	var user *model.User
+	if c.Param("id") != "" {
+		userID, err := uuid.Parse(c.Param("id"))
+		if nil != err {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid user id provided"})
+			return
+		}
+		if user, err = userService.GetById(userID); nil != err {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+
+		if user.ID.String() != rUser.ID.String() && !*rUser.IsAdmin {
+			message := fmt.Sprintf("You may not access this resource ")
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+			return
+		}
+	} else {
+		user = rUser
+	}
+
+	// Create a payment method for the customer
+	paymentMethodParams := &stripe.PaymentMethodParams{
+		Type: stripe.String(string(stripe.PaymentMethodTypeCard)),
+		Card: &stripe.PaymentMethodCardParams{
+			Token: stripe.String(input.Token), // Replace with an actual card token or source ID
+		},
+	}
+
+	paymentMethod, err := paymentmethod.New(paymentMethodParams)
+	if err != nil {
+		message := fmt.Sprintf("Could not create payment method: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
 		return
 	}
 
-	paymentMethode := model.PaymentMethod{
-		Category:    input.Category,
-		Description: input.Description,
-		Details:     input.Details,
-		Active:      input.Active,
-		UserID:      &user.ID,
+	attachParams := &stripe.PaymentMethodAttachParams{
+		Customer: stripe.String(*user.StripeCustomerID),
 	}
-	if err := paymentMethodeService.Save(&paymentMethode); nil != err {
-		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
+
+	attachedPaymentMethod, err := paymentmethod.Attach(paymentMethod.ID, attachParams)
+	if err != nil {
+		message := fmt.Sprintf("Could not attach payment method to customer: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": paymentMethode, "status": "success"})
+	// Set the attached payment method as the default for the customer
+	params := &stripe.CustomerParams{
+		InvoiceSettings: &stripe.CustomerInvoiceSettingsParams{
+			DefaultPaymentMethod: stripe.String(attachedPaymentMethod.ID),
+		},
+	}
+	_, err = customer.Update(*user.StripeCustomerID, params)
+	if err != nil {
+		message := fmt.Sprintf("Could not set default payment method: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	log.Default().Printf("Attached Payment method: %s", attachedPaymentMethod.Type)
+
+	// attachedPaymentMethod.
+
+	c.JSON(http.StatusOK, gin.H{"data": paymentMethod, "status": "success"})
 }
 
 func FindPaymentMethod(c *gin.Context) {
@@ -107,6 +210,71 @@ func FindPaymentMethod(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": paymentMethode})
+}
+
+func SelectDefaultPaymentMethod(c *gin.Context) {
+	userService := service.GetUserService()
+
+	var input dto.SelectDefaultPaymentMethodInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("You may not access this resource ")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	var user *model.User
+	if c.Param("id") != "" {
+		userID, err := uuid.Parse(c.Param("id"))
+		if nil != err {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid user id provided"})
+			return
+		}
+		if user, err = userService.GetById(userID); nil != err {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+
+		if user.ID.String() != rUser.ID.String() && !*rUser.IsAdmin {
+			message := fmt.Sprintf("You may not access this resource ")
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+			return
+		}
+	} else {
+		user = rUser
+	}
+
+	if _, err := userService.UpdateStripeCustomer(rUser, true); err != nil {
+		message := fmt.Sprintf("Could not update user stripe customer: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	pmParams := &stripe.PaymentMethodParams{Customer: stripe.String(*rUser.StripeCustomerID)}
+
+	paymentmethod.Get(input.PaymentMethodID, pmParams)
+
+	// Set the attached payment method as the default for the customer
+	params := &stripe.CustomerParams{
+		InvoiceSettings: &stripe.CustomerInvoiceSettingsParams{
+			DefaultPaymentMethod: stripe.String(input.PaymentMethodID),
+		},
+	}
+
+	_, err = customer.Update(*user.StripeCustomerID, params)
+	if err != nil {
+		message := fmt.Sprintf("Could not set default payment method: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+
 }
 
 func UpdatePaymentMethod(c *gin.Context) {

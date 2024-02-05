@@ -10,6 +10,7 @@ import (
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
+	"github.com/nkamuo/rasta-server/utils/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -173,6 +174,7 @@ func UpdateUser(c *gin.Context) {
 		userService.HashUserPassword(user, *input.Password)
 	}
 
+	userService.UpdateStripeCustomer(user, false)
 	if err := userService.Save(user); nil != err {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": err.Error()})
 		return
@@ -190,10 +192,25 @@ func DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
 		return
 	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("You may not access this resource ")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
+		return
+	}
 	user, err := userService.GetById(id)
+
+	if !*rUser.IsAdmin {
+		message := fmt.Sprintf("You may not access this resource ")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
 	if nil != err {
 		message := fmt.Sprintf("Could not find user with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
 	}
 
 	if err := userService.Delete(user); nil != err {

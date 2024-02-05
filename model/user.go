@@ -23,6 +23,8 @@ type User struct {
 	ReferrerID   *uuid.UUID `gorm:"" json:"referrerId,omitempty"`
 	Referrer     *User      `gorm:"foreignKey:ReferrerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"referrer,omitempty"`
 	//
+	StripeCustomerID *string `gorm:"unique;" json:"stripeCustomerId" binding:""`
+	//
 	CreatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
 	UpdatedAt time.Time `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }
