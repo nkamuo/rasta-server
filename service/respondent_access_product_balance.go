@@ -22,6 +22,7 @@ func GetRespondentAccessProductBalanceService() RespondentAccessProductBalanceSe
 
 type RespondentAccessProductBalanceService interface {
 	GetById(id uuid.UUID, preload ...string) (balance *model.RespondentAccessProductBalance, err error)
+	GetByRespondent(respondent *model.Respondent, preload ...string) (balance *model.RespondentAccessProductBalance, err error)
 	// Close(balance *model.RespondentAccessProductBalance) (err error)
 	Save(balance *model.RespondentAccessProductBalance) (err error)
 	Delete(balance *model.RespondentAccessProductBalance) (error error)
@@ -41,6 +42,11 @@ func (service *balanceServiceImpl) GetById(id uuid.UUID, preload ...string) (bal
 // 	*balance.Active = false
 // 	return service.repo.Save(balance)
 // }
+
+func (service balanceServiceImpl) GetByRespondent(respondent *model.Respondent, preload ...string) (balance *model.RespondentAccessProductBalance, err error) {
+	return service.repo.GetActiveByRespondent(*respondent, preload...)
+	// return nil, errors.New("Could not resolve Access Balance for the given responder");
+}
 
 func (service *balanceServiceImpl) Save(balance *model.RespondentAccessProductBalance) (err error) {
 	return service.repo.Save(balance)

@@ -51,6 +51,8 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	/////////////////////////////////
 
 	api := r.Group("/api")
+	rWithAccess := api.Group("")
+	rWithAccess.Use(middleware.CanHandleMotoristRequestMiddleware())
 	// secure := r.Group("/api")
 	// admin := r.Group("/api")
 
@@ -128,11 +130,12 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	//////////
 	// SESSION
 	////
+
 	api.GET("/me/respondent/session", controller.FindCurrentRespondentSession)
 	api.GET("/me/respondent/session/close", controller.CloseRespondentSession)
 	api.GET("/me/respondent/session/requests", controller.FindAvailableOrdersForRespondent)
 	api.GET("/me/respondent/session/requests/:id", controller.FindOrderForRespondent)
-	api.POST("/me/respondent/session/requests/:id/claim", controller.RespondentClaimOrder)
+	rWithAccess.POST("/me/respondent/session/requests/:id/claim", controller.RespondentClaimOrder)
 	api.POST("/me/respondent/session/requests/:id/verify-client", controller.RespondentVerifyOrderClientDetails)
 	api.POST("/me/respondent/session/requests/:id/cancel", controller.RespondentCancelOrder)
 	api.POST("/me/respondent/session/requests/:id/update-payment", controller.RespondentUpdateOrderPayment)
