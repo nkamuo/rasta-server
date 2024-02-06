@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
+	"github.com/stripe/stripe-go/v74"
 )
 
 var balanceService RespondentAccessProductBalanceService
@@ -24,9 +25,12 @@ type RespondentAccessProductBalanceService interface {
 	GetById(id uuid.UUID, preload ...string) (balance *model.RespondentAccessProductBalance, err error)
 	GetByRespondent(respondent *model.Respondent, preload ...string) (balance *model.RespondentAccessProductBalance, err error)
 	// Close(balance *model.RespondentAccessProductBalance) (err error)
+	SetupForRespondent(respondent *model.Respondent) (balance *model.RespondentAccessProductBalance, err error)
 	Save(balance *model.RespondentAccessProductBalance) (err error)
 	Delete(balance *model.RespondentAccessProductBalance) (error error)
 }
+
+// RespondentAccessProductBalance
 
 type balanceServiceImpl struct {
 	repo repository.RespondentAccessProductBalanceRepository
@@ -46,6 +50,30 @@ func (service *balanceServiceImpl) GetById(id uuid.UUID, preload ...string) (bal
 func (service balanceServiceImpl) GetByRespondent(respondent *model.Respondent, preload ...string) (balance *model.RespondentAccessProductBalance, err error) {
 	return service.repo.GetActiveByRespondent(*respondent, preload...)
 	// return nil, errors.New("Could not resolve Access Balance for the given responder");
+}
+
+func (service balanceServiceImpl) SetupForRespondent(respondent *model.Respondent) (balance *model.RespondentAccessProductBalance, err error) {
+
+	balance, err = service.GetByRespondent(respondent)
+	if err != nil {
+		if err.Error() == "record not found" {
+
+		} else {
+			return nil, err
+		}
+	}
+
+	if balance == nil {
+		balance = &model.RespondentAccessProductBalance{
+			RespondentID: &respondent.ID,
+			Balance:      stripe.Int64(0),
+		}
+
+		if err = service.Save(balance); err != nil {
+			return nil, err
+		}
+	}
+	return balance, err
 }
 
 func (service *balanceServiceImpl) Save(balance *model.RespondentAccessProductBalance) (err error) {

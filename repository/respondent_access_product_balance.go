@@ -64,7 +64,7 @@ func (repo *balanceRepository) GetById(id uuid.UUID, prefetch ...string) (balanc
 
 func (repo *balanceRepository) GetActiveByRespondent(respondent model.Respondent, prefetch ...string) (balance *model.RespondentAccessProductBalance, err error) {
 	query := model.DB //.Preload("Assignments.Assignment.Product").
-	query = query.Where("respondent_id = ? AND active = ? AND ended_at IS NULL", respondent.ID, true)
+	query = query.Where("respondent_id = ?", respondent.ID)
 
 	for _, pFetch := range prefetch {
 		query = query.Preload(pFetch)

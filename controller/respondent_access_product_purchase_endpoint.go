@@ -8,6 +8,8 @@ import (
 	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/initializers"
+	"github.com/nkamuo/rasta-server/model"
+	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
 	"github.com/stripe/stripe-go/v74"
 	"github.com/stripe/stripe-go/v74/price"
@@ -77,18 +79,29 @@ func FindRespondentPurchasePrices(c *gin.Context) {
 }
 
 func CreateRespondentPurchaseCheckoutSession(c *gin.Context) {
+
+	respondentAccessProductPurchaseService := service.GetRespondentAccessProductPurchaseService()
+
+	config, err := initializers.LoadConfig()
+	if err != nil {
+		message := fmt.Sprintf("Error fetching prices: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+
 	var input dto.RespondentPurchaseSessionCheckoutInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	rUser, err := auth.GetCurrentUser(c)
+	rRespondent, err := auth.GetCurrentRespondent(c, "User")
 	if err != nil {
 		message := fmt.Sprintf("You may not access this resource ")
 		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
 		return
 	}
+	rUser := rRespondent.User
 
 	pParams := &stripe.PriceParams{}
 
@@ -120,8 +133,8 @@ func CreateRespondentPurchaseCheckoutSession(c *gin.Context) {
 		Mode:     stripe.String(string(mode)),
 		Customer: rUser.StripeCustomerID,
 
-		// SuccessURL: stripe.String("https://yourwebsite.com/success"),
-		// CancelURL:  stripe.String("https://yourwebsite.com/cancel"),
+		SuccessURL: stripe.String(config.STRIPE_RESPONDENT_PURCHASE_PRODUCT_SUCCESS_CALLBACK_URL),
+		CancelURL:  stripe.String(config.STRIPE_RESPONDENT_PURCHASE_PRODUCT_SUCCESS_CALLBACK_URL),
 	}
 
 	session, err := session.New(params)
@@ -130,9 +143,22 @@ func CreateRespondentPurchaseCheckoutSession(c *gin.Context) {
 		return
 	}
 
+	purchase := &model.RespondentAccessProductPurchase{
+		RespondentID:            &rRespondent.ID,
+		Quantity:                &Quantity,
+		StripeCheckoutSessionID: &session.ID,
+		StripePriceID:           &input.PriceID,
+	}
+
+	if err = respondentAccessProductPurchaseService.Save(purchase); err != nil {
+		message := fmt.Sprintf("Error saving purchase: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": message})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"session": map[string]interface{}{
+		"data": map[string]interface{}{
 			"id":          session.ID,
 			"paymentLink": session.PaymentLink,
 		},

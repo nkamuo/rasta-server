@@ -103,5 +103,5 @@ func (service *respondentServiceImpl) CanHandleMotoristRequest(respondent *model
 		return true, nil
 	}
 
-	return false, nil
+	// return false, nil
 }

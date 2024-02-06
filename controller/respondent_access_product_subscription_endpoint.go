@@ -141,7 +141,7 @@ func CreateRespondentSubscriptionCheckoutSession(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"session": map[string]interface{}{
+		"data": map[string]interface{}{
 			"id": newSubscription.ID,
 			// "paymentLink": newSubscription,
 		},

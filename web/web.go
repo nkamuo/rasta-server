@@ -46,6 +46,8 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	}
 	// r.StaticFile("/favicon.ico", "./resources/favicon.ico")
 
+	r.Any("/stripe/webhook", controller.StripePaymentGatewayWebhook)
+
 	/////////////////////////////////
 	///////// API
 	/////////////////////////////////

@@ -44,6 +44,9 @@ func ConnectDatabase(config *initializers.Config) {
 		&CompanyWithdrawal{},
 		&RespondentWithdrawal{},
 		//
+		&RespondentAccessProductBalance{},
+		&RespondentAccessProductPurchase{},
+		//
 		&MotoristRequestSituation{},
 		&OrderMotoristRequestSituation{},
 		//
