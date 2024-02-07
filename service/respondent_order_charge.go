@@ -112,7 +112,8 @@ func (service *respondentChargeServiceImpl) CreateForOrder(order *model.Order) (
 	// 	amount = 2500;
 	// }
 
-	label := fmt.Sprintf("Charge for %s on %s", product.Label, fulfilment.CreatedAt)
+	description := fmt.Sprintf("Charge for %s on %s", product.Label, fulfilment.CreatedAt)
+	label := product.Title
 
 	err = model.DB.Transaction(func(tx *gorm.DB) error {
 		// Create a PaymentIntent with amount and currency
@@ -133,6 +134,7 @@ func (service *respondentChargeServiceImpl) CreateForOrder(order *model.Order) (
 			RespondentID:              &respondent.ID,
 			Amount:                    *amount,
 			Label:                     label,
+			Description:               description,
 			Status:                    model.ORDER_EARNING_STATUS_PENDING,
 			StripePaymentID:           &pi.ID,
 			StripePaymentClientSecret: &pi.ClientSecret,

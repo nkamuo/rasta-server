@@ -19,6 +19,8 @@ type Respondent struct {
 
 	BillingAmount *uint64 `gorm:"" json:"billingAmount"`
 
+	AccessBalance *RespondentAccessProductBalance `gorm:"foreignKey:RespondentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"accessBalance,omitempty"`
+
 	// //The last location entry posted by the session
 	// CurrentLocationEntryID *uuid.UUID                      `gorm:"unique" json:"currentLocationEntryId,omitempty"`
 	// CurrentLocationEntry   *RespondentSessionLocationEntry `gorm:"foreignKey:CurrentLocationEntryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"currentLocationEntry,omitempty"`

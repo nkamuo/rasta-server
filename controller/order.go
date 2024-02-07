@@ -166,8 +166,12 @@ func CreateOrder(c *gin.Context) {
 	}
 
 	var Requests []model.Request
+	var description = input.Description
 
 	for _, iItem := range input.Items {
+		if description == nil && iItem.Description != nil {
+			description = iItem.Description
+		}
 		if Request, err := buildRequest(iItem, rUser); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": fmt.Sprintf("%s", err.Error())})
 			return
@@ -190,7 +194,7 @@ func CreateOrder(c *gin.Context) {
 	order := model.Order{
 		UserID:      &user.ID,
 		Items:       &Requests,
-		Description: input.Description,
+		Description: description,
 		// Situations: &Situations,
 	}
 

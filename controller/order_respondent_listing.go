@@ -471,7 +471,7 @@ func FindOrderForRespondent(c *gin.Context) {
 		return
 	}
 
-	if !*requestingUser.IsAdmin && order.UserID.String() != requestingUser.ID.String() {
+	if !*requestingUser.IsAdmin && (order.UserID != nil && order.UserID.String() != requestingUser.ID.String()) {
 		// c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": "Not Authorized"})
 		// return
 	}
@@ -523,13 +523,13 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 		return
 	}
 
-	requestingUser, err := auth.GetCurrentUser(c)
+	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	respondant, err := respondentRepo.GetByUser(*requestingUser)
+	respondant, err := respondentRepo.GetByUser(*rUser)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
@@ -537,7 +537,7 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 
 	session, err := sessionRepo.GetActiveByRespondent(*respondant, "Assignments.Assignment.Product")
 	if nil != err {
-		message := fmt.Sprintf("Could not find active session for respondent[id:%s]", respondant.ID)
+		message := fmt.Sprintf("Could not find active session for responder[id:%s]", respondant.ID)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
@@ -569,9 +569,32 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 
 	query = query.
 		Joins("JOIN orders ON orders.id = requests.order_id", 1).
-		Joins("LEFT JOIN order_fulfilments ON order_fulfilments.id = orders.fulfilment_id AND 1 = ?", 1).
-		// Joins("LEFT JOIN respondent_sessions ON order_fulfilments.session_id = respondent_sessions.id", 1).
-		Where("order_fulfilments.id IS NULL OR ((order_fulfilments.responder_id = ? /*OR respondent_sessions.respondent_id = ?*/) AND ((order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL)))", respondant.ID)
+		Joins("LEFT JOIN order_fulfilments ON order_fulfilments.id = orders.fulfilment_id AND 1 = ?", 1)
+	// // Joins("LEFT JOIN respondent_sessions ON order_fulfilments.session_id = respondent_sessions.id", 1).
+	// Where("order_fulfilments.id IS NULL OR ((order_fulfilments.responder_id = ? /*OR respondent_sessions.respondent_id = ?*/) AND ((order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL)))", respondant.ID)
+
+	statuses := page.Status
+	status := "all"
+	if len(statuses) > 0 {
+		status = statuses[0]
+	}
+
+	switch status {
+	case "open":
+		query = query.Where("order_fulfilments.id IS NULL")
+		break
+	case "assigned":
+		query = query.Where("order_fulfilments.responder_id = ? AND ((order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL))", respondant.ID)
+		break
+	case "completed":
+		query = query.Where("order_fulfilments.responder_id = ? AND ((order_fulfilments.client_confirmed_at IS NOT NULL) OR (order_fulfilments.auto_confirmed_at IS NOT NULL))", respondant.ID)
+		break
+	default:
+		query = query.Where("order_fulfilments.id IS NULL OR ((order_fulfilments.responder_id = ? /*OR respondent_sessions.respondent_id = ?*/) AND ((order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL)))", respondant.ID)
+		break
+	}
+	// RESET STATUS
+	page.Status = []string{}
 
 	fmt.Println(query.Statement.SQL.String())
 	if err := query.Scopes(pagination.Paginate(requests, &page, query)).Find(&requests).Error; nil != err {

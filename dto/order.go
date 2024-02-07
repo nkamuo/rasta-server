@@ -54,7 +54,8 @@ type OrderOutput struct {
 	Payment   *model.OrderPayment ` json:"payment,omitempty"` //
 
 	// SITUATIONS
-	Situations *[]*model.MotoristRequestSituation `json:"situations,omitempty"` //`json:"situations,omitempty"`
+	Situations  *[]*model.MotoristRequestSituation `json:"situations,omitempty"` //`json:"situations,omitempty"`
+	Description *string                            `json:"description,omitempty"`
 	// OrderMotoristRequestSituation []*model.OrderMotoristRequestSituation ``
 	//TIMESTAMPS
 	CheckoutCompletedAt *time.Time `json:"checkoutCompletedAt,omitempty"`
@@ -103,7 +104,8 @@ func CreateOrderOutput(order model.Order) (output OrderOutput) {
 		ClientPaidCash: order.ClientPaidCash,
 
 		// SITUATIONS
-		Situations: &Situations, //`json:"situations,omitempty"`
+		Situations:  &Situations, //`json:"situations,omitempty"`
+		Description: order.Description,
 		// OrderMotoristRequestSituation []*model.OrderMotoristRequestSituation ``
 		//TIMESTAMPS
 		CheckoutCompletedAt: order.CheckoutCompletedAt,

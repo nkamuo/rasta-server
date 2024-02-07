@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	//
 	"github.com/nkamuo/rasta-server/auth"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
@@ -12,9 +13,8 @@ import (
 	"github.com/nkamuo/rasta-server/service"
 
 	// "github.com/nkamuo/rasta-server/utils/token"
-	utils "github.com/nkamuo/rasta-server/utils/auth"
-
 	"github.com/gin-gonic/gin"
+	utils "github.com/nkamuo/rasta-server/utils/auth"
 )
 
 func Register(c *gin.Context) {

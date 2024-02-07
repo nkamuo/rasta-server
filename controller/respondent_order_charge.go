@@ -213,11 +213,11 @@ func UpdateRespondentOrderChargeByRespondent(c *gin.Context) {
 		return
 	}
 	respondent, err := respondentService.GetById(responderID, "User")
-	respID := respondent.User.ID.String()
+	respondentUserID := respondent.User.ID.String()
 	//
 	charge, err := chargeService.GetById(chargeID)
 
-	if charge.RespondentID.String() == respID {
+	if charge.RespondentID.String() == responderID.String() {
 	} else {
 		message := fmt.Sprintf("Resource not found: There is no such charge for the given responder")
 		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
@@ -227,7 +227,7 @@ func UpdateRespondentOrderChargeByRespondent(c *gin.Context) {
 
 	if *rUser.IsAdmin {
 	} else {
-		if respID == rUser.ID.String() {
+		if respondentUserID == rUser.ID.String() {
 			// query = query.Where("respondent_id = ?", respondent.ID).Where("respondent_id = ?", respondent.ID)
 		} else {
 			message := fmt.Sprintf("Permision Denied: you may not access this resource")
