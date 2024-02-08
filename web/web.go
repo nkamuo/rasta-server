@@ -13,7 +13,7 @@ import (
 func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"*", "http://localhost:8080", "http://localhost:3000", "http://localhost:51074", "http://localhost:50523"}
+	corsConfig.AllowOrigins = []string{"*", "http://localhost:8080", "http://localhost:3000", "http://srv432356.hstgr.cloud", "https://srv432356.hstgr.cloud"}
 	corsConfig.AddAllowHeaders("Authorization")
 	// config.AllowOrigins = []string{"http://google.com", "http://facebook.com"}
 	// config.AllowAllOrigins = true
