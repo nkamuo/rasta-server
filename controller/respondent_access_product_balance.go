@@ -31,6 +31,7 @@ func FindRespondentAccessProductBalances(c *gin.Context) {
 
 	query := model.DB.Preload("Respondent.User").Preload("Assignments").Preload("Assignments.Assignment.Product") //.Preload("Place")
 
+	// TODO: change `place_id` to `price_id` and use it to match the Stripe price id the user is subscribed to
 	if place_id := c.Query("place_id"); place_id != "" {
 		placeID, err := uuid.Parse(place_id)
 		if nil != err {

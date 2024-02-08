@@ -6,8 +6,12 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/stripe/stripe-go/v74"
+	"github.com/stripe/stripe-go/v74/subscription"
+
 	// "github.com/mitchellh/mapstructure"
 	"github.com/nkamuo/rasta-server/data/pagination"
+	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
@@ -17,158 +21,94 @@ import (
 	// "github.com/gin-gonic/gin"
 )
 
-func FindRespondentAccessProductSubscriptions(c *gin.Context) {
+func FindUserSubscriptions(c *gin.Context) {
+	userService := service.GetUserService()
 
-	respondentRepo := repository.GetRespondentRepository()
-	placeRepo := repository.GetPlaceRepository()
+	config, err := initializers.LoadConfig()
+	if err != nil {
+		message := fmt.Sprintf("You may not access this resource ")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
+		return
+	}
 
-	var subscriptions []model.RespondentAccessProductSubscription
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("You may not access this resource ")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	var user *model.User
+	if c.Param("id") != "" {
+		userID, err := uuid.Parse(c.Param("id"))
+		if nil != err {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid user id provided"})
+			return
+		}
+		if user, err = userService.GetById(userID); nil != err {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+			return
+		}
+
+		if user.ID.String() != rUser.ID.String() && !*rUser.IsAdmin {
+			message := fmt.Sprintf("You may not access this resource ")
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+			return
+		}
+	} else {
+		user = rUser
+	}
+
+	// HERE >>
 	var page pagination.Page
 	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
 
-	query := model.DB.Preload("Respondent.User").Preload("Assignments").Preload("Assignments.Assignment.Product") //.Preload("Place")
+	// params := &stripe.PriceSearchParams{
+	// 	// Limit: 10, // Adjust as needed
+	// 	Product: stripe.String(config.STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID),
+	// 	Active:  stripe.Bool(true),
+	// }
 
-	if place_id := c.Query("place_id"); place_id != "" {
-		placeID, err := uuid.Parse(place_id)
-		if nil != err {
-			message := fmt.Sprintf("Error parsing place_id[%s] query: %s", place_id, err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-			return
-		}
-		if _, err := placeRepo.GetById(placeID); err != nil {
-			message := fmt.Sprintf("Could not find referenced place[%s]: %s", placeID, err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-			return
-		}
-		query = query.Where("place_id = ?", placeID)
+	// var Page *int64
+	// if page.Page != 0 {
+	// 	Page = stripe.Int64(int64(page.Page))
+	// }
+	// var Limit *int64
+	// if page.Limit != nil {
+	// 	Limit = stripe.Int64(int64(*page.Limit))
+	// }
+
+	// Query := fmt.Sprintf("active:'true' AND product: \"%s\"", "")
+	params := &stripe.SubscriptionListParams{
+		Customer: user.StripeCustomerID,
 	}
 
-	if respondent_id := c.Query("respondent_id"); respondent_id != "" {
-		respondentID, err := uuid.Parse(respondent_id)
-		if nil != err {
-			message := fmt.Sprintf("Error parsing respondent_id[%s] query: %s", respondent_id, err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-			return
+	iter := subscription.List(params)
+	var subscriptions []*stripe.Subscription
+
+	for iter.Next() {
+		sub := iter.Subscription()
+		for _, item := range sub.Items.Data {
+			if item.Price.Product.ID == config.STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID {
+				subscriptions = append(subscriptions, sub)
+				break
+			}
+			// fmt.Println(item.Price.ID)
 		}
-		if _, err := respondentRepo.GetById(respondentID); err != nil {
-			message := fmt.Sprintf("Could not find referenced Responder[%s]: %s", respondentID, err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-			return
-		}
-		query = query.Where("respondent_id = ?", respondentID)
 	}
 
-	if status := c.Query("status"); status != "" {
-		query = query.Where("active = ?", true)
-	}
-
-	if err := query.Scopes(pagination.Paginate(subscriptions, &page, query)).Find(&subscriptions).Error; nil != err {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+	if iter.Err() != nil {
+		message := fmt.Sprintf("Error fetching prices: %s", iter.Err().Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": message})
 		return
 	}
+
 	page.Rows = subscriptions
-	c.JSON(http.StatusOK, gin.H{"data": page})
-}
 
-func CreateRespondentAccessProductSubscription(c *gin.Context) {
-
-	// userService := service.GetUserService()
-	// placeService := service.GetPlaceService()
-	// productService := service.GetProductService()
-	// respondentService := service.GetRespondentService()
-	// subscriptionService := service.GetRespondentAccessProductSubscriptionService()
-	// subscriptionRepo := repository.GetRespondentAccessProductSubscriptionRepository()
-	// assignmentService := service.GetProductRespondentAssignmentService()
-
-	// rUser, err := auth.GetCurrentUser(c)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-	// 	return
-	// }
-
-	// var input dto.RespondentAccessProductSubscriptionCreationInput
-	// if err := c.ShouldBindJSON(&input); err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-	// 	return
-	// }
-
-	// product, err := productService.GetById(input.ProductID)
-	// if nil != err {
-	// 	message := fmt.Sprintf("Could not resolve the specified Product with [id:%s]: %s", input.ProductID, err.Error())
-	// 	c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
-	// 	return
-	// }
-
-	// place, err := placeService.GetById(product.PlaceID)
-	// if nil != err {
-	// 	message := fmt.Sprintf("Could not resolve Place [id:%s]: %s", product.PlaceID, err.Error())
-	// 	c.JSON(http.StatusBadRequest, gin.H{"message": message, "status": "error"})
-	// 	return
-	// }
-
-	// respondant, err := respondentService.GetById(input.RespondentID)
-	// if nil != err {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-	// 	return
-	// }
-
-	// user, err := userService.GetById(*respondant.UserID)
-	// if nil != err {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-	// 	return
-	// }
-
-	// var crntAssignment model.RespondentAccessProductSubscription
-	// var existingCount int64
-	// err = model.DB.Where("respondent_id = ? AND active = ?", respondant.ID, true).Model(&crntAssignment).Count(&existingCount).Error
-	// if nil != err {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-	// 	return
-
-	// }
-
-	// if existingCount > 0 {
-	// 	message := fmt.Sprintf(
-	// 		"There is already an active subscription for \"%v\"",
-	// 		user.FullName(),
-	// 	)
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-	// 	return
-
-	// }
-
-	// subscription, err := subscriptionRepo.GetActiveByRespondent(*respondant)
-	// if err != nil {
-	// 	if err.Error() != "record not found" {
-	// 		message := fmt.Sprintf(
-	// 			"There was an error searching active subscription for \"%v\"",
-	// 			user.FullName(),
-	// 		)
-	// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-	// 		return
-	// 	}
-	// } else {
-
-	// 	if err := subscriptionService.Save(subscription); err != nil {
-	// 		message := fmt.Sprintf("An error occured: %s", err.Error())
-	// 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-	// 		return
-	// 	}
-
-	// 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": subscription})
-	// 	return
-
-	// }
-	// fmt.Printf("Input USer ID: %s\n user.ID: %s\n subscription.UserId: %s\n", input.UserId, user.ID, subscription.UserID)
-
-	// if err := subscriptionService.Save(subscription); nil != err {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
-	// 	return
-	// }
-	// c.JSON(http.StatusOK, gin.H{"status": "success", "data": subscription})
+	c.JSON(http.StatusOK, gin.H{"staus": "success", "data": page})
 }
 
 // ////////

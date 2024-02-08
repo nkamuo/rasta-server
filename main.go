@@ -7,7 +7,6 @@ import (
 	"github.com/nkamuo/rasta-server/command"
 	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
-	"github.com/nkamuo/rasta-server/web"
 	// "go-cli-for-git/cmd"
 	// "net/http"
 	// "github.com/joho/godotenv"
@@ -27,10 +26,10 @@ func main() {
 	}
 	model.ConnectDatabase(&config)
 
-	// command.Execute()
-	command.StartWebServer(web.WebServerConfig{
-		Port: "8090",
-	})
+	command.Execute()
+	// command.StartWebServer(web.WebServerConfig{
+	// 	Port: "8090",
+	// })
 }
 
 // func main() {

@@ -101,6 +101,16 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 
 	api.GET("/subscription/respondent/product/subscription/prices", controller.FindRespondentSubscriptionPrices)
 	api.GET("/subscription/respondent/product/purchase/prices", controller.FindRespondentPurchasePrices)
+	//
+	api.GET("/products", controller.FindProducts)
+	api.GET("/products/find_by_category_and_location", controller.FindProductByCategoryAndLocation)
+	api.GET("/products/:id", controller.FindProduct)
+	//
+
+	api.GET("/towing_place_rates", controller.FindTowingPlaceRates)
+	api.GET("/towing_place_rates/:id", controller.FindTowingPlaceRate)
+	api.GET("/towing_place_rates/find_by_place_and_distance", controller.FindTowingRateByPlaceAndDistance)
+	api.GET("/towing_place_rates/find_by_origin_and_destination", controller.FindTowingRateByOriginAndDestination)
 
 	////////////////////////////////////////////
 	// AUTHENTICATION MIDDLEWARE
@@ -174,9 +184,6 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.DELETE("/respondent_session_locations_entries/:id", controller.DeleteRespondentSessionLocationEntry)
 
 	//PROTECTED ENDPOINTS
-	api.GET("/products", controller.FindProducts)
-	api.GET("/products/find_by_category_and_location", controller.FindProductByCategoryAndLocation)
-	api.GET("/products/:id", controller.FindProduct)
 	api.POST("/products", controller.CreateProduct)
 	api.PATCH("/products/:id", controller.UpdateProduct)
 	api.DELETE("/products/:id", controller.DeleteProduct)
@@ -274,10 +281,6 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.PATCH("/fuel_type_place_rates/:id", controller.UpdateFuelTypePlaceRate)
 	api.DELETE("/fuel_type_place_rates/:id", controller.DeleteFuelTypePlaceRate)
 
-	api.GET("/towing_place_rates", controller.FindTowingPlaceRates)
-	api.GET("/towing_place_rates/:id", controller.FindTowingPlaceRate)
-	api.GET("/towing_place_rates/find_by_place_and_distance", controller.FindTowingRateByPlaceAndDistance)
-	api.GET("/towing_place_rates/find_by_origin_and_destination", controller.FindTowingRateByOriginAndDestination)
 	api.POST("/towing_place_rates", controller.CreateTowingPlaceRate)
 	api.PATCH("/towing_place_rates/:id", controller.UpdateTowingPlaceRate)
 	api.DELETE("/towing_place_rates/:id", controller.DeleteTowingPlaceRate)
@@ -289,10 +292,14 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.PATCH("/payment_methods/:id", controller.UpdatePaymentMethod)
 	api.DELETE("/payment_methods/:id", controller.DeletePaymentMethod)
 	api.POST("/payment_methods/:id/select", controller.SelectDefaultPaymentMethod)
+	//
+	// api.GET("/payment_methods", controller.FindPaymentMethods)
+	api.GET("/subscriptions", controller.FindUserSubscriptions)
 
 	// USER PAYMENT METHODS
 	api.GET("/users/:id/payment_methods", controller.FindUserPaymentMethods)
-
+	// USER SUBSCRIPTIONS
+	api.GET("/users/:id/subscriptions", controller.FindUserSubscriptions)
 	// product_respondent_assignment
 
 	return r, nil
