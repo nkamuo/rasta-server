@@ -185,11 +185,11 @@ func CloseRespondentAccessProductSubscription(c *gin.Context) {
 		return
 	}
 	//  TODO: Close the subscription - The admin should be able to close a  given subscription for whatever reason
-	if err := subscriptionService.Close(subscription); nil != err {
-		message := fmt.Sprintf("Could not close subscription [id:%s]: %s", id, err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
-		return
-	}
+	// if err := subscriptionService.Close(subscription); nil != err {
+	// 	message := fmt.Sprintf("Could not close subscription [id:%s]: %s", id, err.Error())
+	// 	c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+	// 	return
+	// }
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": subscription})
 }
 

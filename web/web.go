@@ -228,6 +228,11 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.GET("/respondents/:id/wallet/withdrawals", controller.FindRespondentWithdrawals)
 	api.GET("/respondents/:id/wallet/withdrawals/:withdrawal_id", controller.FindRespondentWithdrawal)
 
+	// RESPONDENT SUBSCRIPTIONS AND BALANCE
+	api.GET("/respondents/:id/access/balance", controller.FindRespondentAccessProductBalance)
+	api.GET("/respondents/:id/subscriptions", controller.FindRespondentAccessProductSubscription)
+	//
+
 	//RESPONDENT REVIEWS
 	api.GET("/respondent_service_reviews", controller.FindRespondentServiceReviews)
 	api.GET("/respondent_service_reviews/:id", controller.FindRespondentServiceReview)

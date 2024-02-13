@@ -220,7 +220,7 @@ func FindRespondent(c *gin.Context) {
 	}
 	// respondent, err := respondentService.GetById(id)
 	var respondent model.Respondent
-	err = model.DB.Where("id = ?", id).Preload("User").Preload("Place").Preload("Company").First(&respondent).Error
+	err = model.DB.Where("id = ?", id).Preload("User").Preload("Place", "AccessBalance", "AccessSubscription").Preload("Company").First(&respondent).Error
 	if nil != err {
 		message := fmt.Sprintf("Could not find respondent with [id:%s]: %s", id, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
@@ -237,7 +237,7 @@ func GetCurrentRespondent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	respondent, err := respondentRepo.GetByUser(*user, "User", "Place", "Vehicle", "Company", "AccessBalance")
+	respondent, err := respondentRepo.GetByUser(*user, "User", "Place", "Vehicle", "Company", "AccessBalance", "AccessSubscription")
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
