@@ -581,7 +581,7 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 
 	switch status {
 	case "open":
-		query = query.Where("order_fulfilments.id IS NULL")
+		query = query.Where("orders.status NOT IN ? AND order_fulfilments.id IS NULL", []string{model.ORDER_EARNING_STATUS_COMPLETED, model.ORDER_EARNING_STATUS_CANCELLED})
 		break
 	case "assigned":
 		query = query.Where("order_fulfilments.responder_id = ? AND ((order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL))", respondant.ID)
