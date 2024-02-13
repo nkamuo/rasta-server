@@ -1,15 +1,11 @@
 package repository
 
 import (
-	"errors"
-	"fmt"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
-	"github.com/stripe/stripe-go/v74"
-	"github.com/stripe/stripe-go/v74/subscription"
 	"gorm.io/gorm"
 )
 
@@ -29,7 +25,7 @@ type RespondentAccessProductSubscriptionRepository interface {
 	FindAll(page int, limit int) (subscriptions []model.RespondentAccessProductSubscription, total int64, err error)
 	GetById(id uuid.UUID, prefetch ...string) (subscription *model.RespondentAccessProductSubscription, err error)
 	GetActiveByRespondent(respondent model.Respondent, prefetch ...string) (subscription *model.RespondentAccessProductSubscription, err error)
-	GetActiveByStripeCustomerID(customerID string) (sub *stripe.Subscription, err error)
+	GetActiveByRespondentAndTime(respondent model.Respondent, time time.Time, prefetch ...string) (sub *model.RespondentAccessProductSubscription, err error)
 	Save(subscription *model.RespondentAccessProductSubscription) (err error)
 	Delete(subscription *model.RespondentAccessProductSubscription) (error error)
 	DeleteById(id uuid.UUID) (subscription *model.RespondentAccessProductSubscription, err error)
@@ -69,58 +65,24 @@ func (repo *subscriptionRepository) GetById(id uuid.UUID, prefetch ...string) (s
 }
 
 func (repo *subscriptionRepository) GetActiveByRespondent(respondent model.Respondent, prefetch ...string) (subscription *model.RespondentAccessProductSubscription, err error) {
-	query := model.DB //.Preload("Assignments.Assignment.Product").
-	query = query.Where("respondent_id = ? AND active = ? AND ended_at IS NULL", respondent.ID, true)
+	now := time.Now()
+	return repo.GetActiveByRespondentAndTime(respondent, now, prefetch...)
+}
+
+func (repo *subscriptionRepository) GetActiveByRespondentAndTime(respondent model.Respondent, time time.Time, prefetch ...string) (sub *model.RespondentAccessProductSubscription, err error) {
+
+	query := repo.db
+	query = query.Where("respondent_id = ? AND (? BETWEEN starting_at AND ending_at)", respondent.ID, time)
 
 	for _, pFetch := range prefetch {
 		query = query.Preload(pFetch)
 	}
 
-	if err = query.First(&subscription).Error; err != nil {
+	if err = query.First(&sub).Error; err != nil {
 		return nil, err
 	}
-	return subscription, nil
-}
+	return sub, nil
 
-func (repo *subscriptionRepository) GetActiveByStripeCustomerID(customerID string) (sub *stripe.Subscription, err error) {
-
-	// params := &stripe.SubscriptionSearchParams{
-	// 	SearchParams: stripe.SearchParams{
-	// 	  Query: "status:'active' AND metadata['order_id']:'6735'",
-
-	// 	},
-	//   };
-
-	config, err := initializers.LoadConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	params := &stripe.SubscriptionListParams{
-		Customer: stripe.String(customerID),
-		Status:   stripe.String("active"),
-	}
-	iter := subscription.List(params)
-
-	for iter.Next() {
-		sub := iter.Subscription()
-
-		for _, item := range sub.Items.Data {
-			if item.Price.Product.ID != config.STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID {
-				continue
-			}
-			return sub, nil
-			// fmt.Println(item.Price.ID)
-		}
-		// prices = append(prices, iter.Price())
-	}
-
-	if iter.Err() != nil {
-		message := fmt.Sprintf(" %s", iter.Err().Error())
-		return nil, errors.New(message)
-	}
-
-	return nil, errors.New("Not implemented")
 }
 
 func (repo *subscriptionRepository) Save(subscription *model.RespondentAccessProductSubscription) (err error) {

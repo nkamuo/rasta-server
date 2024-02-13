@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/nkamuo/rasta-server/initializers"
-
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -45,6 +44,7 @@ func ConnectDatabase(config *initializers.Config) {
 		&RespondentWithdrawal{},
 		//
 		&RespondentAccessProductBalance{},
+		&RespondentAccessProductSubscription{},
 		&RespondentAccessProductPurchase{},
 		//
 		&MotoristRequestSituation{},

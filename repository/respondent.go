@@ -21,7 +21,7 @@ func GetRespondentRepository() RespondentRepository {
 }
 
 type RespondentRepository interface {
-	FindAll(page int, limit int) (respondents []model.Respondent, total int64, err error)
+	FindAll(input ...int) (respondents []model.Respondent, total int64, err error)
 	FindAllByCompanyID(companyID uuid.UUID, page int, limit int) (respondents []model.Respondent, total int64, err error)
 	GetById(id uuid.UUID, preload ...string) (respondent *model.Respondent, err error)
 	GetByEmail(email string, preload ...string) (respondent *model.Respondent, err error)
@@ -37,7 +37,15 @@ type respondentRepository struct {
 	db *gorm.DB
 }
 
-func (repo *respondentRepository) FindAll(page int, limit int) (respondents []model.Respondent, total int64, err error) {
+func (repo *respondentRepository) FindAll(input ...int) (respondents []model.Respondent, total int64, err error) {
+	page := 1
+	limit := 10
+	if len(input) > 0 {
+		page = input[0]
+	}
+	if len(input) > 1 {
+		limit = input[1]
+	}
 	offset := (page - 1) * limit
 
 	err = repo.db.

@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/stripe/stripe-go/v74/price"
@@ -65,8 +66,14 @@ func (service *purchaseServiceImpl) Save(purchase *model.RespondentAccessProduct
 
 func (service *purchaseServiceImpl) Commit(purchase *model.RespondentAccessProductPurchase) (err error) {
 
+	config, err := initializers.LoadConfig()
+	if err != nil {
+		message := fmt.Sprintf("Error Initialiing Config: %s", err.Error())
+		return errors.New(message)
+	}
 	respondentService := GetRespondentService()
 	balanceService := GetRespondentAccessProductBalanceService()
+	subscriptionService := GetRespondentAccessProductSubscriptionService()
 
 	respondent, err := respondentService.GetById(*purchase.RespondentID)
 	if err != nil {
@@ -74,6 +81,10 @@ func (service *purchaseServiceImpl) Commit(purchase *model.RespondentAccessProdu
 	}
 
 	balance, err := balanceService.SetupForRespondent(respondent)
+	if err != nil {
+		return err
+	}
+	subscription, err := subscriptionService.GetByRespondent(respondent)
 	if err != nil {
 		return err
 	}
@@ -93,10 +104,21 @@ func (service *purchaseServiceImpl) Commit(purchase *model.RespondentAccessProdu
 		if err != nil {
 			return err
 		}
+		product := stripePrice.Product
+		ProductID := product.ID
 		if stripePrice.TransformQuantity != nil {
-
+			var quantity = *purchase.Quantity
 			var multiplier = stripePrice.TransformQuantity.DivideBy
-			balance.Increment(multiplier)
+			var total = quantity * multiplier
+			if ProductID == config.STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID {
+				balance.Increment(total)
+			} else if ProductID == config.STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID {
+				subscription.ExtendByDays((total))
+			} else {
+				message := fmt.Sprintf("Unknown Product ID: %s", ProductID)
+				return errors.New(message)
+			}
+
 		}
 	}
 	*purchase.Succeeded = true
@@ -105,6 +127,9 @@ func (service *purchaseServiceImpl) Commit(purchase *model.RespondentAccessProdu
 			return err
 		}
 		if err = tx.Save(balance).Error; err != nil {
+			return err
+		}
+		if err = tx.Save(subscription).Error; err != nil {
 			return err
 		}
 		return nil

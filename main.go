@@ -7,6 +7,7 @@ import (
 	"github.com/nkamuo/rasta-server/command"
 	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
+	"github.com/nkamuo/rasta-server/startup"
 	"github.com/nkamuo/rasta-server/web"
 	// "go-cli-for-git/cmd"
 	// "net/http"
@@ -26,6 +27,10 @@ func main() {
 		fmt.Println("CONFIG ERROR:", err)
 	}
 	model.ConnectDatabase(&config)
+
+	if err := startup.Boot(); err != nil {
+		fmt.Println("BOOT ERROR:", err)
+	}
 
 	// command.Execute()
 	command.StartWebServer(web.WebServerConfig{

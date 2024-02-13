@@ -26,6 +26,7 @@ type RespondentAccessProductBalanceService interface {
 	GetByRespondent(respondent *model.Respondent, preload ...string) (balance *model.RespondentAccessProductBalance, err error)
 	// Close(balance *model.RespondentAccessProductBalance) (err error)
 	SetupForRespondent(respondent *model.Respondent) (balance *model.RespondentAccessProductBalance, err error)
+	SetupForAllRespondents() (err error)
 	Save(balance *model.RespondentAccessProductBalance) (err error)
 	Delete(balance *model.RespondentAccessProductBalance) (error error)
 }
@@ -74,6 +75,21 @@ func (service balanceServiceImpl) SetupForRespondent(respondent *model.Responden
 		}
 	}
 	return balance, err
+}
+
+func (service balanceServiceImpl) SetupForAllRespondents() (err error) {
+	respondantRepo := repository.GetRespondentRepository()
+	respondents, _, err := respondantRepo.FindAll(1, 100000)
+	if err != nil {
+		return err
+	}
+	for _, respondent := range respondents {
+		_, err = service.SetupForRespondent(&respondent)
+		if err != nil {
+			return err
+		}
+	}
+	return err
 }
 
 func (service *balanceServiceImpl) Save(balance *model.RespondentAccessProductBalance) (err error) {

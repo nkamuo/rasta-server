@@ -163,13 +163,11 @@ func FindRespondentAccessProductSubscription(c *gin.Context) {
 // /////////////
 func CloseRespondentAccessProductSubscription(c *gin.Context) {
 	subscriptionService := service.GetRespondentAccessProductSubscriptionService()
-
 	respondant, err := auth.GetCurrentRespondent(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
@@ -181,19 +179,17 @@ func CloseRespondentAccessProductSubscription(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
-
 	if respondant.ID.String() != (*subscription.RespondentID).String() {
 		message := fmt.Sprintf("Could not find your subscription with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
-
+	//  TODO: Close the subscription - The admin should be able to close a  given subscription for whatever reason
 	if err := subscriptionService.Close(subscription); nil != err {
 		message := fmt.Sprintf("Could not close subscription [id:%s]: %s", id, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": subscription})
 }
 

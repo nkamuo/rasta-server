@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/model"
@@ -96,7 +97,7 @@ func (service *respondentServiceImpl) CanHandleMotoristRequest(respondent *model
 		return true, nil
 	}
 
-	if _, err := subscriptionService.GetActiveStripeSubscriptionByCustomerID(*fullRespondent.User.StripeCustomerID); err != nil {
+	if _, err := subscriptionService.GetActiveByRespondentAndTime(*fullRespondent, time.Now()); err != nil {
 		return false, err
 	} else {
 
