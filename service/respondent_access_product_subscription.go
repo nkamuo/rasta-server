@@ -45,7 +45,7 @@ func (service *subscriptionServiceImpl) GetById(id uuid.UUID, preload ...string)
 }
 
 func (service subscriptionServiceImpl) GetByRespondent(respondent *model.Respondent, preload ...string) (subscription *model.RespondentAccessProductSubscription, err error) {
-	return service.repo.GetActiveByRespondent(*respondent, preload...)
+	return service.repo.GetByRespondent(*respondent, preload...)
 	// return nil, errors.New("Could not resolve Access Balance for the given responder");
 }
 

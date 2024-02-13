@@ -24,6 +24,7 @@ func GetRespondentAccessProductSubscriptionRepository() RespondentAccessProductS
 type RespondentAccessProductSubscriptionRepository interface {
 	FindAll(page int, limit int) (subscriptions []model.RespondentAccessProductSubscription, total int64, err error)
 	GetById(id uuid.UUID, prefetch ...string) (subscription *model.RespondentAccessProductSubscription, err error)
+	GetByRespondent(respondent model.Respondent, prefetch ...string) (subscription *model.RespondentAccessProductSubscription, err error)
 	GetActiveByRespondent(respondent model.Respondent, prefetch ...string) (subscription *model.RespondentAccessProductSubscription, err error)
 	GetActiveByRespondentAndTime(respondent model.Respondent, time time.Time, prefetch ...string) (sub *model.RespondentAccessProductSubscription, err error)
 	Save(subscription *model.RespondentAccessProductSubscription) (err error)
@@ -67,6 +68,20 @@ func (repo *subscriptionRepository) GetById(id uuid.UUID, prefetch ...string) (s
 func (repo *subscriptionRepository) GetActiveByRespondent(respondent model.Respondent, prefetch ...string) (subscription *model.RespondentAccessProductSubscription, err error) {
 	now := time.Now()
 	return repo.GetActiveByRespondentAndTime(respondent, now, prefetch...)
+}
+
+func (repo *subscriptionRepository) GetByRespondent(respondent model.Respondent, prefetch ...string) (subscription *model.RespondentAccessProductSubscription, err error) {
+	query := repo.db
+	query = query.Where("respondent_id = ?", respondent.ID)
+
+	for _, pFetch := range prefetch {
+		query = query.Preload(pFetch)
+	}
+
+	if err = query.First(&subscription).Error; err != nil {
+		return nil, err
+	}
+	return subscription, nil
 }
 
 func (repo *subscriptionRepository) GetActiveByRespondentAndTime(respondent model.Respondent, time time.Time, prefetch ...string) (sub *model.RespondentAccessProductSubscription, err error) {
