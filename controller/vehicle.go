@@ -123,6 +123,7 @@ func CreateVehicle(c *gin.Context) {
 		Color:              *input.Color,
 		Description:        input.Description,
 		Published:          &input.Published,
+		VinNumber:          input.VinNumber,
 	}
 
 	if owner != nil {
@@ -200,6 +201,10 @@ func UpdateVehicle(c *gin.Context) {
 		message := fmt.Sprintf("Unathorized: You may not access this resource")
 		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 		return
+	}
+
+	if nil != input.VinNumber {
+		vehicle.VinNumber = input.VinNumber
 	}
 
 	if nil != input.Color {

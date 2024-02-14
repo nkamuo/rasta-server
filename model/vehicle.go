@@ -23,6 +23,7 @@ type Vehicle struct {
 	ModelID *uuid.UUID    `gorm:"" json:"modelId,omitempty"`
 	Model   *VehicleModel `gorm:"" json:"model"`
 	//  ALTERNATIVE TO VEHICLE MODEL
+	VinNumber *string `gorm:"" json:"vin,omitempty"`
 	MakeName  *string `gorm:"" json:"makeName,omitempty"`
 	ModelName *string `gorm:"" json:"modelName,omitempty"`
 	//

@@ -10,6 +10,7 @@ type VehicleCreationInput struct {
 	//
 	ModelID *uuid.UUID `json:"modelId" binding:""`
 	//
+	VinNumber *string `json:"vin,omitempty"`
 	MakeName  *string `json:"makeName,omitempty"`
 	ModelName *string `json:"modelName,omitempty"`
 	//
@@ -26,6 +27,7 @@ type VehicleUpdateInput struct {
 	Description        *string    `json:"description" binding:""`
 	LicensePlateNumber *string    `json:"licensePlateNumber" binding:""`
 
+	VinNumber *string `json:"vin,omitempty"`
 	Color     *string `json:"color" binding:""`
 	MakeName  *string `json:"makeName,omitempty"`
 	ModelName *string `json:"modelName,omitempty"`
