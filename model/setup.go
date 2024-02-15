@@ -12,7 +12,7 @@ import (
 
 var DB *gorm.DB
 
-func ConnectDatabase(config *initializers.Config) {
+func ConnectDatabase(config *initializers.Config) (err error) {
 
 	// dsn := fmt.Sprintf("user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local")
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", config.DBUserName, config.DBUserPassword, config.DBHost, config.DBPort, config.DBName)
@@ -46,6 +46,7 @@ func ConnectDatabase(config *initializers.Config) {
 		&RespondentAccessProductBalance{},
 		&RespondentAccessProductSubscription{},
 		&RespondentAccessProductPurchase{},
+		&RespondentAccessProductPrice{},
 		//
 		&MotoristRequestSituation{},
 		&OrderMotoristRequestSituation{},
@@ -73,10 +74,10 @@ func ConnectDatabase(config *initializers.Config) {
 		&RespondentSessionLocationEntry{},
 	)
 	if err != nil {
-		return
+		return err
 	}
 
 	DB = database
 	MigrateMotoristSituations(database)
-
+	return err
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/startup"
+	"github.com/nkamuo/rasta-server/web"
 	// "go-cli-for-git/cmd"
 	// "net/http"
 	// "github.com/joho/godotenv"
@@ -25,16 +26,19 @@ func main() {
 	if err != nil {
 		fmt.Println("CONFIG ERROR:", err)
 	}
-	model.ConnectDatabase(&config)
+	if err := model.ConnectDatabase(&config); err != nil {
+		fmt.Println("DATABASE ERROR:", err)
+		return
+	}
 
 	if err := startup.Boot(); err != nil {
 		fmt.Println("BOOT ERROR:", err)
 	}
 
-	command.Execute()
-	// command.StartWebServer(web.WebServerConfig{
-	// 	Port: "8090",
-	// })
+	// command.Execute()
+	command.StartWebServer(web.WebServerConfig{
+		Port: "8090",
+	})
 }
 
 // func main() {

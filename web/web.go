@@ -194,6 +194,15 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.PATCH("/users/:id", controller.UpdateUser)
 	api.DELETE("/users/:id", controller.DeleteUser)
 
+	// api.GET("/subscription/respondent/product/subscription/prices", controller.FindRespondentSubscriptionPrices)
+	// api.GET("/subscription/respondent/product/purchase/prices", controller.FindRespondentPurchasePrices)
+
+	api.GET("/respondent_access_product_prices", controller.FindRespondentAccessProductPrices)
+	api.GET("/respondent_access_product_prices/:id", controller.FindRespondentAccessProductPrice)
+	api.POST("/respondent_access_product_prices", controller.CreateRespondentAccessProductPrice)
+	api.PATCH("/respondent_access_product_prices/:id", controller.UpdateRespondentAccessProductPrice)
+	api.DELETE("/respondent_access_product_prices/:id", controller.DeleteRespondentAccessProductPrice)
+
 	api.GET("/orders", controller.FindOrders)
 	api.GET("/orders/:id", controller.FindOrder)
 	api.POST("/orders", controller.CreateOrder)

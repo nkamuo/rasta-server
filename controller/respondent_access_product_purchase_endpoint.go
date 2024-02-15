@@ -46,6 +46,8 @@ func FindRespondentPurchasePrices(c *gin.Context) {
 		},
 	}
 
+	params.AddExpand("data.tiers")
+
 	iter := price.Search(params)
 	var prices []*stripe.Price
 
@@ -103,19 +105,19 @@ func CreateRespondentPurchaseCheckoutSession(c *gin.Context) {
 	}
 	rUser := rRespondent.User
 
-	pParams := &stripe.PriceParams{}
+	// pParams := &stripe.PriceParams{}
 
-	rPrice, err := price.Get(input.PriceID, pParams)
-	if err != nil {
-		message := fmt.Sprintf("Error fetching prices: %s", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": message})
-		return
-	}
+	// rPrice, err := price.Get(input.PriceID, pParams)
+	// if err != nil {
+	// 	message := fmt.Sprintf("Error fetching prices: %s", err.Error())
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": message})
+	// 	return
+	// }
 
-	mode := stripe.CheckoutSessionModePayment
-	if rPrice.Recurring != nil {
-		mode = stripe.CheckoutSessionModePayment
-	}
+	// mode := stripe.CheckoutSessionModePayment
+	// if rPrice.Recurring != nil {
+	// 	mode = stripe.CheckoutSessionModePayment
+	// }
 
 	var Quantity int64 = 1
 	if input.Quantity != nil {
@@ -130,7 +132,7 @@ func CreateRespondentPurchaseCheckoutSession(c *gin.Context) {
 				Quantity: stripe.Int64(Quantity),
 			},
 		},
-		Mode:     stripe.String(string(mode)),
+		// Mode:     stripe.String(string(mode)),
 		Customer: rUser.StripeCustomerID,
 
 		SuccessURL: stripe.String(config.STRIPE_RESPONDENT_PURCHASE_PRODUCT_SUCCESS_CALLBACK_URL),

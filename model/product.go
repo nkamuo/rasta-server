@@ -22,8 +22,8 @@ type Product struct {
 	IconImage   string          `gorm:"" json:"iconImage,omitempty"`
 	CoverImage  string          `gorm:"" json:"coverImage,omitempty"`
 	Published   *bool           `gorm:"default:false;not null" json:"published"`
-	CreatedAt   time.Time       `gorm:"not null;default:'1970-01-01 00:00:01'" json:"createdAt,omitempty"`
-	UpdatedAt   time.Time       `gorm:"not null;default:'1970-01-01 00:00:01';ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
+	CreatedAt   time.Time       `gorm:"not null;" json:"createdAt,omitempty"`
+	UpdatedAt   time.Time       `gorm:"not null;ON UPDATE CURRENT_TIMESTAMP" json:"updatedAt,omitempty"`
 }
 
 func (product *Product) BeforeCreate(tx *gorm.DB) (err error) {
