@@ -17,9 +17,10 @@ type RespondentAccessProductPurchase struct {
 	// Purchase *int64 `gorm:"default:0;not null" json:"balance"`
 	// The total number of request the user has paid for and can handle
 	//TODO: Decremete this number each time he handles a request
+	PurchaseType *RespondentAccessProductPurchaseType `gorm:"default:'PAID';" json:"purchaseType,omitempty"`
 
-	StripeCheckoutSessionID *string                       `gorm:"not null" json:"stripeCheckoutSessionId,omitempty"`
-	StripePriceID           *string                       `gorm:"not null" json:"stripePriceId,omitempty"`
+	StripeCheckoutSessionID *string                       `gorm:"" json:"stripeCheckoutSessionId,omitempty"`
+	StripePriceID           *string                       `gorm:"" json:"stripePriceId,omitempty"`
 	PriceID                 *uuid.UUID                    `gorm:"type:char(36);" json:"priceId,omitempty"`
 	Price                   *RespondentAccessProductPrice `gorm:"foreignKey:PriceID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"price,omitempty"`
 	// The price ID of the product purchased
@@ -38,3 +39,7 @@ func (balance *RespondentAccessProductPurchase) BeforeCreate(tx *gorm.DB) (err e
 
 	return nil
 }
+
+type RespondentAccessProductPurchaseType string
+
+const RESPONDENT_ACCESS_PRODUCT_PURCHASE_TYPE_GIFT RespondentAccessProductPurchaseType = "GIFT"

@@ -99,8 +99,8 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	/// RESPONDENT SUBSCRIPTION PRODUCT PRICES
 	//////////////////
 
-	api.GET("/subscription/respondent/product/subscription/prices", controller.FindRespondentSubscriptionPrices)
-	api.GET("/subscription/respondent/product/purchase/prices", controller.FindRespondentPurchasePrices)
+	// api.GET("/subscription/respondent/product/subscription/prices", controller.FindRespondentSubscriptionPrices)
+	// api.GET("/subscription/respondent/product/purchase/prices", controller.FindRespondentPurchasePrices)
 	//
 	api.GET("/products", controller.FindProducts)
 	api.GET("/products/find_by_category_and_location", controller.FindProductByCategoryAndLocation)
@@ -230,6 +230,10 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.GET("/respondents/:id/charges", controller.FindRespondentOrderChargesByRespondent)
 	api.GET("/respondents/:id/charges/:charge_id", controller.FindRespondentOrderChargeByRespondent)
 	api.POST("/respondents/:id/charges/:charge_id/update", controller.UpdateRespondentOrderChargeByRespondent)
+	//
+	api.GET("/respondents/:id/access_product_purchases", controller.FindRespondentPurchaseCheckoutSessions)
+	api.POST("/respondents/:id/access_product_purchases", controller.CreateRespondentPurchase)
+
 	//
 	//RESPONDENT - WALLET
 	api.GET("/respondents/:id/wallet", controller.FindRespondentWallet)

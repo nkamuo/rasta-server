@@ -211,7 +211,7 @@ func CreateRespondent(c *gin.Context) {
 }
 
 func FindRespondent(c *gin.Context) {
-	// respondentService := service.GetRespondentService()
+	respondentService := service.GetRespondentService()
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
@@ -219,8 +219,8 @@ func FindRespondent(c *gin.Context) {
 		return
 	}
 	// respondent, err := respondentService.GetById(id)
-	var respondent model.Respondent
-	err = model.DB.Where("id = ?", id).Preload("User").Preload("Place", "AccessBalance", "AccessSubscription").Preload("Company").First(&respondent).Error
+	// var respondent model.Respondent
+	respondent, err := respondentService.GetById(id, "User", "AccessBalance", "AccessSubscription", "Place", "Company")
 	if nil != err {
 		message := fmt.Sprintf("Could not find respondent with [id:%s]: %s", id, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
