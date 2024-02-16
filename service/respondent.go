@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 )
@@ -81,28 +81,54 @@ func (service *respondentServiceImpl) DeleteById(id uuid.UUID) (respondent *mode
 
 func (service *respondentServiceImpl) CanHandleMotoristRequest(respondent *model.Respondent) (result bool, err error) {
 
-	respondentService := GetRespondentService()
-	accessBalanceService := GetRespondentAccessProductBalanceService()
-	subscriptionService := GetRespondentAccessProductSubscriptionService()
+	// respondentService := GetRespondentService()
+	// accessBalanceService := GetRespondentAccessProductBalanceService()
+	// subscriptionService := GetRespondentAccessProductSubscriptionService()
+	orderRepo := repository.GetOrderRepository()
+	respondentOrderChargeRepo := repository.GetRespondentOrderChargeRepository()
 
-	fullRespondent, err := respondentService.GetById(respondent.ID, "User")
+	IsTrue := true
+	count, err := orderRepo.CountByRespondent(respondent, &IsTrue)
+
 	if err != nil {
-		message := fmt.Sprintf("An error occured refetching responder: %s", err.Error())
+		return false, err
+	}
+
+	if count > 0 {
+		message := fmt.Sprintf("You have %d active orders", count)
 		return false, errors.New(message)
 	}
 
-	if balance, err := accessBalanceService.GetByRespondent(respondent); err != nil {
+	var page dto.FinancialPageRequest
+	err = respondentOrderChargeRepo.PaginateByRespondent(respondent, &page)
+	if err != nil {
 		return false, err
-	} else if balance.Balance != nil && *balance.Balance > 0 {
-		return true, nil
 	}
 
-	if _, err := subscriptionService.GetActiveByRespondentAndTime(*fullRespondent, time.Now()); err != nil {
-		return false, err
-	} else {
-
-		return true, nil
+	if page.TotalRows > 0 {
+		return false, nil
 	}
+
+	return true, nil
+
+	// fullRespondent, err := respondentService.GetById(respondent.ID, "User")
+	// if err != nil {
+	// 	message := fmt.Sprintf("An error occured refetching responder: %s", err.Error())
+	// 	return false, errors.New(message)
+	// }
+
+	// if balance, err := accessBalanceService.GetByRespondent(respondent); err != nil {
+	// 	return false, err
+	// } else if balance.Balance != nil && *balance.Balance > 0 {
+	// 	return true, nil
+	// }
+
+	// if _, err := subscriptionService.GetActiveByRespondentAndTime(*fullRespondent, time.Now()); err != nil {
+	// 	return false, err
+	// } else {
+
+	// 	return true, nil
+	// }
 
 	// return false, nil
 }

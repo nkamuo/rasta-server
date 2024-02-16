@@ -18,8 +18,10 @@ type RespondentAccessProductPurchase struct {
 	// The total number of request the user has paid for and can handle
 	//TODO: Decremete this number each time he handles a request
 
-	StripeCheckoutSessionID *string `gorm:"not null" json:"stripeCheckoutSessionId,omitempty"`
-	StripePriceID           *string `gorm:"not null" json:"stripePriceId,omitempty"`
+	StripeCheckoutSessionID *string                       `gorm:"not null" json:"stripeCheckoutSessionId,omitempty"`
+	StripePriceID           *string                       `gorm:"not null" json:"stripePriceId,omitempty"`
+	PriceID                 *uuid.UUID                    `gorm:"type:char(36);" json:"priceId,omitempty"`
+	Price                   *RespondentAccessProductPrice `gorm:"foreignKey:PriceID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"price,omitempty"`
 	// The price ID of the product purchased
 	Quantity  *int64 `gorm:"default:1;not null" json:"quantity,omitempty"`
 	Succeeded *bool  `gorm:"default:false;not null" json:"succeeded,omitempty"`

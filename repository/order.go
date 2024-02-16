@@ -24,6 +24,7 @@ type OrderRepository interface {
 	FindAll(page int, limit int) (orders []model.Order, total int64, err error)
 	GetById(id uuid.UUID, preload ...string) (order *model.Order, err error)
 	GetByFulfilment(fulfilment model.OrderFulfilment) (order *model.Order, err error)
+	CountByRespondent(respondent *model.Respondent, isActive *bool) (count int64, err error)
 	Save(order *model.Order) (err error)
 	Update(order *model.Order, fields map[string]interface{}) (err error)
 	Delete(order *model.Order) (error error)
@@ -68,6 +69,21 @@ func (repo *orderRepository) GetByFulfilment(fulfilment model.OrderFulfilment) (
 		return nil, err
 	}
 	return order, nil
+}
+
+func (repo *orderRepository) CountByRespondent(respondent *model.Respondent, isActive *bool) (count int64, err error) {
+	query := repo.db.Model(&model.Order{})
+	query = query.Joins("LEFT JOIN order_fulfilments ON orders.fulfilment_id = order_fulfilments.id")
+	query = query.Where("order_fulfilments.responder_id = ?", respondent.ID)
+	if isActive != nil {
+		if *isActive {
+			query = query.Where("(order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL)")
+		} else {
+			query = query.Where("(order_fulfilments.client_confirmed_at IS NOT NULL) OR (order_fulfilments.auto_confirmed_at IS NOT NULL)")
+		}
+	}
+	err = query.Count(&count).Error
+	return count, err
 }
 
 func (repo *orderRepository) Save(order *model.Order) (err error) {

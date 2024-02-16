@@ -225,7 +225,6 @@ func (service *orderServiceImpl) CompleteOrder(order *model.Order, isAuto bool, 
 
 	fulfilmentService := GetOrderFulfilmentService()
 	earningService := GetGeneralEarningService()
-	chargeService := GetRespondentOrderChargeService()
 	// orderService := GetOrderService()
 
 	if order == nil {
@@ -278,6 +277,53 @@ func (service *orderServiceImpl) CompleteOrder(order *model.Order, isAuto bool, 
 
 	}
 
+	if err = service.ProcessOrderBilling(order); err != nil {
+		return err
+	}
+
+	if err := earningService.ProcessEarnings(order); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (service *orderServiceImpl) ProcessOrderBilling(order *model.Order) (err error) {
+	chargeService := GetRespondentOrderChargeService()
+	fulfilmentService := GetOrderFulfilmentService()
+
+	respondentService := GetRespondentService()
+	accessBalanceService := GetRespondentAccessProductBalanceService()
+	subscriptionService := GetRespondentAccessProductSubscriptionService()
+
+	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID, "Responder.User")
+
+	respondent, err := respondentService.GetById(*fulfilment.ResponderID, "User")
+	if err != nil {
+		message := fmt.Sprintf("An error occured refetching responder: %s", err.Error())
+		return errors.New(message)
+	}
+
+	if _, err := subscriptionService.GetActiveByRespondentAndTime(*respondent, time.Now()); err != nil {
+		if err.Error() == "record not found" {
+			// Subscribtion not found that covers the current time
+		} else {
+			return err
+		}
+	} else {
+		return nil
+	}
+
+	if balance, err := accessBalanceService.GetByRespondent(respondent); err != nil {
+		return err
+	} else if balance.Balance != nil && *balance.Balance > 0 {
+		balance.Increment(-1)
+		if err := accessBalanceService.Save(balance); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	if _, err := chargeService.CreateForOrder(order); err != nil {
 		if err.Error() == "There is already a charge for this order/request" {
 
@@ -286,9 +332,7 @@ func (service *orderServiceImpl) CompleteOrder(order *model.Order, isAuto bool, 
 		}
 	}
 
-	if err := earningService.ProcessEarnings(order); err != nil {
-		return err
-	}
+	// return false, nil
 
 	return err
 }

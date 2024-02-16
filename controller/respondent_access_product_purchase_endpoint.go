@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/initializers"
@@ -83,6 +84,7 @@ func FindRespondentPurchasePrices(c *gin.Context) {
 func CreateRespondentPurchaseCheckoutSession(c *gin.Context) {
 
 	respondentAccessProductPurchaseService := service.GetRespondentAccessProductPurchaseService()
+	priceService := service.GetRespondentAccessProductPriceService()
 
 	config, err := initializers.LoadConfig()
 	if err != nil {
@@ -114,29 +116,66 @@ func CreateRespondentPurchaseCheckoutSession(c *gin.Context) {
 	// 	return
 	// }
 
-	// mode := stripe.CheckoutSessionModePayment
+	mode := stripe.CheckoutSessionModePayment
 	// if rPrice.Recurring != nil {
 	// 	mode = stripe.CheckoutSessionModePayment
 	// }
+
+	PriceID, err := uuid.Parse(input.PriceID)
+	if err != nil {
+		message := fmt.Sprintf("Error parsing UUID: %s", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": message})
+		return
+	}
+
+	price, err := priceService.GetById(PriceID)
+	if err != nil {
+		message := fmt.Sprintf("Error fetching prices: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": message})
+		return
+	}
+
+	StripePriceID := *price.StripePriceID
 
 	var Quantity int64 = 1
 	if input.Quantity != nil {
 		Quantity = *input.Quantity
 	}
+
+	if !(Quantity >= int64(*price.Upto)) {
+		message := fmt.Sprintf("Quantity must be at least %d", *price.Upto)
+		c.JSON(http.StatusBadRequest, gin.H{"error": message})
+		return
+	}
+
+	CallbackURL := ""
+	DefaultCallback := config.STRIPE_RESPONDENT_PURCHASE_PRODUCT_SUCCESS_CALLBACK_URL
+	Referrer := c.GetHeader("Referer")
+	if Referrer == "" {
+		// Referrer = c.GetHeader("Origin");
+		if DefaultCallback != "" {
+			CallbackURL = DefaultCallback
+		} else {
+			CallbackURL = c.GetHeader("Origin")
+		}
+	} else {
+		CallbackURL = Referrer
+	}
+
 	params := &stripe.CheckoutSessionParams{
 		// Customer: rUser.StripeCustomerID,
 		// PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
-				Price:    stripe.String(input.PriceID), // Replace with your actual Price ID
+				Price:    stripe.String(StripePriceID), // Replace with your actual Price ID
 				Quantity: stripe.Int64(Quantity),
 			},
 		},
-		// Mode:     stripe.String(string(mode)),
+		Mode:     stripe.String(string(mode)),
 		Customer: rUser.StripeCustomerID,
 
-		SuccessURL: stripe.String(config.STRIPE_RESPONDENT_PURCHASE_PRODUCT_SUCCESS_CALLBACK_URL),
-		CancelURL:  stripe.String(config.STRIPE_RESPONDENT_PURCHASE_PRODUCT_SUCCESS_CALLBACK_URL),
+		SuccessURL: stripe.String(CallbackURL),
+		CancelURL:  stripe.String(CallbackURL),
 	}
 
 	session, err := session.New(params)
@@ -149,7 +188,8 @@ func CreateRespondentPurchaseCheckoutSession(c *gin.Context) {
 		RespondentID:            &rRespondent.ID,
 		Quantity:                &Quantity,
 		StripeCheckoutSessionID: &session.ID,
-		StripePriceID:           &input.PriceID,
+		StripePriceID:           &StripePriceID,
+		PriceID:                 &price.ID,
 	}
 
 	if err = respondentAccessProductPurchaseService.Save(purchase); err != nil {

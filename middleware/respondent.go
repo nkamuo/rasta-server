@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +22,8 @@ func CanHandleMotoristRequestMiddleware() gin.HandlerFunc {
 		canHandle, err := respondentService.CanHandleMotoristRequest(responent)
 
 		if err != nil || !canHandle {
-			c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": "Unauthorized"})
+			message := fmt.Sprintf("You are not allowed to handle this request: %s", err.Error())
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 			c.Abort()
 			return
 		}

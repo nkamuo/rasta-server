@@ -9,7 +9,6 @@ import (
 	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
-	"github.com/stripe/stripe-go/v74/price"
 	"gorm.io/gorm"
 )
 
@@ -74,6 +73,7 @@ func (service *purchaseServiceImpl) Commit(purchase *model.RespondentAccessProdu
 	respondentService := GetRespondentService()
 	balanceService := GetRespondentAccessProductBalanceService()
 	subscriptionService := GetRespondentAccessProductSubscriptionService()
+	priceService := GetRespondentAccessProductPriceService()
 
 	respondent, err := respondentService.GetById(*purchase.RespondentID)
 	if err != nil {
@@ -99,26 +99,22 @@ func (service *purchaseServiceImpl) Commit(purchase *model.RespondentAccessProdu
 		return errors.New(message)
 	}
 
-	if purchase.StripePriceID != nil {
-		stripePrice, err := price.Get(*purchase.StripePriceID, nil)
+	if purchase.PriceID != nil {
+		price, err := priceService.GetById(*purchase.PriceID)
 		if err != nil {
 			return err
 		}
-		product := stripePrice.Product
-		ProductID := product.ID
-		if stripePrice.TransformQuantity != nil {
-			var quantity = *purchase.Quantity
-			var multiplier = stripePrice.TransformQuantity.DivideBy
-			var total = quantity * multiplier
-			if ProductID == config.STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID {
+		ProductID := price.ProductID()
+		if ProductID != nil {
+			total := *purchase.Quantity
+			if *ProductID == config.STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID {
 				balance.Increment(total)
-			} else if ProductID == config.STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID {
+			} else if *ProductID == config.STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID {
 				subscription.ExtendByDays((total))
 			} else {
 				message := fmt.Sprintf("Unknown Product ID: %s", ProductID)
 				return errors.New(message)
 			}
-
 		}
 	}
 	*purchase.Succeeded = true

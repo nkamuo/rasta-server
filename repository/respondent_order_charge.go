@@ -4,6 +4,9 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/data/financial"
+	"github.com/nkamuo/rasta-server/data/pagination"
+	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
 	"gorm.io/gorm"
 )
@@ -25,6 +28,7 @@ type RespondentOrderChargeRepository interface {
 	GetById(id uuid.UUID) (respondentCharge *model.RespondentOrderCharge, err error)
 	GetByRequest(request model.Request) (respondentCharge *model.RespondentOrderCharge, err error)
 	FindByRespondent(respondent model.Respondent) (withdrawals *[]model.RespondentOrderCharge, err error)
+	PaginateByRespondent(respondent *model.Respondent, page *dto.FinancialPageRequest) (err error)
 	Save(respondentCharge *model.RespondentOrderCharge) (err error)
 	Delete(respondentCharge *model.RespondentOrderCharge) (error error)
 	DeleteById(id uuid.UUID) (respondentCharge *model.RespondentOrderCharge, err error)
@@ -90,4 +94,15 @@ func (repo *respondentChargeRepository) DeleteById(id uuid.UUID) (respondentChar
 	}
 	err = repo.db.Delete(respondentCharge).Error
 	return respondentCharge, err
+}
+
+func (repo *respondentChargeRepository) PaginateByRespondent(respondent *model.Respondent, page *dto.FinancialPageRequest) (err error) {
+	var charges []model.RespondentOrderCharge
+	query := repo.db.Preload("Request.Product.Place").Preload("Request.Order.User")
+	query = query.Scopes(financial.FilterRequest(nil, page, query))
+	if err = query.Scopes(pagination.Paginate(charges, &page.Page, query)).Find(&charges).Error; nil != err {
+		return err
+	}
+	page.Rows = charges
+	return err
 }
