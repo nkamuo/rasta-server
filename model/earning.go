@@ -25,9 +25,9 @@ type OrderEarning struct {
 
 type OrderEarningStatus = string
 
-const ORDER_EARNING_STATUS_PENDING = "pending"
-const ORDER_EARNING_STATUS_COMPLETED = "completed"
-const ORDER_EARNING_STATUS_CANCELLED = "cancelled"
+const ORDER_EARNING_STATUS_PENDING OrderEarningStatus = "pending"
+const ORDER_EARNING_STATUS_COMPLETED OrderEarningStatus = "completed"
+const ORDER_EARNING_STATUS_CANCELLED OrderEarningStatus = "cancelled"
 
 func (earning OrderEarning) IsCommited() bool {
 	return earning.Status == ORDER_EARNING_STATUS_COMPLETED

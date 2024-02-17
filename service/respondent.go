@@ -100,6 +100,7 @@ func (service *respondentServiceImpl) CanHandleMotoristRequest(respondent *model
 	}
 
 	var page dto.FinancialPageRequest
+	page.Page.Status = []string{model.ORDER_EARNING_STATUS_PENDING} //&[]string{""};
 	err = respondentOrderChargeRepo.PaginateByRespondent(respondent, &page)
 	if err != nil {
 		return false, err
