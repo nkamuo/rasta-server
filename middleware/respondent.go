@@ -28,7 +28,7 @@ func CanHandleMotoristRequestMiddleware() gin.HandlerFunc {
 		}
 
 		if !canHandle {
-			message := fmt.Sprintf("You are not allowed to handle this request: %s", err.Error())
+			message := fmt.Sprintf("You are not allowed to handle this request")
 			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 			c.Abort()
 			return
