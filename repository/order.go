@@ -77,9 +77,9 @@ func (repo *orderRepository) CountByRespondent(respondent *model.Respondent, isA
 	query = query.Where("order_fulfilments.responder_id = ?", respondent.ID)
 	if isActive != nil {
 		if *isActive {
-			query = query.Where("(order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL)")
+			query = query.Where("(order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL) AND (order_fulfilments.responder_confirmed_at IS NULL)")
 		} else {
-			query = query.Where("(order_fulfilments.client_confirmed_at IS NOT NULL) OR (order_fulfilments.auto_confirmed_at IS NOT NULL)")
+			query = query.Where("(order_fulfilments.client_confirmed_at IS NOT NULL) OR (order_fulfilments.auto_confirmed_at IS NOT NULL)  OR (order_fulfilments.responder_confirmed_at IS NOT NULL)")
 		}
 	}
 	err = query.Count(&count).Error

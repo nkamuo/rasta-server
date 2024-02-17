@@ -584,13 +584,13 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 		query = query.Where("orders.status NOT IN ? AND order_fulfilments.id IS NULL", []string{model.ORDER_EARNING_STATUS_COMPLETED, model.ORDER_EARNING_STATUS_CANCELLED})
 		break
 	case "assigned":
-		query = query.Where("order_fulfilments.responder_id = ? AND ((order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL))", respondant.ID)
+		query = query.Where("order_fulfilments.responder_id = ? AND ((order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL) AND (order_fulfilments.responder_confirmed_at IS NULL))", respondant.ID)
 		break
 	case "completed":
-		query = query.Where("order_fulfilments.responder_id = ? AND ((order_fulfilments.client_confirmed_at IS NOT NULL) OR (order_fulfilments.auto_confirmed_at IS NOT NULL))", respondant.ID)
+		query = query.Where("order_fulfilments.responder_id = ? AND ((order_fulfilments.client_confirmed_at IS NOT NULL) OR (order_fulfilments.auto_confirmed_at IS NOT NULL)  OR (order_fulfilments.responder_confirmed_at IS NOT NULL))", respondant.ID)
 		break
 	default:
-		query = query.Where("order_fulfilments.id IS NULL OR ((order_fulfilments.responder_id = ? /*OR respondent_sessions.respondent_id = ?*/) AND ((order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL)))", respondant.ID)
+		query = query.Where("order_fulfilments.id IS NULL OR ((order_fulfilments.responder_id = ? /*OR respondent_sessions.respondent_id = ?*/) )", respondant.ID)
 		break
 	}
 	// RESET STATUS
