@@ -21,7 +21,13 @@ func CanHandleMotoristRequestMiddleware() gin.HandlerFunc {
 
 		canHandle, err := respondentService.CanHandleMotoristRequest(responent)
 
-		if err != nil || !canHandle {
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+			c.Abort()
+			return
+		}
+
+		if !canHandle {
 			message := fmt.Sprintf("You are not allowed to handle this request: %s", err.Error())
 			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 			c.Abort()
