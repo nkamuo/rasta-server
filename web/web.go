@@ -64,6 +64,12 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.POST("/register", controller.Register)
 	api.POST("/login", controller.Login)
 
+	// >> RESET PASSWORD
+	api.POST("/password-reset/request-code", controller.AuthPasswordResetGenerateCode)
+	api.POST("/password-reset/verify-code", controller.AuthPasswordResetVerifyCode)
+	api.POST("/password-reset/change-password", controller.AuthPasswordResetCommit)
+	// >> RESET PASSWORD
+
 	api.GET("/motorist_request_situations", controller.FindMotoristRequestSituations)
 	api.GET("/motorist_request_situations/:id", controller.FindMotoristRequestSituation)
 	api.POST("/motorist_request_situations", controller.CreateMotoristRequestSituation)

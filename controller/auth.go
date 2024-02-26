@@ -124,7 +124,6 @@ func Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "token": token})
-
 }
 
 func GetCurrentUser(c *gin.Context) {
