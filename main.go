@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		fmt.Println("CONFIG ERROR:", err)
 	}
-	if err := model.ConnectDatabase(&config); err != nil {
+	if err := model.ConnectDatabase(config); err != nil {
 		fmt.Println("DATABASE ERROR:", err)
 		return
 	}

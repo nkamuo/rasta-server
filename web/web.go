@@ -199,6 +199,7 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.POST("/users", controller.CreateUser)
 	api.PATCH("/users/:id", controller.UpdateUser)
 	api.DELETE("/users/:id", controller.DeleteUser)
+	api.POST("/users/:id/avatar", controller.UpdateUserAvatar)
 
 	// api.GET("/subscription/respondent/product/subscription/prices", controller.FindRespondentSubscriptionPrices)
 	// api.GET("/subscription/respondent/product/purchase/prices", controller.FindRespondentPurchasePrices)

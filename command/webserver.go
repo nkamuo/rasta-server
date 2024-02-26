@@ -9,6 +9,33 @@ import (
 )
 
 func StartWebServer(config web.WebServerConfig) (err error) {
+
+	sysConfig, err := initializers.LoadConfig()
+	if err != nil {
+		return err
+	}
+
+	if config.AssetDir == "" {
+		config.AssetDir = sysConfig.ASSET_DIR
+	} else {
+		sysConfig.ASSET_DIR = config.AssetDir
+	}
+	if config.PublicPrefix == "" {
+		config.PublicPrefix = sysConfig.PUBLIC_PREFIX
+	} else {
+		sysConfig.PUBLIC_PREFIX = config.PublicPrefix
+	}
+	if config.Addr == "" {
+		config.Addr = sysConfig.SERVER_ADDRESS
+	} else {
+		sysConfig.SERVER_ADDRESS = config.Addr
+	}
+	if config.Port == "" {
+		config.Port = sysConfig.SERVER_PORT
+	} else {
+		sysConfig.SERVER_PORT = config.Port
+	}
+
 	r, err := web.BuildWebServer(config)
 	if err != nil {
 		return err
@@ -29,6 +56,10 @@ func buildWebServerCommand(command *cobra.Command) func(cmd *cobra.Command, args
 		htdocs, _ := command.Flags().GetString("htdocs")
 		index, _ := command.Flags().GetString("index")
 		directoryListing, _ := command.Flags().GetBool("directory-listing")
+
+		// addr := fmt.Sprintf("%s:%s", config.Addr, config.Port)
+
+		// sysConfig.SERVER_ADDRESS = addr
 
 		config := web.WebServerConfig{
 			Addr:                  address,

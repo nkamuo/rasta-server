@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
+	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
@@ -86,6 +87,13 @@ func FindUser(c *gin.Context) {
 func UpdateUserAvatar(c *gin.Context) {
 	userService := service.GetUserService()
 
+	config, err := initializers.LoadConfig()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+
+	}
+
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
@@ -97,6 +105,19 @@ func UpdateUserAvatar(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 	}
 
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Uathentication error: %s", err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if !*rUser.IsAdmin && rUser.ID != user.ID {
+		message := fmt.Sprintf("You may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
 	// var err error;
 
 	// single file
@@ -104,20 +125,37 @@ func UpdateUserAvatar(c *gin.Context) {
 
 	if nil != err {
 		message := fmt.Sprintf("An error occurred: %s", err.Error())
-		c.JSON(http.StatusOK, gin.H{"message": message, "status": "success"})
+		c.JSON(http.StatusOK, gin.H{"message": message, "status": "error"})
 		return
 	}
 
 	// log.Println(file.Filename)
 	ext := filepath.Ext(file.Filename)
-	dst := fmt.Sprintf("users/%s/avatar.%s", user.ID, ext)
+
+	uploadDir := config.UPLOAD_DIR
+	if uploadDir == "" {
+		uploadDir = "uploads"
+	}
+	if config.USER_AVATAR_UPLOAD_DIR != "" {
+		uploadDir = config.USER_AVATAR_UPLOAD_DIR
+	}
+	uploadPath := fmt.Sprintf("%s/users/%s/avatar%s", uploadDir, user.ID, ext)
+	dst := fmt.Sprintf("%s/%s", config.ASSET_DIR, uploadPath)
 
 	// Upload the file to specific dst.
 	err = c.SaveUploadedFile(file, dst)
 
 	if err != nil {
-		message := fmt.Sprintf("An error occurred: %s", err.Error())
-		c.JSON(http.StatusOK, gin.H{"message": message, "status": "success"})
+		message := fmt.Sprintf("An error occurred uploading file: %s", err.Error())
+		c.JSON(http.StatusOK, gin.H{"message": message, "status": "error"})
+		return
+	}
+
+	user.AvatarPath = &uploadPath
+
+	if err = userService.Save(user); err != nil {
+		message := fmt.Sprintf("An error occurred uploading file: %s", err.Error())
+		c.JSON(http.StatusOK, gin.H{"message": message, "status": "error"})
 		return
 	}
 

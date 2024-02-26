@@ -19,6 +19,8 @@ type User struct {
 	IsAdmin   *bool         `gorm:"default:false;not null" json:"isAdmin"`
 	Published bool          `gorm:"default:false;not null" json:"published"`
 	//
+	AvatarPath *string `gorm:"varchar(1000)" json:"avatarPath,omitempty"`
+	//
 	ReferralCode *string    `gorm:"unique;" json:"referralCode" binding:""`
 	ReferrerID   *uuid.UUID `gorm:"" json:"referrerId,omitempty"`
 	Referrer     *User      `gorm:"foreignKey:ReferrerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"referrer,omitempty"`

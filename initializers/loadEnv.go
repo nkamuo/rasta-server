@@ -1,6 +1,8 @@
 package initializers
 
 import (
+	"fmt"
+
 	"github.com/spf13/viper"
 	"github.com/stripe/stripe-go/v74"
 )
@@ -30,7 +32,13 @@ type Config struct {
 
 	SERVER_ADDRESS string `mapstructure:"SERVER_ADDRESS"`
 	SERVER_PORT    string `mapstructure:"SERVER_PORT"`
+	PUBLIC_PREFIX  string `mapstructure:"PUBLIC_PREFIX"`
+	// UPLOAD_DIR   string `mapstructure:"PUBLIC_PREFIX"`
 	//
+
+	ASSET_DIR              string `mapstructure:"ASSET_DIR"`
+	UPLOAD_DIR             string `mapstructure:"UPLOAD_DIR"`
+	USER_AVATAR_UPLOAD_DIR string `mapstructure:"USER_AVATAR_UPLOAD_DIR"`
 
 	STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID     string `mapstructure:"STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID"`
 	STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID string `mapstructure:"STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID"`
@@ -48,10 +56,10 @@ type Config struct {
 
 var loaded bool
 
-func LoadConfig(paths ...string) (config Config, err error) {
+func LoadConfig(paths ...string) (config *Config, err error) {
 
 	if loaded {
-		return *CONFIG, nil
+		return CONFIG, nil
 	}
 	var path string
 	if len(paths) > 0 {
@@ -71,11 +79,27 @@ func LoadConfig(paths ...string) (config Config, err error) {
 	}
 
 	err = viper.Unmarshal(&config)
-	CONFIG = &config
+	CONFIG = config
 
 	stripe.Key = config.STRIPE_SECRET_KEY
 
 	loaded = true
 
 	return config, err
+}
+
+func (c *Config) GetServerAddress() string {
+	// return c.SERVER_ADDRESS + ":" + c.SERVER_PORT
+	serverAddr := c.SERVER_ADDRESS
+	if c.SERVER_PORT != "" {
+		serverAddr += ":" + c.SERVER_PORT
+	}
+	return serverAddr
+}
+
+func (c *Config) ResolvePublicPath(filePath string) string {
+	if c.PUBLIC_PREFIX != "" {
+		filePath = fmt.Sprintf("%s/%s", c.PUBLIC_PREFIX, filePath)
+	}
+	return filePath
 }
