@@ -1,6 +1,10 @@
 package dto
 
-import "github.com/google/uuid"
+import (
+	// "mime/multipart"
+
+	"github.com/google/uuid"
+)
 
 type RespondentCreationInput struct {
 	UserID    uuid.UUID  `json:"userId" binding:"required"`
@@ -21,4 +25,10 @@ type RespondentUpdateInput struct {
 
 type RespondentCompanyAssignmentInput struct {
 	RespondentID uuid.UUID `json:"respondentId" binding:"required"`
+}
+
+type RespondentDocumentVerificationInput struct {
+	Ssn *string `json:"ssn" binding:""`
+	// Documents *[]*ImageDocument `json:"documents,omitempty"`
+	// FileData    *[]*multipart.FileHeader `form:"documents" binding:""`
 }

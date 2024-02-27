@@ -244,6 +244,9 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	// >> RESPONDER DOCUMENTS
 	api.GET("/respondents/:id/documents", controller.FindRespondentDocuments)
 	api.GET("/respondents/:id/documents/type/:type", controller.FindRespondentDocuments)
+	//
+	api.POST("/respondents/:id/documents/type/:type", controller.UpdateRespondentDocuments)
+	api.POST("/respondents/:id/documents", controller.UpdateRespondentDocuments)
 	// << RESPONDER DOCUMENTS
 
 	//

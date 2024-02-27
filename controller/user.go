@@ -91,7 +91,6 @@ func UpdateUserAvatar(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
 		return
-
 	}
 
 	id, err := uuid.Parse(c.Param("id"))
@@ -129,9 +128,6 @@ func UpdateUserAvatar(c *gin.Context) {
 		return
 	}
 
-	// log.Println(file.Filename)
-	ext := filepath.Ext(file.Filename)
-
 	uploadDir := config.UPLOAD_DIR
 	if uploadDir == "" {
 		uploadDir = "uploads"
@@ -139,6 +135,10 @@ func UpdateUserAvatar(c *gin.Context) {
 	if config.USER_AVATAR_UPLOAD_DIR != "" {
 		uploadDir = config.USER_AVATAR_UPLOAD_DIR
 	}
+
+	// log.Println(file.Filename)
+	ext := filepath.Ext(file.Filename)
+
 	uploadPath := fmt.Sprintf("%s/users/%s/avatar%s", uploadDir, user.ID, ext)
 	dst := fmt.Sprintf("%s/%s", config.ASSET_DIR, uploadPath)
 

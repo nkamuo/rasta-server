@@ -26,6 +26,11 @@ type Respondent struct {
 	// CurrentLocationEntryID *uuid.UUID                      `gorm:"unique" json:"currentLocationEntryId,omitempty"`
 	// CurrentLocationEntry   *RespondentSessionLocationEntry `gorm:"foreignKey:CurrentLocationEntryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"currentLocationEntry,omitempty"`
 
+	// >> DOCUMENTS AND VERIFICATIONS
+	Ssn       *string           `gorm: "type:varchar(32);unique" json:"ssn,omitempty"`
+	Documents *[]*ImageDocument `gorm:"foreignKey:ResponderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"documents,omitempty"`
+	// DOCUMENTS
+
 	//ASSOCIATED USER ACCOUNT
 	UserID *uuid.UUID `gorm:";unique" json:"userId,omitempty"`
 	User   *User      `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user,omitempty"`

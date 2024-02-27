@@ -3,14 +3,17 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
+	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/repository"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -395,6 +398,11 @@ func FindRespondentDocuments(c *gin.Context) {
 	var page pagination.Page
 	var documents []model.ImageDocument
 
+	if err := c.ShouldBindQuery(&page); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
 	query := model.DB.Where("responder_id = ?", respondent.ID)
 	if docType != "" {
 		query = query.Where("doc_type = ?", docType)
@@ -410,4 +418,137 @@ func FindRespondentDocuments(c *gin.Context) {
 	page.Rows = documents
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": page})
+}
+
+func UpdateRespondentDocuments(c *gin.Context) {
+	respondentService := service.GetRespondentService()
+
+	config, err := initializers.LoadConfig()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	// docType := c.Param("type")
+	// if docType == "" {
+	// 	docType = c.Query("type")
+	// }
+
+	var input dto.RespondentDocumentVerificationInput
+	if err := c.Bind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Access denied: %s", "You may not access this resource")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
+		return
+	}
+	// respondent, err := respondentService.GetById(id)
+	// var respondent model.Respondent
+	respondent, err := respondentService.GetById(id, "User", "AccessBalance", "AccessSubscription", "Place", "Company")
+	if nil != err {
+		message := fmt.Sprintf("Could not find respondent with [id:%s]: %s", id, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if !*rUser.IsAdmin && rUser.ID.String() != respondent.UserID.String() {
+		message := fmt.Sprintf("Access denied: %s", "You may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	uploadDir := config.UPLOAD_DIR
+	if config.RESPONDER_DOCUMENT_UPLOAD_DIR != "" {
+		uploadDir = config.RESPONDER_DOCUMENT_UPLOAD_DIR
+	}
+	if uploadDir == "" {
+		uploadDir = "uploads"
+	}
+
+	// Multipart form
+	form, _ := c.MultipartForm()
+	files := form.File["documents[]"]
+
+	var documents []model.ImageDocument
+
+	for _, file := range files {
+		// log.Println(file.Filename)
+		ext := filepath.Ext(file.Filename)
+		newName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+
+		uploadPath := fmt.Sprintf("%s/responder/%s/documents/%s", uploadDir, respondent.ID, newName)
+		dst := fmt.Sprintf("%s/%s", config.ASSET_DIR, uploadPath)
+		// Upload the file to specific dst.
+		err = c.SaveUploadedFile(file, dst)
+		if err != nil {
+			message := fmt.Sprintf("An error occurred uploading file: %s", err.Error())
+			c.JSON(http.StatusOK, gin.H{"message": message, "status": "error"})
+			return
+		}
+
+		docType := "DRIVER_LICENSE" //file.Header.Get("docType")
+
+		document := model.ImageDocument{
+			ResponderID:  &respondent.ID,
+			DocType:      &docType,
+			FilePath:     uploadPath,
+			Size:         file.Size,
+			OriginalName: file.Filename,
+			Extension:    ext,
+		}
+		documents = append(documents, document)
+	}
+
+	err = model.DB.Transaction(func(tx *gorm.DB) error {
+		if !*rUser.IsAdmin {
+			respondent.Active = false
+		}
+		if input.Ssn != nil {
+			respondent.Ssn = input.Ssn
+			tx.Save(respondent)
+		}
+		for _, document := range documents {
+			if err := tx.Create(&document).Error; nil != err {
+				return err
+			}
+		}
+		return nil
+	})
+
+	if nil != err {
+		message := fmt.Sprintf("An error occured: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": respondent})
+
+	// c.String(http.StatusOK, fmt.Sprintf("%d files uploaded!", len(files)))
+
+	// var page pagination.Page
+
+	// query := model.DB.Where("responder_id = ?", respondent.ID)
+	// if docType != "" {
+	// 	query = query.Where("doc_type = ?", docType)
+	// }
+
+	// query = query.Scopes(pagination.Paginate(documents, &page, query))
+
+	// if err = query.Find(&documents).Error; err != nil {
+	// 	message := fmt.Sprintf("An error occured: %s", err.Error())
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+	// }
+
+	// page.Rows = documents
+
 }

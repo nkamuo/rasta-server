@@ -36,9 +36,10 @@ type Config struct {
 	// UPLOAD_DIR   string `mapstructure:"PUBLIC_PREFIX"`
 	//
 
-	ASSET_DIR              string `mapstructure:"ASSET_DIR"`
-	UPLOAD_DIR             string `mapstructure:"UPLOAD_DIR"`
-	USER_AVATAR_UPLOAD_DIR string `mapstructure:"USER_AVATAR_UPLOAD_DIR"`
+	ASSET_DIR                     string `mapstructure:"ASSET_DIR"`
+	UPLOAD_DIR                    string `mapstructure:"UPLOAD_DIR"`
+	USER_AVATAR_UPLOAD_DIR        string `mapstructure:"USER_AVATAR_UPLOAD_DIR"`
+	RESPONDER_DOCUMENT_UPLOAD_DIR string `mapstructure:"RESPONDER_DOCUMENT_UPLOAD_DIR"`
 
 	STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID     string `mapstructure:"STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID"`
 	STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID string `mapstructure:"STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID"`
