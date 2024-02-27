@@ -241,6 +241,11 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.GET("/respondents/:id/access_product_purchases", controller.FindRespondentPurchaseCheckoutSessions)
 	api.POST("/respondents/:id/access_product_purchases", controller.CreateRespondentPurchase)
 
+	// >> RESPONDER DOCUMENTS
+	api.GET("/respondents/:id/documents", controller.FindRespondentDocuments)
+	api.GET("/respondents/:id/documents/type/:type", controller.FindRespondentDocuments)
+	// << RESPONDER DOCUMENTS
+
 	//
 	//RESPONDENT - WALLET
 	api.GET("/respondents/:id/wallet", controller.FindRespondentWallet)
@@ -286,6 +291,11 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.POST("/vehicles", controller.CreateVehicle)
 	api.PATCH("/vehicles/:id", controller.UpdateVehicle)
 	api.DELETE("/vehicles/:id", controller.DeleteVehicle)
+
+	// >> VEHICLE DOCUMENTS
+	api.GET("/vehicles/:id/documents", controller.FindVehicleDocuments)
+	api.GET("/vehicles/:id/documents/type/:type", controller.FindVehicleDocuments)
+	// << VEHICLE DOCUMENTS
 
 	api.GET("/product_respondent_assignments", controller.FindProductRespondentAssignments)
 	api.GET("/product_respondent_assignments/:id", controller.FindProductRespondentAssignment)

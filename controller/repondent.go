@@ -218,6 +218,13 @@ func FindRespondent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
 		return
 	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Access denied: %s", "You may not access this resource")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
+		return
+	}
 	// respondent, err := respondentService.GetById(id)
 	// var respondent model.Respondent
 	respondent, err := respondentService.GetById(id, "User", "AccessBalance", "AccessSubscription", "Place", "Company")
@@ -226,6 +233,14 @@ func FindRespondent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
+
+	if !*rUser.IsAdmin && rUser.ID.String() != respondent.UserID.String() {
+
+		message := fmt.Sprintf("Access denied: %s", "You may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": respondent})
 }
 
@@ -339,4 +354,60 @@ func DeleteRespondent(c *gin.Context) {
 
 	message := fmt.Sprintf("Deleted respondent \"%s\"", respondent.ID)
 	c.JSON(http.StatusOK, gin.H{"data": respondent, "status": "success", "message": message})
+}
+
+func FindRespondentDocuments(c *gin.Context) {
+	respondentService := service.GetRespondentService()
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	docType := c.Param("type")
+	if docType == "" {
+		docType = c.Query("type")
+	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Access denied: %s", "You may not access this resource")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
+		return
+	}
+	// respondent, err := respondentService.GetById(id)
+	// var respondent model.Respondent
+	respondent, err := respondentService.GetById(id, "User", "AccessBalance", "AccessSubscription", "Place", "Company")
+	if nil != err {
+		message := fmt.Sprintf("Could not find respondent with [id:%s]: %s", id, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if !*rUser.IsAdmin && rUser.ID.String() != respondent.UserID.String() {
+
+		message := fmt.Sprintf("Access denied: %s", "You may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	var page pagination.Page
+	var documents []model.ImageDocument
+
+	query := model.DB.Where("responder_id = ?", respondent.ID)
+	if docType != "" {
+		query = query.Where("doc_type = ?", docType)
+	}
+
+	query = query.Scopes(pagination.Paginate(documents, &page, query))
+
+	if err = query.Find(&documents).Error; err != nil {
+		message := fmt.Sprintf("An error occured: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+	}
+
+	page.Rows = documents
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": page})
 }

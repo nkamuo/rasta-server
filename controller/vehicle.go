@@ -291,6 +291,61 @@ func DeleteVehicle(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": vehicle, "status": "success", "message": message})
 }
 
+func FindVehicleDocuments(c *gin.Context) {
+	vehicleService := service.GetVehicleService()
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	docType := c.Param("type")
+	if docType == "" {
+		docType = c.Query("type")
+	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Access denied: %s", "You may not access this resource")
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	vehicle, err := vehicleService.GetById(id, "Owner")
+	if nil != err {
+		message := fmt.Sprintf("Could not find respondent with [id:%s]: %s", id, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if !*rUser.IsAdmin && rUser.ID.String() != vehicle.OwnerID.String() {
+
+		message := fmt.Sprintf("Access denied: %s", "You may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	var page pagination.Page
+	var documents []model.ImageDocument
+
+	query := model.DB.Where("vehicle_id = ?", vehicle.ID)
+	if docType != "" {
+		query = query.Where("doc_type = ?", docType)
+	}
+
+	query = query.Scopes(pagination.Paginate(documents, &page, query))
+
+	if err = query.Find(&documents).Error; err != nil {
+		message := fmt.Sprintf("An error occured: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+	}
+
+	page.Rows = documents
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": page})
+}
+
 func ValidateVehicleCategory(category model.VehicleCategory) (err error) {
 	switch category {
 	case model.PRODUCT_FLAT_TIRE_SERVICE:

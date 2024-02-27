@@ -72,6 +72,8 @@ func ConnectDatabase(config *initializers.Config) (err error) {
 		&UserPassword{},
 		// &LocationCoordinates{},
 		&RespondentSessionLocationEntry{},
+		//
+		&ImageDocument{},
 	)
 	if err != nil {
 		return err
