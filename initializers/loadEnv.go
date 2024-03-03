@@ -32,9 +32,10 @@ type Config struct {
 
 	HTTPS bool `mapstructure:"HTTPS"`
 
-	SERVER_ADDRESS string `mapstructure:"SERVER_ADDRESS"`
-	SERVER_PORT    *uint  `mapstructure:"SERVER_PORT"`
-	PUBLIC_PREFIX  string `mapstructure:"PUBLIC_PREFIX"`
+	SERVER_ADDRESS   string `mapstructure:"SERVER_ADDRESS"`
+	SERVER_HOST_NAME string `mapstructure:"SERVER_HOST_NAME"`
+	SERVER_PORT      *uint  `mapstructure:"SERVER_PORT"`
+	PUBLIC_PREFIX    string `mapstructure:"PUBLIC_PREFIX"`
 	// UPLOAD_DIR   string `mapstructure:"PUBLIC_PREFIX"`
 	//
 
@@ -105,7 +106,10 @@ func (c *Config) GetServerURL() string {
 	if c.HTTPS {
 		scheme = "https"
 	}
-	serverAddr := c.SERVER_ADDRESS
+	serverAddr := c.SERVER_HOST_NAME
+	if serverAddr == "" {
+		serverAddr = c.SERVER_ADDRESS
+	}
 	if serverAddr == "" {
 		// serverAddr = "127.0.0.1"
 		serverAddr = "10.0.2.2" // TO WORK WITH ANDROID EMULATOR FOR TESTING
