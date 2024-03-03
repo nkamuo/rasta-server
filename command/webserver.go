@@ -30,17 +30,19 @@ func StartWebServer(config web.WebServerConfig) (err error) {
 	} else {
 		sysConfig.SERVER_ADDRESS = config.Addr
 	}
-	if config.Port == "" {
-		config.Port = sysConfig.SERVER_PORT
+	if config.Port == 0 {
+		if sysConfig.SERVER_PORT != nil {
+			config.Port = *sysConfig.SERVER_PORT
+		}
 	} else {
-		sysConfig.SERVER_PORT = config.Port
+		sysConfig.SERVER_PORT = &config.Port
 	}
 
 	r, err := web.BuildWebServer(config)
 	if err != nil {
 		return err
 	}
-	addr := fmt.Sprintf("%s:%s", config.Addr, config.Port)
+	addr := fmt.Sprintf("%s:%d", config.Addr, config.Port)
 	err = r.Run(addr)
 	return
 }
@@ -51,7 +53,7 @@ func buildWebServerCommand(command *cobra.Command) func(cmd *cobra.Command, args
 		// password, _ := rootCmd.Flags().GetString("password")
 
 		address, _ := command.Flags().GetString("address")
-		port, _ := command.Flags().GetString("port")
+		port, _ := command.Flags().GetUint("port")
 		publicPrefix, _ := command.Flags().GetString("public-prefix")
 		htdocs, _ := command.Flags().GetString("htdocs")
 		index, _ := command.Flags().GetString("index")
@@ -94,13 +96,14 @@ func init() {
 	webserverCmd.Run = buildWebServerCommand(webserverCmd)
 	SERVER_ADDRESS := config.SERVER_ADDRESS
 	SERVER_PORT := config.SERVER_PORT
-	if SERVER_PORT == "" {
-		SERVER_PORT = "8090"
+	if SERVER_PORT == nil {
+		P := uint(8090)
+		SERVER_PORT = &P
 	}
 
 	rootCmd.AddCommand(webserverCmd)
 	webserverCmd.PersistentFlags().StringP("address", "a", SERVER_ADDRESS, "the ip address to bind the server to")
-	webserverCmd.PersistentFlags().StringP("port", "p", SERVER_PORT, "the port to bind the request to")
+	webserverCmd.PersistentFlags().UintP("port", "p", *SERVER_PORT, "the port to bind the request to")
 
 	webserverCmd.PersistentFlags().StringP("htdocs", "", "", "The assets folder for HTML, CSS, JS files")
 	webserverCmd.PersistentFlags().StringP("public-prefix", "", "", "The prefix that will be served from the htdocs folder")

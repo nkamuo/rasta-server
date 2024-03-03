@@ -1,8 +1,6 @@
 package dto
 
 import (
-	// "mime/multipart"
-
 	"github.com/google/uuid"
 )
 
@@ -28,7 +26,7 @@ type RespondentCompanyAssignmentInput struct {
 }
 
 type RespondentDocumentVerificationInput struct {
-	Ssn *string `json:"ssn" binding:""`
+	Ssn *string `form:"ssn" json:"ssn" binding:""`
 	// Documents *[]*ImageDocument `json:"documents,omitempty"`
-	// FileData    *[]*multipart.FileHeader `form:"documents" binding:""`
+	// FileData *[]*multipart.FileHeader `form:"documents" binding:""`
 }

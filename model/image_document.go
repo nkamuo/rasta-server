@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/initializers"
 	"gorm.io/gorm"
 )
 
@@ -42,3 +43,31 @@ func (document *ImageDocument) BeforeCreate(tx *gorm.DB) (err error) {
 	document.UpdatedAt = time.Now()
 	return nil
 }
+
+func (document *ImageDocument) PublicPath() string {
+	config, err := initializers.LoadConfig()
+	if err != nil {
+		// return err
+		message := "Error loading config"
+		panic(message)
+	}
+	return config.ResolvePublicPath(document.FilePath)
+}
+
+func ResolveDocumentSlicePublicPaths(documents *[]*ImageDocument) {
+	config, err := initializers.LoadConfig()
+	if err != nil {
+		// return err
+		message := "Error loading config"
+		panic(message)
+	}
+	if documents != nil {
+		for _, doc := range *documents {
+			doc.FilePath = config.ResolvePublicPath(doc.FilePath)
+		}
+	}
+}
+
+// for _, doc := range documents {
+// 	doc.FilePath = config.ResolvePublicPath(doc.FilePath)
+// }

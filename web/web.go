@@ -293,6 +293,7 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.GET("/vehicles/:id", controller.FindVehicle)
 	api.POST("/vehicles", controller.CreateVehicle)
 	api.PATCH("/vehicles/:id", controller.UpdateVehicle)
+	api.POST("/vehicles/:id", controller.UpdateVehicle)
 	api.DELETE("/vehicles/:id", controller.DeleteVehicle)
 
 	// >> VEHICLE DOCUMENTS
@@ -345,7 +346,7 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 
 type WebServerConfig struct {
 	Addr                  string
-	Port                  string
+	Port                  uint
 	IndexFile             string
 	AssetDir              string
 	PublicPrefix          string

@@ -3,7 +3,10 @@ package model
 import (
 	"time"
 
+	os "os"
+
 	"github.com/google/uuid"
+	"github.com/nkamuo/rasta-server/initializers"
 	"gorm.io/gorm"
 )
 
@@ -54,4 +57,51 @@ func (Respondent *Respondent) BeforeCreate(tx *gorm.DB) (err error) {
 
 func (Respondent *Respondent) Independent() bool {
 	return Respondent.CompanyID == nil
+}
+
+func (responder *Respondent) ClearDocuments(types ...string) (err error) {
+	// if len(types) == 0 {
+	// 	responder.Documents = nil
+	// 	return nil
+	// }
+	config, err := initializers.LoadConfig()
+	if err != nil {
+		return err
+	}
+
+	var fullRespondent Respondent
+	if err = DB.Where("id = ?", responder.ID).Preload("Documents").First(&fullRespondent).Error; err != nil {
+		return err
+	}
+
+	var tLength = len(types)
+	var newDocuments []*ImageDocument
+	for _, doc := range *fullRespondent.Documents {
+		docType := doc.DocType
+		if tLength == 0 || (docType != nil && contains(types, *docType)) {
+			//REMOVE THIS DOCUMENT
+			nativePath := config.ResolveNativePath(doc.FilePath)
+			// Delete File
+			if err = os.Remove(nativePath); err != nil {
+				return err
+			}
+			if err = DB.Delete(doc).Error; err != nil {
+				return err
+			}
+
+		} else {
+			newDocuments = append(newDocuments, doc)
+		}
+	}
+	responder.Documents = &newDocuments
+	return nil
+}
+
+func contains(slice []string, element string) bool {
+	for _, value := range slice {
+		if value == element {
+			return true
+		}
+	}
+	return false
 }

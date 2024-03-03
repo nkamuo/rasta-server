@@ -1,0 +1,4 @@
+curl -X POST http://localhost:8090/api/users/25af6352-c303-476b-bf56-d9ac35334e31/avatar ^
+  -F "file=@C:\workspace\fiverr\bernadette\ims-ui\dist\assets\avatar-4FNYbrfr.png" ^
+  -H "Content-Type: multipart/form-data" ^
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE3MjE5MjE4OTEsInVzZXJfaWQiOiIyNWFmNjM1Mi1jMzAzLTQ3NmItYmY1Ni1kOWFjMzUzMzRlMzEifQ._ipud8qvtR_IMraIwMQHGkLt4DgG5FXhH9ZtY0FxFCk"

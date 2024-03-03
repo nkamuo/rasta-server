@@ -230,7 +230,7 @@ func FindRespondent(c *gin.Context) {
 	}
 	// respondent, err := respondentService.GetById(id)
 	// var respondent model.Respondent
-	respondent, err := respondentService.GetById(id, "User", "AccessBalance", "AccessSubscription", "Place", "Company")
+	respondent, err := respondentService.GetById(id, "User", "AccessBalance", "AccessSubscription", "Place", "Company", "Documents")
 	if nil != err {
 		message := fmt.Sprintf("Could not find respondent with [id:%s]: %s", id, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
@@ -243,6 +243,7 @@ func FindRespondent(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
 		return
 	}
+	model.ResolveDocumentSlicePublicPaths(respondent.Documents)
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": respondent})
 }
@@ -255,11 +256,13 @@ func GetCurrentRespondent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
-	respondent, err := respondentRepo.GetByUser(*user, "User", "Place", "Vehicle", "Company", "AccessBalance", "AccessSubscription")
+	respondent, err := respondentRepo.GetByUser(*user, "User", "Place", "Vehicle", "Company", "AccessBalance", "AccessSubscription", "Documents")
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
+
+	model.ResolveDocumentSlicePublicPaths(respondent.Documents)
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": respondent})
 
 }
@@ -396,7 +399,7 @@ func FindRespondentDocuments(c *gin.Context) {
 	}
 
 	var page pagination.Page
-	var documents []model.ImageDocument
+	var documents []*model.ImageDocument
 
 	if err := c.ShouldBindQuery(&page); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
@@ -414,6 +417,8 @@ func FindRespondentDocuments(c *gin.Context) {
 		message := fmt.Sprintf("An error occured: %s", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
 	}
+
+	model.ResolveDocumentSlicePublicPaths(&documents)
 
 	page.Rows = documents
 
@@ -441,7 +446,7 @@ func UpdateRespondentDocuments(c *gin.Context) {
 	// }
 
 	var input dto.RespondentDocumentVerificationInput
-	if err := c.Bind(&input); err != nil {
+	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
@@ -454,7 +459,7 @@ func UpdateRespondentDocuments(c *gin.Context) {
 	}
 	// respondent, err := respondentService.GetById(id)
 	// var respondent model.Respondent
-	respondent, err := respondentService.GetById(id, "User", "AccessBalance", "AccessSubscription", "Place", "Company")
+	respondent, err := respondentService.GetById(id)
 	if nil != err {
 		message := fmt.Sprintf("Could not find respondent with [id:%s]: %s", id, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
@@ -475,38 +480,42 @@ func UpdateRespondentDocuments(c *gin.Context) {
 		uploadDir = "uploads"
 	}
 
-	// Multipart form
-	form, _ := c.MultipartForm()
-	files := form.File["documents[]"]
-
 	var documents []model.ImageDocument
 
-	for _, file := range files {
-		// log.Println(file.Filename)
-		ext := filepath.Ext(file.Filename)
-		newName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+	// Multipart form
+	form, _ := c.MultipartForm()
+	if form != nil {
+		files := form.File["documents[]"]
+		if len(files) != 0 {
 
-		uploadPath := fmt.Sprintf("%s/responder/%s/documents/%s", uploadDir, respondent.ID, newName)
-		dst := fmt.Sprintf("%s/%s", config.ASSET_DIR, uploadPath)
-		// Upload the file to specific dst.
-		err = c.SaveUploadedFile(file, dst)
-		if err != nil {
-			message := fmt.Sprintf("An error occurred uploading file: %s", err.Error())
-			c.JSON(http.StatusOK, gin.H{"message": message, "status": "error"})
-			return
+			for _, file := range files {
+				// log.Println(file.Filename)
+				ext := filepath.Ext(file.Filename)
+				newName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+
+				uploadPath := fmt.Sprintf("%s/responder/%s/documents/%s", uploadDir, respondent.ID, newName)
+				dst := fmt.Sprintf("%s/%s", config.ASSET_DIR, uploadPath)
+				// Upload the file to specific dst.
+				err = c.SaveUploadedFile(file, dst)
+				if err != nil {
+					message := fmt.Sprintf("An error occurred uploading file: %s", err.Error())
+					c.JSON(http.StatusOK, gin.H{"message": message, "status": "error"})
+					return
+				}
+
+				docType := "DRIVER_LICENSE" //file.Header.Get("docType")
+
+				document := model.ImageDocument{
+					ResponderID:  &respondent.ID,
+					DocType:      &docType,
+					FilePath:     uploadPath,
+					Size:         file.Size,
+					OriginalName: file.Filename,
+					Extension:    ext,
+				}
+				documents = append(documents, document)
+			}
 		}
-
-		docType := "DRIVER_LICENSE" //file.Header.Get("docType")
-
-		document := model.ImageDocument{
-			ResponderID:  &respondent.ID,
-			DocType:      &docType,
-			FilePath:     uploadPath,
-			Size:         file.Size,
-			OriginalName: file.Filename,
-			Extension:    ext,
-		}
-		documents = append(documents, document)
 	}
 
 	err = model.DB.Transaction(func(tx *gorm.DB) error {
@@ -516,6 +525,14 @@ func UpdateRespondentDocuments(c *gin.Context) {
 		if input.Ssn != nil {
 			respondent.Ssn = input.Ssn
 			tx.Save(respondent)
+		}
+		// CLEAR EXISTING DOCUMENTS
+
+		// if err := tx.Where("responder_id = ?", respondent.ID).Delete(&model.ImageDocument{}).Error; nil != err {
+		// 	return err
+		// }
+		if err = respondent.ClearDocuments(); err != nil {
+			return err
 		}
 		for _, document := range documents {
 			if err := tx.Create(&document).Error; nil != err {

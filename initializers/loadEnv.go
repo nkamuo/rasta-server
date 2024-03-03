@@ -30,8 +30,10 @@ type Config struct {
 
 	RESPONDENT_ORDER_CHARGE_AMOUNT uint64 `mapstructure:"RESPONDENT_ORDER_CHARGE_AMOUNT"`
 
+	HTTPS bool `mapstructure:"HTTPS"`
+
 	SERVER_ADDRESS string `mapstructure:"SERVER_ADDRESS"`
-	SERVER_PORT    string `mapstructure:"SERVER_PORT"`
+	SERVER_PORT    *uint  `mapstructure:"SERVER_PORT"`
 	PUBLIC_PREFIX  string `mapstructure:"PUBLIC_PREFIX"`
 	// UPLOAD_DIR   string `mapstructure:"PUBLIC_PREFIX"`
 	//
@@ -43,6 +45,9 @@ type Config struct {
 
 	STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID     string `mapstructure:"STRIPE_RESPONDENT_PURCHASE_PRODUCT_ID"`
 	STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID string `mapstructure:"STRIPE_RESPONDENT_SUBSCRIPTION_PRODUCT_ID"`
+	//
+
+	VEHICLE_DOCUMENT_UPLOAD_DIR string `mapstructure:"VEHICLE_DOCUMENT_UPLOAD_DIR"`
 	//
 
 	STRIPE_RESPONDENT_PURCHASE_PRODUCT_SUCCESS_CALLBACK_URL string `mapstructure:"STRIPE_RESPONDENT_PURCHASE_PRODUCT_SUCCESS_CALLBACK_URL"`
@@ -89,18 +94,43 @@ func LoadConfig(paths ...string) (config *Config, err error) {
 	return config, err
 }
 
-func (c *Config) GetServerAddress() string {
-	// return c.SERVER_ADDRESS + ":" + c.SERVER_PORT
-	serverAddr := c.SERVER_ADDRESS
-	if c.SERVER_PORT != "" {
-		serverAddr += ":" + c.SERVER_PORT
+var publicUrl *string
+
+func (c *Config) GetServerURL() string {
+	if publicUrl != nil {
+		return *publicUrl
 	}
+	// return c.SERVER_ADDRESS + ":" + c.SERVER_PORT
+	scheme := "http"
+	if c.HTTPS {
+		scheme = "https"
+	}
+	serverAddr := c.SERVER_ADDRESS
+	if serverAddr == "" {
+		// serverAddr = "127.0.0.1"
+		serverAddr = "10.0.2.2" // TO WORK WITH ANDROID EMULATOR FOR TESTING
+	}
+	serverAddr = fmt.Sprintf("%s://%s", scheme, serverAddr)
+	if c.SERVER_PORT != nil {
+		if (c.HTTPS && *c.SERVER_PORT != 443) || (!c.HTTPS) && *c.SERVER_PORT != 80 {
+			serverAddr = fmt.Sprintf("%s:%d", serverAddr, *c.SERVER_PORT)
+		}
+	}
+	publicUrl = &serverAddr
 	return serverAddr
 }
 
 func (c *Config) ResolvePublicPath(filePath string) string {
 	if c.PUBLIC_PREFIX != "" {
-		filePath = fmt.Sprintf("%s/%s", c.PUBLIC_PREFIX, filePath)
+		serverAddr := c.GetServerURL()
+		filePath = fmt.Sprintf("%s/%s/%s", serverAddr, c.PUBLIC_PREFIX, filePath)
+	}
+	return filePath
+}
+
+func (c *Config) ResolveNativePath(filePath string) string {
+	if c.ASSET_DIR != "" {
+		filePath = fmt.Sprintf("%s/%s", c.ASSET_DIR, filePath)
 	}
 	return filePath
 }

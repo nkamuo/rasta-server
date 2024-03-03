@@ -37,7 +37,7 @@ func main() {
 
 	// command.Execute()
 	command.StartWebServer(web.WebServerConfig{
-		Port: "8090",
+		Port: 8090,
 	})
 }
 

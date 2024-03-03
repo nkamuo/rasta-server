@@ -1,16 +1,18 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/nkamuo/rasta-server/data/pagination"
 	"github.com/nkamuo/rasta-server/dto"
+	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/service"
 	"github.com/nkamuo/rasta-server/utils/auth"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -144,27 +146,51 @@ func CreateVehicle(c *gin.Context) {
 		return
 	}
 
+	if err = UpdateVehicleDocuments(c, &vehicle, rUser); err != nil {
+		message := fmt.Sprintf("An error occured: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	model.ResolveDocumentSlicePublicPaths(vehicle.Documents)
 	c.JSON(http.StatusOK, gin.H{"data": vehicle, "status": "success"})
 }
 
 func FindVehicle(c *gin.Context) {
-	// vehicleService := service.GetVehicleService()
+	vehicleService := service.GetVehicleService()
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
 
 	id, err := uuid.Parse(c.Param("id"))
 	if nil != err {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
 		return
 	}
-
-	var vehicle model.Vehicle
-
-	query := model.DB.Preload("Model").Preload("Owner")
-	if err := query.First(&vehicle, "id = ?", id).Error; err != nil {
+	// Preload("Respondent.User").Preload("Assignments").Preload("Assignments.Assignment.Product")
+	vehicle, err := vehicleService.GetById(id, "Owner", "Documents")
+	if nil != err {
 		message := fmt.Sprintf("Could not find vehicle with [id:%s]", id)
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": vehicle})
+
+	if *rUser.IsAdmin {
+		/// USER IS ADMIN - ADMIN CAN VIEW ANY SESSION
+	} else {
+		// USER IS NOT ADMIN - USER CAN ONLY VIEW HIS/HER VEHICLE
+		if rUser.ID.String() != (*vehicle.OwnerID).String() {
+			message := fmt.Sprintf("Could not find your vehicle with [id:%s]", id)
+			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+			return
+		}
+	}
+	model.ResolveDocumentSlicePublicPaths(vehicle.Documents)
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": vehicle})
 }
 
 func UpdateVehicle(c *gin.Context) {
@@ -181,7 +207,7 @@ func UpdateVehicle(c *gin.Context) {
 	}
 
 	var input dto.VehicleUpdateInput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -264,6 +290,14 @@ func UpdateVehicle(c *gin.Context) {
 		return
 	}
 
+	if err = UpdateVehicleDocuments(c, vehicle, rUser); err != nil {
+		message := fmt.Sprintf("An error occured while updating Images: %s", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	model.ResolveDocumentSlicePublicPaths(vehicle.Documents)
+
 	message := fmt.Sprintf("Updated model \"%s\"", vehicle.ID)
 	c.JSON(http.StatusOK, gin.H{"data": vehicle, "status": "success", "message": message})
 }
@@ -286,6 +320,8 @@ func DeleteVehicle(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"data": vehicle, "status": "success", "message": message})
 		return
 	}
+
+	vehicle.ClearDocuments()
 
 	message := fmt.Sprintf("Deleted vehicle \"%s\"", vehicle.ID)
 	c.JSON(http.StatusOK, gin.H{"data": vehicle, "status": "success", "message": message})
@@ -327,7 +363,7 @@ func FindVehicleDocuments(c *gin.Context) {
 	}
 
 	var page pagination.Page
-	var documents []model.ImageDocument
+	var documents []*model.ImageDocument
 
 	query := model.DB.Where("vehicle_id = ?", vehicle.ID)
 	if docType != "" {
@@ -341,9 +377,88 @@ func FindVehicleDocuments(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": message})
 	}
 
+	model.ResolveDocumentSlicePublicPaths(&documents)
+
 	page.Rows = documents
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": page})
+}
+
+func UpdateVehicleDocuments(c *gin.Context, vehicle *model.Vehicle, rUser *model.User) (err error) {
+	// respondentService := service.GetRespondentService()
+
+	config, err := initializers.LoadConfig()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	uploadDir := config.UPLOAD_DIR
+	if config.VEHICLE_DOCUMENT_UPLOAD_DIR != "" {
+		uploadDir = config.VEHICLE_DOCUMENT_UPLOAD_DIR
+	}
+	if uploadDir == "" {
+		uploadDir = "uploads"
+	}
+
+	var documents []model.ImageDocument
+
+	// Multipart form
+	form, _ := c.MultipartForm()
+	if form != nil {
+		files := form.File["documents[]"]
+		if len(files) != 0 {
+
+			for _, file := range files {
+				// log.Println(file.Filename)
+				ext := filepath.Ext(file.Filename)
+				newName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+
+				uploadPath := fmt.Sprintf("%s/vehicles/%s/documents/%s", uploadDir, vehicle.ID, newName)
+				dst := fmt.Sprintf("%s/%s", config.ASSET_DIR, uploadPath)
+				// Upload the file to specific dst.
+				err = c.SaveUploadedFile(file, dst)
+				if err != nil {
+					return err
+				}
+
+				docType := "IMAGE" //file.Header.Get("docType")
+
+				document := model.ImageDocument{
+					VehicleID:    &vehicle.ID,
+					DocType:      &docType,
+					FilePath:     uploadPath,
+					Size:         file.Size,
+					OriginalName: file.Filename,
+					Extension:    ext,
+				}
+				documents = append(documents, document)
+			}
+		}
+	}
+
+	err = model.DB.Transaction(func(tx *gorm.DB) error {
+		if !*rUser.IsAdmin {
+			V := false
+			vehicle.Published = &V
+		}
+		// CLEAR EXISTING DOCUMENTS
+
+		// if err := tx.Where("responder_id = ?", respondent.ID).Delete(&model.ImageDocument{}).Error; nil != err {
+		// 	return err
+		// }
+		if err = vehicle.ClearDocuments(); err != nil {
+			return err
+		}
+		for _, document := range documents {
+			if err := tx.Create(&document).Error; nil != err {
+				return err
+			}
+		}
+		return nil
+	})
+
+	return err
 }
 
 func ValidateVehicleCategory(category model.VehicleCategory) (err error) {
@@ -361,5 +476,5 @@ func ValidateVehicleCategory(category model.VehicleCategory) (err error) {
 	case model.PRODUCT_KEY_UNLOCK_SERVICE:
 		return nil
 	}
-	return errors.New(fmt.Sprintf("Unsupported Vehicle Category \"%s\"", category))
+	return (fmt.Errorf("Unsupported Vehicle Category \"%s\"", category))
 }
