@@ -8,7 +8,7 @@ import (
 	"github.com/nkamuo/rasta-server/initializers"
 	"github.com/nkamuo/rasta-server/model"
 	"github.com/nkamuo/rasta-server/startup"
-	"github.com/nkamuo/rasta-server/web"
+	// "github.com/nkamuo/rasta-server/web"
 	// "go-cli-for-git/cmd"
 	// "net/http"
 	// "github.com/joho/godotenv"
