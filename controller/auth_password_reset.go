@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/d-vignesh/go-jwt-auth/utils"
+	// "github.com/d-vignesh/go-jwt-auth/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/nkamuo/rasta-server/dto"
 	"github.com/nkamuo/rasta-server/model"
@@ -34,8 +34,8 @@ func AuthPasswordResetGenerateCode(c *gin.Context) {
 	}
 	Now := time.Now()
 	ExpiresAt := Now.Add(time.Minute * 15)
-	Code := utils.GenerateRandomNumbers(6)
-	Token := utils.GenerateRandomString(32)
+	Code := mailing.GenerateRandomNumbers(6)
+	Token := mailing.GenerateRandomString(32)
 
 	userVerificationRequest := &model.UserVerificationRequest{
 		Email:       user.Email,
