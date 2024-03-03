@@ -35,10 +35,10 @@ func main() {
 		fmt.Println("BOOT ERROR:", err)
 	}
 
-	// command.Execute()
-	command.StartWebServer(web.WebServerConfig{
-		Port: 8090,
-	})
+	command.Execute()
+	// command.StartWebServer(web.WebServerConfig{
+	// 	Port: 8090,
+	// })
 }
 
 // func main() {
