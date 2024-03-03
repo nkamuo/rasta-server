@@ -29,6 +29,7 @@ func ConnectDatabase(config *initializers.Config) (err error) {
 
 	err = database.AutoMigrate(
 		&User{},
+		&UserVerificationRequest{},
 		&Company{},
 		&Product{},
 		&Respondent{},
