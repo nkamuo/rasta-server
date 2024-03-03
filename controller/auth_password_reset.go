@@ -32,7 +32,6 @@ func AuthPasswordResetGenerateCode(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
 	}
-
 	Now := time.Now()
 	ExpiresAt := Now.Add(time.Minute * 15)
 	Code := utils.GenerateRandomNumbers(6)
