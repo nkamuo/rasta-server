@@ -218,6 +218,7 @@ func BuildWebServer(config WebServerConfig) (engin *gin.Engine, err error) {
 	api.DELETE("/orders/:id", controller.DeleteOrder)
 	api.POST("/orders/:id/verify-responder", controller.ClientVerifyOrderRespondentDetails)
 	api.POST("/orders/:id/cancel", controller.ClientCancelOrder)
+	api.POST("/orders/:id/publish", controller.ClientPublicOrder)
 	api.POST("/orders/:id/confirm", controller.ClientConfirmCompleteOrder)
 
 	//

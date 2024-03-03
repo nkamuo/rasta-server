@@ -239,3 +239,62 @@ func ClientCancelOrder(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": fulfilment, "status": "success"})
 }
+
+func ClientPublicOrder(c *gin.Context) {
+
+	orderRepo := repository.GetOrderRepository()
+	orderService := service.GetOrderService()
+
+	id, err := uuid.Parse(c.Param("id"))
+	if nil != err {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "Invalid Id provided"})
+		return
+	}
+
+	rUser, err := auth.GetCurrentUser(c)
+	if err != nil {
+		message := fmt.Sprintf("Authentication error")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	order, err := orderService.GetById(id)
+	if err != nil {
+		message := fmt.Sprintf("Could not find Order with [id:%s]", id)
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if order.UserID.String() != rUser.ID.String() {
+		message := fmt.Sprintf("You may not access this resource")
+		c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if order.Status != model.ORDER_STATUS_DRAFT {
+		message := fmt.Sprintf("You can only publish 'draft' orders. Order [%s] is currently '%s'", id, order.Status)
+		c.JSON(http.StatusExpectationFailed, gin.H{"status": "error", "message": message})
+		return
+	}
+
+	if order.FulfilmentID == nil {
+		order.Status = model.ORDER_STATUS_PENDING
+		if err := orderRepo.Update(order, map[string]interface{}{"status": model.ORDER_STATUS_PENDING}); err != nil {
+			message := fmt.Sprintf("Task failed: %s", err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": order, "status": "success"})
+		return
+		// message := fmt.Sprintf("Order [id:%s] is not assigned yet", id)
+		// c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+		// return
+	} else {
+		// TODO: PROCEEDS DOWN
+		message := fmt.Sprintf("Order [id:%s] is already assigned to a responder", id)
+		c.JSON(http.StatusExpectationFailed, gin.H{"status": "error", "message": message})
+		return
+	}
+
+}

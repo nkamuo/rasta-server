@@ -13,6 +13,7 @@ import (
 type OrderStatus string
 
 const (
+	ORDER_STATUS_DRAFT                OrderStatus = "draft"
 	ORDER_STATUS_PENDING              OrderStatus = "pending"
 	ORDER_STATUS_RESPONDENT_ASSIGNED  OrderStatus = "assigned"
 	ORDER_STATUS_RESPONDENT_ARRIVED   OrderStatus = "arrived"
@@ -37,7 +38,7 @@ type Order struct {
 	Adjustments []OrderAdjustment `gorm:"foreignKey:OrderID" json:"adjustments,omitempty"`
 
 	//
-	Status OrderStatus `gorm:"type:varchar(32);not null;default:'pending'" json:"status,omitempty"`
+	Status OrderStatus `gorm:"type:varchar(32);not null;default:'draft'" json:"status,omitempty"`
 
 	//ASSOCIATED USER ACCOUNT
 	UserID *uuid.UUID `gorm:"" json:"userId,omitempty"`
@@ -82,6 +83,7 @@ func (order *Order) BeforeCreate(tx *gorm.DB) (err error) {
 	now := time.Now()
 	order.ID = uuid.New()
 	order.Code = generateOrderCode()
+	order.Status = ORDER_STATUS_DRAFT
 	order.CreatedAt = &now
 	// order.UpdatedAt = &now
 	//
