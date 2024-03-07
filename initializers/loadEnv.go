@@ -131,6 +131,7 @@ func (c *Config) ResolvePublicPath(filePath string) string {
 		serverAddr := c.GetServerURL()
 		publicPath := fmt.Sprintf("%s/%s", c.PUBLIC_PREFIX, filePath)
 		publicPath = strings.Replace(publicPath, "//", "/", -1)
+		publicPath = strings.Trim(publicPath, "/")
 		filePath = fmt.Sprintf("%s/%s", serverAddr, publicPath)
 	}
 	return filePath
