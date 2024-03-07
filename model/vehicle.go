@@ -68,7 +68,7 @@ func (vehicle *Vehicle) ClearDocuments(types ...string) (err error) {
 			//REMOVE THIS DOCUMENT
 			nativePath := config.ResolveNativePath(doc.FilePath)
 			_, err := os.Stat(nativePath)
-			if os.IsNotExist(err) {
+			if !os.IsNotExist(err) {
 				// Delete File
 				if err = os.Remove(nativePath); err != nil {
 					return err
