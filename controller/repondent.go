@@ -531,12 +531,14 @@ func UpdateRespondentDocuments(c *gin.Context) {
 		// if err := tx.Where("responder_id = ?", respondent.ID).Delete(&model.ImageDocument{}).Error; nil != err {
 		// 	return err
 		// }
-		if err = respondent.ClearDocuments(); err != nil {
-			return err
-		}
-		for _, document := range documents {
-			if err := tx.Create(&document).Error; nil != err {
+		if len(documents) > 0 {
+			if err = respondent.ClearDocuments(); err != nil {
 				return err
+			}
+			for _, document := range documents {
+				if err := tx.Create(&document).Error; nil != err {
+					return err
+				}
 			}
 		}
 		return nil
