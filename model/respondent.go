@@ -82,8 +82,11 @@ func (responder *Respondent) ClearDocuments(types ...string) (err error) {
 			//REMOVE THIS DOCUMENT
 			nativePath := config.ResolveNativePath(doc.FilePath)
 			// Delete File
-			if err = os.Remove(nativePath); err != nil {
-				return err
+			_, err := os.Stat(nativePath)
+			if os.IsNotExist(err) {
+				if err = os.Remove(nativePath); err != nil {
+					return err
+				}
 			}
 			if err = DB.Delete(doc).Error; err != nil {
 				return err

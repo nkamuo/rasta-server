@@ -67,9 +67,12 @@ func (vehicle *Vehicle) ClearDocuments(types ...string) (err error) {
 		if tLength == 0 || (docType != nil && contains(types, *docType)) {
 			//REMOVE THIS DOCUMENT
 			nativePath := config.ResolveNativePath(doc.FilePath)
-			// Delete File
-			if err = os.Remove(nativePath); err != nil {
-				return err
+			_, err := os.Stat(nativePath)
+			if os.IsNotExist(err) {
+				// Delete File
+				if err = os.Remove(nativePath); err != nil {
+					return err
+				}
 			}
 			if err = DB.Delete(doc).Error; err != nil {
 				return err
