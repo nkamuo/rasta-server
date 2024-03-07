@@ -112,8 +112,8 @@ func (c *Config) GetServerURL() string {
 		serverAddr = c.SERVER_ADDRESS
 	}
 	if serverAddr == "" {
-		// serverAddr = "127.0.0.1"
-		serverAddr = "10.0.2.2" // TO WORK WITH ANDROID EMULATOR FOR TESTING
+		serverAddr = "127.0.0.1"
+		// serverAddr = "10.0.2.2" // TO WORK WITH ANDROID EMULATOR FOR TESTING
 	}
 	serverAddr = fmt.Sprintf("%s://%s", scheme, serverAddr)
 	if c.SERVER_PORT != nil {

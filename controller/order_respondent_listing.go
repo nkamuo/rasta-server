@@ -523,6 +523,12 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 		return
 	}
 
+	statuses := page.Status
+	status := "all"
+	if len(statuses) > 0 {
+		status = statuses[0]
+	}
+
 	rUser, err := auth.GetCurrentUser(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
@@ -550,21 +556,23 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 		Preload("FuelTypeInfo").Preload("VehicleInfo")
 	// Preload("Origin").Preload("Destination")
 
-	//THE ASSIGNMENTS THIS RESPONDENT's SESSION IS CURRENTLY RESPONDING TO
+	if status == "all" || status == "open" {
+		//THE ASSIGNMENTS THIS RESPONDENT's SESSION IS CURRENTLY RESPONDING TO
 
-	assignments := session.Assignments
+		assignments := session.Assignments
 
-	if assignments != nil {
-		var productIds []string
-		for _, elAssignment := range assignments {
-			if elAssignment.Assignment == nil || elAssignment.Assignment.Product == nil {
-				continue
+		if assignments != nil {
+			var productIds []string
+			for _, elAssignment := range assignments {
+				if elAssignment.Assignment == nil || elAssignment.Assignment.Product == nil {
+					continue
+				}
+
+				product := elAssignment.Assignment.Product
+				productIds = append(productIds, product.ID.String())
 			}
-
-			product := elAssignment.Assignment.Product
-			productIds = append(productIds, product.ID.String())
+			query.Where("product_id IN ?", productIds)
 		}
-		query.Where("product_id IN ?", productIds)
 	}
 
 	query = query.
@@ -573,15 +581,9 @@ func FindAvailableOrdersForRespondent(c *gin.Context) {
 	// // Joins("LEFT JOIN respondent_sessions ON order_fulfilments.session_id = respondent_sessions.id", 1).
 	// Where("order_fulfilments.id IS NULL OR ((order_fulfilments.responder_id = ? /*OR respondent_sessions.respondent_id = ?*/) AND ((order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL)))", respondant.ID)
 
-	statuses := page.Status
-	status := "all"
-	if len(statuses) > 0 {
-		status = statuses[0]
-	}
-
 	switch status {
 	case "open":
-		query = query.Where("orders.status NOT IN ? AND order_fulfilments.id IS NULL", []string{model.ORDER_EARNING_STATUS_COMPLETED, model.ORDER_EARNING_STATUS_CANCELLED})
+		query = query.Where("orders.status IN ? AND order_fulfilments.id IS NULL", []string{string(model.ORDER_STATUS_PENDING)})
 		break
 	case "assigned":
 		query = query.Where("order_fulfilments.responder_id = ? AND ((order_fulfilments.client_confirmed_at IS NULL) AND (order_fulfilments.auto_confirmed_at IS NULL) AND (order_fulfilments.responder_confirmed_at IS NULL))", respondant.ID)

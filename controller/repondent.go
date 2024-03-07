@@ -201,7 +201,7 @@ func CreateRespondent(c *gin.Context) {
 	}
 
 	if nil != input.Active {
-		respondent.Active = *input.Active
+		respondent.Active = input.Active
 	}
 
 	// fmt.Printf("Input USer ID: %s\n user.ID: %s\n respondent.UserId: %s\n", input.UserId, user.ID, respondent.UserID)
@@ -321,7 +321,7 @@ func UpdateRespondent(c *gin.Context) {
 	}
 
 	if nil != input.Active {
-		respondent.Active = *input.Active
+		respondent.Active = input.Active
 	}
 
 	if err := respondentService.Save(respondent); nil != err {
@@ -520,7 +520,7 @@ func UpdateRespondentDocuments(c *gin.Context) {
 
 	err = model.DB.Transaction(func(tx *gorm.DB) error {
 		if !*rUser.IsAdmin {
-			respondent.Active = false
+			*respondent.Active = false
 		}
 		if input.Ssn != nil {
 			respondent.Ssn = input.Ssn

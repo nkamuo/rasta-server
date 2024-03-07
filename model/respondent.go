@@ -13,7 +13,7 @@ import (
 type Respondent struct {
 	// -
 	ID        uuid.UUID `gorm:"type:char(36);primary_key" json:"id,omitempty"`
-	Active    bool      `gorm:"default:false;not null" json:"active"`
+	Active    *bool     `gorm:"default:false;not null" json:"active"`
 	Published bool      `gorm:"default:false;not null" json:"published"`
 
 	//PRIMARY VEHICLE USED BY THIS RESPONDENT
@@ -30,7 +30,7 @@ type Respondent struct {
 	// CurrentLocationEntry   *RespondentSessionLocationEntry `gorm:"foreignKey:CurrentLocationEntryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"currentLocationEntry,omitempty"`
 
 	// >> DOCUMENTS AND VERIFICATIONS
-	Ssn       *string           `gorm: "type:varchar(32);unique" json:"ssn,omitempty"`
+	Ssn       *string           `gorm:"type:varchar(32);unique" json:"ssn,omitempty"`
 	Documents *[]*ImageDocument `gorm:"foreignKey:ResponderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"documents,omitempty"`
 	// DOCUMENTS
 

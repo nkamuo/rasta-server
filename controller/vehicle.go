@@ -34,7 +34,7 @@ func FindVehicles(c *gin.Context) {
 		return
 	}
 
-	query := model.DB.Model(&model.Vehicle{}).Preload("Model").Preload("Owner")
+	query := model.DB.Model(&model.Vehicle{}).Preload("Documents").Preload("Model").Preload("Owner")
 
 	if *rUser.IsAdmin {
 		if ownerID := c.Query("owner_id"); ownerID != "" {
@@ -50,6 +50,12 @@ func FindVehicles(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
 		return
 	}
+
+	for i, vehicle := range vehicles {
+		model.ResolveDocumentSlicePublicPaths(vehicle.Documents)
+		vehicles[i] = vehicle
+	}
+
 	page.Rows = vehicles
 	c.JSON(http.StatusOK, gin.H{"data": page})
 }
