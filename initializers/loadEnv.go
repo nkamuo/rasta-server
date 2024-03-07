@@ -121,7 +121,7 @@ func (c *Config) GetServerURL() string {
 			serverAddr = fmt.Sprintf("%s:%d", serverAddr, *c.SERVER_PORT)
 		}
 	}
-	serverAddr = strings.TrimRight(serverAddr, "/");
+	serverAddr = strings.TrimRight(serverAddr, "/")
 	publicUrl = &serverAddr
 	return serverAddr
 }
@@ -129,7 +129,9 @@ func (c *Config) GetServerURL() string {
 func (c *Config) ResolvePublicPath(filePath string) string {
 	if c.PUBLIC_PREFIX != "" {
 		serverAddr := c.GetServerURL()
-		filePath = fmt.Sprintf("%s/%s/%s", serverAddr, c.PUBLIC_PREFIX, filePath)
+		publicPath := fmt.Sprintf("%s/%s", c.PUBLIC_PREFIX, filePath)
+		publicPath = strings.Replace(publicPath, "//", "/", -1)
+		filePath = fmt.Sprintf("%s/%s", serverAddr, publicPath)
 	}
 	return filePath
 }
