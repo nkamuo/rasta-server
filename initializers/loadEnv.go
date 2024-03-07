@@ -2,6 +2,7 @@ package initializers
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/viper"
 	"github.com/stripe/stripe-go/v74"
@@ -120,6 +121,7 @@ func (c *Config) GetServerURL() string {
 			serverAddr = fmt.Sprintf("%s:%d", serverAddr, *c.SERVER_PORT)
 		}
 	}
+	serverAddr = strings.TrimRight(serverAddr, "/");
 	publicUrl = &serverAddr
 	return serverAddr
 }
