@@ -85,8 +85,8 @@ func (service *respondentServiceImpl) CanHandleMotoristRequest(respondent *model
 	// accessBalanceService := GetRespondentAccessProductBalanceService()
 	// subscriptionService := GetRespondentAccessProductSubscriptionService()
 
-	if respondent.IsActive() == false {
-		message := fmt.Sprintf("Your account it currently inactive, please contact support for more information")
+	if !respondent.IsActive() {
+		message := ("Your account it currently inactive, please contact support for more information")
 		return false, errors.New(message)
 	}
 
