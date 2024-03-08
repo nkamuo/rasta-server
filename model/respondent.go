@@ -55,6 +55,10 @@ func (Respondent *Respondent) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
+func (respondent *Respondent) IsActive() bool {
+	return respondent.Active != nil && *respondent.Active == true
+}
+
 func (Respondent *Respondent) Independent() bool {
 	return Respondent.CompanyID == nil
 }
