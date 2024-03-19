@@ -224,6 +224,7 @@ func RespondentConfirmCompleteOrder(c *gin.Context) {
 	// }
 
 	err = model.DB.Transaction(func(tx *gorm.DB) (err error) {
+
 		if err = tx.Save(fulfilment).Error; err != nil {
 			return err
 		}
@@ -237,6 +238,17 @@ func RespondentConfirmCompleteOrder(c *gin.Context) {
 		message := fmt.Sprintf("Task failed: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": message})
 		return
+	}
+
+	/**
+	 * If the client have not confirmed, then billing has not been processed, so do that now
+	 */
+	if (fulfilment.ClientConfirmedAt == nil) && (fulfilment.AutoConfirmedAt == nil) {
+		if err = orderService.ProcessOrderBilling(order); err != nil {
+			message := fmt.Sprintf("Error Fetching order[id:%s] details: %s", id, err.Error())
+			c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": message})
+			return
+		}
 	}
 
 	// nOrder, err := getOrderById(id)

@@ -32,6 +32,7 @@ type OrderService interface {
 
 	CompleteOrder(order *model.Order, isAuto bool, feedback *dto.ClientOrderConfirmationRequest) (err error)
 	Process(order *model.Order) (err error)
+	ProcessOrderBilling(order *model.Order) (err error)
 	UpdateResponderLocationEntry(order *model.Order, locationEntry model.RespondentSessionLocationEntry) (err error)
 	AssignResponder(order *model.Order, session *model.RespondentSession) (err error)
 	Save(order *model.Order) (err error)
@@ -277,8 +278,13 @@ func (service *orderServiceImpl) CompleteOrder(order *model.Order, isAuto bool, 
 
 	}
 
-	if err = service.ProcessOrderBilling(order); err != nil {
-		return err
+	/**
+	 * If the responder have not confirmed, then billing has not been processed, so do that now
+	 */
+	if fulfilment.ResponderConfirmedAt == nil {
+		if err = service.ProcessOrderBilling(order); err != nil {
+			return err
+		}
 	}
 
 	if err := earningService.ProcessEarnings(order); err != nil {
@@ -297,6 +303,9 @@ func (service *orderServiceImpl) ProcessOrderBilling(order *model.Order) (err er
 	subscriptionService := GetRespondentAccessProductSubscriptionService()
 
 	fulfilment, err := fulfilmentService.GetById(*order.FulfilmentID, "Responder.User")
+	if err != nil {
+		return err
+	}
 
 	respondent, err := respondentService.GetById(*fulfilment.ResponderID, "User")
 	if err != nil {
@@ -311,6 +320,7 @@ func (service *orderServiceImpl) ProcessOrderBilling(order *model.Order) (err er
 			return err
 		}
 	} else {
+		//THE RESPONDER HAS A SUBSCRIPTION THAT COVER's THE CURRENT DAY
 		return nil
 	}
 
