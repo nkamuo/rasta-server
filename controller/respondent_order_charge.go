@@ -102,6 +102,7 @@ func FindRespondentOrderChargesByRespondent(c *gin.Context) {
 		return
 	}
 	query := model.DB.Preload("Request.Product.Place").Preload("Request.Order.User")
+	query = query.Where("respondent_id = ?", respondent.ID).Where("respondent_id = ?", respondent.ID)
 
 	if *rUser.IsAdmin {
 		// if respondent_id := c.Query("respondent_id"); respondent_id != "" {
@@ -109,7 +110,6 @@ func FindRespondentOrderChargesByRespondent(c *gin.Context) {
 		// }
 	} else {
 		if respondent.User != nil && respondent.User.ID.String() == rUser.ID.String() {
-			query = query.Where("respondent_id = ?", respondent.ID).Where("respondent_id = ?", respondent.ID)
 		} else {
 			message := fmt.Sprintf("Permision Denied: you may not access this resource[403]")
 			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
