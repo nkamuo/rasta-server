@@ -110,6 +110,7 @@ func FindRespondentOrderChargesByRespondent(c *gin.Context) {
 		// }
 	} else {
 		if respondent.User != nil && respondent.User.ID.String() == rUser.ID.String() {
+			// Do Nothing
 		} else {
 			message := fmt.Sprintf("Permision Denied: you may not access this resource[403]")
 			c.JSON(http.StatusForbidden, gin.H{"status": "error", "message": message})
