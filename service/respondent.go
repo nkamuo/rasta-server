@@ -113,7 +113,8 @@ func (service *respondentServiceImpl) CanHandleMotoristRequest(respondent *model
 	}
 
 	if page.TotalRows > 0 {
-		return false, nil
+		message := fmt.Sprintf("You still have %d charges to pay", page.TotalRows)
+		return false, errors.New(message)
 	}
 
 	return true, nil
