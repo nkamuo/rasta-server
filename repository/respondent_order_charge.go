@@ -99,7 +99,7 @@ func (repo *respondentChargeRepository) DeleteById(id uuid.UUID) (respondentChar
 func (repo *respondentChargeRepository) PaginateByRespondent(respondent *model.Respondent, page *dto.FinancialPageRequest) (err error) {
 	var charges []model.RespondentOrderCharge
 	query := repo.db.Preload("Request.Product.Place").Preload("Request.Order.User")
-	query = query.Scopes(financial.FilterRequest(nil, page, query))
+	query = query.Scopes(financial.FilterRequest(nil, page, query)).Where("respondent_id = ?", respondent.ID)
 	if err = query.Scopes(pagination.Paginate(charges, &page.Page, query)).Find(&charges).Error; nil != err {
 		return err
 	}
