@@ -113,8 +113,15 @@ func (service *respondentServiceImpl) CanHandleMotoristRequest(respondent *model
 	}
 
 	if page.TotalRows > 0 {
-		message := fmt.Sprintf("You still have %d charges to pay", page.TotalRows)
-		return false, errors.New(message)
+		if page.TotalPages == 1 {
+
+			return false, errors.New("You have a pending charge to pay")
+		} else {
+
+			message := fmt.Sprintf("You have %d pending charges to pay", page.TotalRows)
+			return false, errors.New(message)
+		}
+
 	}
 
 	return true, nil
